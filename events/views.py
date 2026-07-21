@@ -323,6 +323,7 @@ def browse_events_view(request):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
         'events': [e for e in DUMMY_EVENTS
                    if e['status'] in ('Open', 'Upcoming')],
     }
@@ -335,6 +336,7 @@ def event_public_detail_view(request, pk):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
         'event': event,
         'has_applied': False,
     }

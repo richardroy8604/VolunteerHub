@@ -13,7 +13,7 @@
             <!-- ================= DEAN SIDEBAR NAVIGATION ================= -->
             {% if user.is_staff or user_role == 'dean' %}
                 <li class="nav-item">
-                    <a href="/dean/dashboard/" class="sidebar-link {% if request.path == '/dean/dashboard/' or user_role == 'dean' and not 'events' in request.path and not 'users' in request.path and not 'reports' in request.path %}active{% endif %}" data-title="Dashboard">
+                    <a href="/dean/dashboard/" class="sidebar-link {% if request.path == '/dean/dashboard/' or user_role == 'dean' and not 'events' in request.path and not 'committees' in request.path and not 'approvals' in request.path and not 'users' in request.path and not 'reports' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Dashboard</span>
                     </a>
@@ -53,7 +53,7 @@
             <!-- ================= COMMITTEE HEAD NAVIGATION ================= -->
             {% elif user.userprofile.role == 'committee_head' or user_role == 'committee_head' %}
                 <li class="nav-item">
-                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' and not 'volunteers' in request.path and not 'attendance' in request.path %}active{% endif %}" data-title="Dashboard">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' and not 'volunteers' in request.path and not 'attendance' in request.path and not 'coordinators' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-circle-nodes"></i>
                         <span>Dashboard</span>
                     </a>
@@ -80,7 +80,7 @@
             <!-- ================= STUDENT NAVIGATION ================= -->
             {% else %}
                 <li class="nav-item">
-                    <a href="/student/dashboard/" class="sidebar-link {% if request.path == '/student/dashboard/' or user_role == 'student' %}active{% endif %}" data-title="Dashboard">
+                    <a href="/student/dashboard/" class="sidebar-link {% if request.path == '/student/dashboard/' or user_role == 'student' and not 'events' in request.path and not 'applications' in request.path and not 'volunteering' in request.path and not 'coordinators' in request.path and not 'profile' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-table-columns"></i>
                         <span>Dashboard</span>
                     </a>
