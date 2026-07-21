@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Welcome back, {{ user_name }}</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Your Student Volunteer Dashboard & Event Log</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-success py-2 px-3" style="font-size: 0.85rem; border-radius: 50px; background-color: var(--clr-primary) !important;">
+            <i class="fa-solid fa-graduation-cap me-1"></i> Volunteer Profile
+        </span>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid-dashboard mb-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+    <!-- Completed Hours Card -->
+    <div class="metric-card success">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.total_hours }} hrs</span>
+            <span class="metric-label">Completed Hours</span>
+            <span class="text-success mt-1 d-block" style="font-size: 0.7rem; font-weight: 500;">
+                <i class="fa-solid fa-circle-check"></i> Exceeded semester target (30 hrs)
+            </span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-award"></i></div>
+    </div>
+
+    <!-- Active Assignments Card -->
+    <div class="metric-card info">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.active_events }}</span>
+            <span class="metric-label">Active Assignments</span>
+            <span class="text-muted mt-1 d-block" style="font-size: 0.7rem;">Currently assigned roles</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-house-laptop"></i></div>
+    </div>
+
+    <!-- Submitted Applications Card -->
+    <div class="metric-card warning">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.total_applications }}</span>
+            <span class="metric-label">Submitted Applications</span>
+            <span class="text-warning mt-1 d-block" style="font-size: 0.7rem; font-weight: 500;">
+                <i class="fa-solid fa-clock-rotate-left"></i> 1 pending review
+            </span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-file-signature"></i></div>
+    </div>
+
+    <!-- Target Progress Card -->
+    <div class="metric-card">
+        <div class="metric-content w-100">
+            <span class="metric-value">158%</span>
+            <span class="metric-label">Target Progress</span>
+            <div class="progress mt-2" style="height: 6px; border-radius: 5px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: 100%; background-color: var(--clr-primary) !important;"></div>
+            </div>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-chart-line"></i></div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Upcoming Duties & Active Assignments -->
+    <div class="col-lg-8 mb-4">
+        <div class="content-card h-100">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">
+                <span><i class="fa-solid fa-calendar-check text-success me-2"></i> Upcoming Volunteering Duties</span>
+            </h4>
+
+            {% if active_assignments %}
+            <div class="d-flex flex-column gap-3 mt-2">
+                {% for assignment in active_assignments %}
+                <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center" style="border-radius: var(--radius-md); border-left: 4px solid {% if assignment.status == 'Assigned' %}var(--clr-primary){% else %}var(--clr-warning){% endif %};">
+                    <div>
+                        <h5 class="mb-1" style="font-size: 0.95rem; font-weight: 700; color: var(--clr-text-main);">{{ assignment.event }}</h5>
+                        <div class="d-flex flex-wrap gap-x-3 text-muted" style="font-size: 0.8rem;">
+                            <span class="me-3"><i class="fa-solid fa-users-gear me-1"></i> Committee: <strong>{{ assignment.committee }}</strong></span>
+                            <span><i class="fa-regular fa-clock me-1"></i> Dates: {{ assignment.date }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if assignment.status == 'Assigned' %}
+                        <span class="badge bg-success py-1 px-3 text-white rounded-pill" style="font-size: 0.75rem; background-color: var(--clr-primary) !important;">Assigned</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark py-1 px-3 rounded-pill" style="font-size: 0.75rem;">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fa-regular fa-calendar-times mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                No active volunteering duties. Apply to events below!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Quick Portal Links -->
+    <div class="col-lg-4 mb-4">
+        <div class="content-card h-100">
+            <h4 class="content-card-title border-bottom pb-2 mb-4">
+                <span><i class="fa-solid fa-route text-success me-2"></i> Quick Actions</span>
+            </h4>
+
+            <div class="d-flex flex-column gap-3">
+                <a href="/events/" class="btn btn-primary py-2.5 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem; font-weight: 600;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Browse Volunteering Events
+                </a>
+                <a href="/student/volunteering/" class="btn btn-secondary py-2.5 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem; font-weight: 600; border-color: var(--clr-border);">
+                    <i class="fa-solid fa-clock-rotate-left"></i> My Volunteering History
+                </a>
+                <a href="/student/applications/" class="btn btn-secondary py-2.5 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem; font-weight: 600; border-color: var(--clr-border);">
+                    <i class="fa-solid fa-file-invoice"></i> My Applications
+                </a>
+                <a href="/accounts/profile/" class="btn btn-secondary py-2.5 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem; font-weight: 600; border-color: var(--clr-border);">
+                    <i class="fa-regular fa-user-circle"></i> View My Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Events Catalog Panel -->
+<div class="content-card mt-2">
+    <h4 class="content-card-title border-bottom pb-2 mb-4">
+        <span><i class="fa-solid fa-calendar-days text-success me-2"></i> Available Campus Events</span>
+    </h4>
+    
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Event Name</th>
+                    <th>Event Date</th>
+                    <th>Status</th>
+                    <th style="width: 150px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in recent_events %}
+                <tr>
+                    <td style="font-weight: 600;">{{ event.name }}</td>
+                    <td class="text-muted" style="font-size: 0.88rem;">{{ event.date }}</td>
+                    <td>
+                        {% if event.status == 'Open' %}
+                        <span class="badge bg-success-light text-success rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(25, 135, 84, 0.1); font-weight: 600;">Registration Open</span>
+                        {% else %}
+                        <span class="badge bg-secondary-light text-muted rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(108, 117, 125, 0.1); font-weight: 600;">Upcoming</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <a href="/events/1/" class="btn btn-secondary py-1 px-3" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
+                            <i class="fa-regular fa-eye"></i> Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

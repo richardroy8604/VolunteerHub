@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}My Volunteering History — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">My Volunteering History</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Record of your volunteering hours, attendance, and completed roles</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/student/dashboard/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Hours Summary Dashboard Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <div class="content-card p-4 d-flex justify-content-between align-items-center" style="border-radius: var(--radius-lg); border-top: 4px solid var(--clr-primary) !important;">
+            <div>
+                <span class="text-muted d-block mb-1" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Total Hours Credited</span>
+                <span style="font-size: 2.2rem; font-weight: 800; color: var(--clr-primary);">{{ total_hours }} hrs</span>
+                <span class="d-block text-success mt-2" style="font-size: 0.75rem; font-weight: 500;">
+                    <i class="fa-solid fa-medal me-1"></i> Verified by Dean
+                </span>
+            </div>
+            <div class="rounded-circle bg-success-light text-success d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.75rem; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="content-card p-4 d-flex justify-content-between align-items-center" style="border-radius: var(--radius-lg); border-top: 4px solid var(--clr-primary) !important;">
+            <div>
+                <span class="text-muted d-block mb-1" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Completed Events</span>
+                <span style="font-size: 2.2rem; font-weight: 800; color: var(--clr-text-main);">{{ total_events }}</span>
+                <span class="d-block text-muted mt-2" style="font-size: 0.75rem;">Across multiple semesters</span>
+            </div>
+            <div class="rounded-circle bg-success-light text-success d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.75rem; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Log Table -->
+<div class="content-card">
+    <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
+        <span><i class="fa-solid fa-list-check text-success me-2"></i> Event Participation Log</span>
+    </h4>
+    
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Event Name</th>
+                    <th>Committee / Role</th>
+                    <th>Event Timeline</th>
+                    <th style="text-align: center;">Attendance</th>
+                    <th style="text-align: center;">Hours Earned</th>
+                    <th style="text-align: center;">Certificates</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in history %}
+                <tr>
+                    <td style="font-weight: 600;">{{ log.event }}</td>
+                    <td style="font-weight: 600;" class="text-success">{{ log.committee }}</td>
+                    <td class="text-muted" style="font-size: 0.88rem;">{{ log.dates }}</td>
+                    <td style="text-align: center;">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <span class="badge bg-success-light text-success rounded-pill px-2.5 py-1" style="font-size: 0.75rem; background-color: rgba(25, 135, 84, 0.1); font-weight: 600;">
+                                {{ log.attendance }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td style="text-align: center; font-weight: 700; color: var(--clr-primary);">{{ log.hours }} hrs</td>
+                    <td style="text-align: center;">
+                        <!-- Certificate stub button -->
+                        <button type="button" class="btn btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; border-radius: var(--radius-sm);" onclick="alert('Certificates will be implemented in a future update!')">
+                            <i class="fa-solid fa-download"></i> Download
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-hourglass-empty mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                        No volunteering history recorded. Join an event today!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

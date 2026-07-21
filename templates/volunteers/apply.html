@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for Event — {{ event.name }} — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Volunteer Registration</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Register your top 3 committee preferences for <strong>{{ event.name }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/events/{{ event.id }}/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Cancel Registration
+        </a>
+    </div>
+</div>
+
+<form action="." method="post" id="apply-form">
+    {% csrf_token %}
+    <div class="row">
+        <!-- Left Column: Preference Selector form -->
+        <div class="col-lg-8 mb-4">
+            <div class="content-card">
+                <h4 class="content-card-title border-bottom pb-2 mb-4">
+                    <span><i class="fa-solid fa-sliders text-success me-2"></i> Select Committee Preferences</span>
+                </h4>
+
+                <div class="alert alert-success border-0 p-3 mb-4" style="background-color: var(--clr-primary-light); color: var(--clr-primary); font-size: 0.85rem; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    Please select three <strong>different</strong> committees. You will be matched based on these preferences and committee capacity.
+                </div>
+
+                <!-- Preference 1 -->
+                <div class="mb-3">
+                    <label class="form-label" for="pref1" style="font-weight: 600; font-size: 0.9rem;">1st Preference <span class="text-danger">*</span></label>
+                    <select class="form-control pref-select" id="pref1" name="pref1" required style="border-color: var(--clr-border); cursor: pointer;">
+                        <option value="">-- Choose 1st Preference --</option>
+                        {% for committee in event.committees %}
+                        <option value="{{ committee.id }}">{{ committee.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Preference 2 -->
+                <div class="mb-3">
+                    <label class="form-label" for="pref2" style="font-weight: 600; font-size: 0.9rem;">2nd Preference <span class="text-danger">*</span></label>
+                    <select class="form-control pref-select" id="pref2" name="pref2" required style="border-color: var(--clr-border); cursor: pointer;">
+                        <option value="">-- Choose 2nd Preference --</option>
+                        {% for committee in event.committees %}
+                        <option value="{{ committee.id }}">{{ committee.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Preference 3 -->
+                <div class="mb-4">
+                    <label class="form-label" for="pref3" style="font-weight: 600; font-size: 0.9rem;">3rd Preference <span class="text-danger">*</span></label>
+                    <select class="form-control pref-select" id="pref3" name="pref3" required style="border-color: var(--clr-border); cursor: pointer;">
+                        <option value="">-- Choose 3rd Preference --</option>
+                        {% for committee in event.committees %}
+                        <option value="{{ committee.id }}">{{ committee.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <hr class="my-4" style="border-top-color: var(--clr-border);">
+
+                <h4 class="content-card-title border-bottom pb-2 mb-4">
+                    <span><i class="fa-solid fa-file-invoice text-success me-2"></i> Additional Details (Optional)</span>
+                </h4>
+
+                <!-- Past Experience -->
+                <div class="mb-3">
+                    <label class="form-label" for="experience" style="font-weight: 600; font-size: 0.88rem;">Past Volunteering Experience</label>
+                    <textarea class="form-control" id="experience" name="experience" rows="3" placeholder="Briefly describe any past volunteering work..." style="border-color: var(--clr-border);"></textarea>
+                </div>
+
+                <!-- Skills -->
+                <div class="mb-0">
+                    <label class="form-label" for="skills" style="font-weight: 600; font-size: 0.88rem;">Relevant Skills / Certifications</label>
+                    <textarea class="form-control" id="skills" name="skills" rows="3" placeholder="e.g. Photography, Graphic Design, Web Development, First Aid training..." style="border-color: var(--clr-border);"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Student Profile Details info board -->
+        <div class="col-lg-4">
+            <div class="content-card mb-4" style="border-top: 4px solid var(--clr-primary) !important;">
+                <h4 class="content-card-title border-bottom pb-2 mb-3">
+                    <span><i class="fa-regular fa-id-card text-success me-2"></i> Applicant Profile</span>
+                </h4>
+                
+                <div class="d-flex flex-column gap-3 mt-2" style="font-size: 0.85rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Full Name:</span>
+                        <strong style="color: var(--clr-text-main);">{{ student.name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Class/Sem:</span>
+                        <strong style="color: var(--clr-text-main);">{{ student.student_class }} / {{ student.semester }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Department:</span>
+                        <strong style="color: var(--clr-text-main);">{{ student.department }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Email Address:</span>
+                        <strong style="color: var(--clr-text-main);">{{ student.email }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Phone Number:</span>
+                        <strong style="color: var(--clr-text-main);">{{ student.phone }}</strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-0 p-3 mt-4 mb-0" style="font-size: 0.78rem; background-color: rgba(255, 193, 7, 0.08); color: #856404; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-circle-exclamation me-1"></i>
+                    To modify your contact info or upload a profile picture, please visit your <a href="/accounts/profile/edit/" class="alert-link text-decoration-underline" style="color: #664d03;">Profile Settings</a>.
+                </div>
+            </div>
+
+            <!-- Submit action buttons card -->
+            <div class="content-card">
+                <button type="submit" class="btn btn-primary w-100 py-2.5 d-flex align-items-center justify-content-center gap-2 mb-2" style="font-weight: 600;">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Application
+                </button>
+                <a href="/events/{{ event.id }}/" class="btn btn-secondary w-100 py-2.5 d-flex align-items-center justify-content-center gap-2" style="border-color: var(--clr-border);">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selects = document.querySelectorAll('.pref-select');
+        const form = document.getElementById('apply-form');
+
+        // Prevent choosing duplicate preferences in selects
+        selects.forEach(select => {
+            select.addEventListener('change', function() {
+                // Clear disabled states on options
+                selects.forEach(s => {
+                    s.querySelectorAll('option').forEach(opt => {
+                        if (opt.value !== "") opt.disabled = false;
+                    });
+                });
+
+                // Disable already selected choices in other selectors
+                const selectedValues = Array.from(selects).map(s => s.value).filter(val => val !== "");
+                
+                selects.forEach(s => {
+                    s.querySelectorAll('option').forEach(opt => {
+                        if (opt.value !== "" && opt.value !== s.value && selectedValues.includes(opt.value)) {
+                            opt.disabled = true;
+                        }
+                    });
+                });
+            });
+        });
+
+        // Mock success submission alert
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Mock Success: Your volunteer application has been submitted successfully. You can track your allocation status in the My Applications page!');
+                window.location.href = '/student/applications/';
+            });
+        }
+    });
+</script>
+{% endblock %}
