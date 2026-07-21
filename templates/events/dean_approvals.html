@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Hours Approvals — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header / Breadcrumbs -->
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        {% if selected_event_id %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2" style="font-size: 0.85rem;">
+                <li class="breadcrumb-item"><a href="/dean/approvals/" class="text-success" style="font-weight: 500;">Hours Sheets Approvals</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ selected_event_name }}</li>
+            </ol>
+        </nav>
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">{{ selected_event_name }} Submissions</h2>
+        <p class="text-muted" style="font-size: 0.9rem;">Select a committee to review and verify volunteering hours</p>
+        {% else %}
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Hours Sheets Approvals</h2>
+        <p class="text-muted" style="font-size: 0.9rem;">Select an event first to review its coordinating committee submissions</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if not selected_event_id %}
+<!-- EVENT LEVEL SELECTION (Grid of Events with Pending Sheets) -->
+<div class="row g-4">
+    {% for event in events %}
+    <div class="col-md-6 col-lg-4">
+        <div class="content-card h-100 d-flex flex-column justify-content-between p-4" style="border-radius: var(--radius-lg); border-top: 4px solid var(--clr-primary) !important;">
+            <div>
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--clr-text-main); line-height: 1.4;" class="mb-3">
+                    <i class="fa-solid fa-calendar-day text-success me-2"></i> {{ event.name }}
+                </h4>
+                
+                <div class="d-flex flex-column gap-2 mb-4" style="font-size: 0.85rem; color: var(--clr-text-muted);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Pending Committees:</span>
+                        <span class="badge bg-warning text-dark px-2 rounded" style="font-weight: 600;">{{ event.count }} pending</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Volunteers Impacted:</span>
+                        <strong style="color: var(--clr-text-main);">{{ event.student_count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Total Hours Submitted:</span>
+                        <strong style="color: var(--clr-primary);">{{ event.total_hours }} hrs</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="?event_id={{ event.id }}" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.85rem; font-weight: 600;">
+                View Committee Sheets <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="content-card text-center py-5 text-muted">
+            <i class="fa-solid fa-clipboard-check mb-2" style="font-size: 3.5rem; display: block; opacity: 0.5;"></i>
+            <h4 class="h5 mt-3" style="font-weight: 600;">No Pending Submissions</h4>
+            <p class="mb-0 text-muted" style="font-size: 0.9rem;">There are no hour sheets currently awaiting approval from coordinators.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- COMMITTEE LEVEL SELECTION (Table of Pending Committees for Selected Event) -->
+<div class="content-card">
+    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+        <h4 class="content-card-title mb-0">
+            <span><i class="fa-solid fa-cubes text-success me-2"></i> Pending Committee Sheets</span>
+        </h4>
+        <a href="/dean/approvals/" class="btn btn-secondary py-1 px-3 d-flex align-items-center gap-1" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-arrow-left"></i> Change Event
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Committee Name</th>
+                    <th>Submitted By (Coordinator)</th>
+                    <th>Date Submitted</th>
+                    <th style="text-align: center;">Volunteers Count</th>
+                    <th style="text-align: center;">Total Hours</th>
+                    <th style="text-align: center; width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sheet in pending_approvals %}
+                <tr>
+                    <td style="font-weight: 600;" class="text-success">{{ sheet.committee_name }}</td>
+                    <td style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-user-tie text-muted me-1"></i> {{ sheet.coordinator }}
+                    </td>
+                    <td style="font-size: 0.85rem;" class="text-muted">{{ sheet.submitted_date }}</td>
+                    <td style="text-align: center; font-weight: 600;">{{ sheet.student_count }}</td>
+                    <td style="text-align: center; font-weight: 600; color: var(--clr-primary);">{{ sheet.total_hours }} hrs</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn btn-primary py-1 px-3 d-inline-flex align-items-center gap-1" style="font-size: 0.8rem; border-radius: var(--radius-sm);" data-bs-toggle="modal" data-bs-target="#reviewModal_{{ sheet.id }}">
+                            <i class="fa-solid fa-magnifying-glass"></i> Review Sheet
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% for sheet in pending_approvals %}
+<!-- Review & Action Bootstrap Modal -->
+<div class="modal fade" id="reviewModal_{{ sheet.id }}" tabindex="-1" aria-labelledby="reviewModalLabel_{{ sheet.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <!-- Modal Header -->
+            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="reviewModalLabel_{{ sheet.id }}" style="font-weight: 600;">
+                    <i class="fa-solid fa-stamp me-2"></i> Review Hours: {{ sheet.committee_name }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body p-4 text-start">
+                <div class="row g-3 mb-4 p-3 bg-light rounded" style="border-radius: var(--radius-md); border-left: 4px solid var(--clr-primary);">
+                    <div class="col-md-6">
+                        <span class="text-muted d-block" style="font-size: 0.75rem;">EVENT</span>
+                        <strong style="font-size: 0.9rem;">{{ sheet.event_name }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted d-block" style="font-size: 0.75rem;">SUBMITTED BY</span>
+                        <strong style="font-size: 0.9rem;">{{ sheet.coordinator }}</strong>
+                    </div>
+                </div>
+
+                <h6 class="mb-3" style="font-weight: 700; color: var(--clr-text-main);">Volunteers Attendance Sheet</h6>
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-bordered table-sm text-center align-middle" style="font-size: 0.85rem;">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="text-align: left; padding-left: 12px;">Student Name</th>
+                                <th>Class</th>
+                                <th>Status</th>
+                                <th>Hours Marked</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in sheet.students %}
+                            <tr>
+                                <td style="text-align: left; padding-left: 12px; font-weight: 600;">{{ student.name }}</td>
+                                <td>{{ student.class }}</td>
+                                <td>
+                                    {% if student.status == 'Present' %}
+                                    <span class="badge bg-success-light text-success rounded-pill px-2" style="font-size: 0.7rem; background-color: rgba(25, 135, 84, 0.1);">Present</span>
+                                    {% elif student.status == 'Absent' %}
+                                    <span class="badge bg-danger-light text-danger rounded-pill px-2" style="font-size: 0.7rem; background-color: rgba(220, 53, 69, 0.1);">Absent</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-light text-warning rounded-pill px-2" style="font-size: 0.7rem; background-color: rgba(255, 193, 7, 0.1);">Late</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-weight: 700;">{{ student.hours }} hrs</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer p-3 border-top-0 d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.9rem;">Close</button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-danger" onclick="rejectHours('{{ sheet.committee_name }}')" style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Send Back / Reject
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="approveHours('{{ sheet.committee_name }}')" style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-circle-check me-1"></i> Approve & Credit Hours
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function approveHours(committeeName) {
+        alert(`Mock Success: Volunteering hours for "${committeeName}" approved successfully. Hours have been credited to student profiles.`);
+        window.location.reload();
+    }
+
+    function rejectHours(committeeName) {
+        const reason = prompt(`Enter reason for sending back the hours sheet for "${committeeName}":`);
+        if (reason) {
+            alert(`Mock Success: Attendance sheet sent back to coordinator with feedback: "${reason}".`);
+            window.location.reload();
+        }
+    }
+</script>
+{% endblock %}

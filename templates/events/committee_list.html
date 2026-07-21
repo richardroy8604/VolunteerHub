@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Committees Overview — VolunteerHub{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Clickable Row Float & Glow Animation */
+    .table-custom tbody tr.clickable-row {
+        cursor: pointer;
+        transition: background-color var(--transition-speed) var(--transition-smooth),
+                    transform var(--transition-speed) var(--transition-smooth),
+                    box-shadow var(--transition-speed) var(--transition-smooth);
+    }
+    .table-custom tbody tr.clickable-row:hover {
+        background-color: rgba(27, 77, 62, 0.05) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(27, 77, 62, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Event Committees</h2>
+        <p class="text-muted" style="font-size: 0.9rem;">Master view of all coordinating committees across campus events</p>
+    </div>
+</div>
+
+<!-- Filter Selector Card -->
+<div class="content-card mb-4" style="padding: 16px 24px;">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-6 col-lg-4 mb-0">
+            <label class="form-label" for="event-filter" style="font-size: 0.85rem; font-weight: 600;">Filter Committees by Event</label>
+            <select name="event_id" id="event-filter" class="form-control" onchange="this.form.submit();" style="border-color: var(--clr-border); cursor: pointer;">
+                <option value="">-- All Events --</option>
+                {% for event in events %}
+                <option value="{{ event.id }}" {% if selected_event_id == event.id|slugify %}selected{% endif %}>{{ event.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if selected_event_id %}
+        <div class="col-md-3 col-lg-2 align-self-end mt-md-0 mt-3" style="margin-bottom: 2px;">
+            <a href="." class="btn btn-secondary w-100 py-1" style="font-size: 0.85rem; border-color: var(--clr-border); height: 38px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-filter-circle-xmark me-2"></i> Clear Filter
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Committee Table List -->
+<div class="content-card">
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Committee Name</th>
+                    <th style="width: 25%;">Event Name</th>
+                    <th>assigned Coordinator</th>
+                    <th>Required Count</th>
+                    <th>Filled Slots</th>
+                    <th>Allocation Bar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for committee in committees %}
+                <tr class="clickable-row" onclick="window.location.href='/dean/committees/{{ committee.id }}/';">
+                    <td>
+                        <a href="/dean/committees/{{ committee.id }}/" class="text-success" style="font-weight: 600;" onclick="event.stopPropagation();">
+                            {{ committee.name }}
+                        </a>
+                    </td>
+                    <td style="font-size: 0.9rem; font-weight: 500;">
+                        <i class="fa-solid fa-calendar-week text-muted me-1"></i> {{ committee.event_name }}
+                    </td>
+                    <td style="font-size: 0.85rem; font-weight: 500;">
+                        <i class="fa-solid fa-user-tie text-muted me-1"></i> {{ committee.head }}
+                    </td>
+                    <td style="font-weight: 600;">{{ committee.required }}</td>
+                    <td>
+                        <span class="badge bg-success" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">{{ committee.assigned }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress" style="width: 80px; height: 8px; border-radius: 5px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required 100 %}%"></div>
+                            </div>
+                            <span style="font-size: 0.75rem; font-weight: 500;" class="text-muted">{% widthratio committee.assigned committee.required 100 %}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-cubes mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                        No committees have been configured.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

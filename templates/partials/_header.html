@@ -1,0 +1,73 @@
+<!-- Header bar at the top of the screen -->
+<header class="top-header">
+    <div class="header-left">
+        <!-- Sidebar collapse toggle button -->
+        <button class="toggle-sidebar-btn" id="toggle-sidebar-btn" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="d-none d-md-inline text-muted font-monospace" style="font-size: 0.85rem;">
+            Rajagiri Campus Volunteer System
+        </span>
+    </div>
+
+    <div class="header-right">
+        <!-- Notification Icons -->
+        <div class="position-relative cursor-pointer text-muted px-2" style="font-size: 1.2rem;">
+            <i class="fa-regular fa-bell"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem; padding: 3px 5px;">
+                3
+            </span>
+        </div>
+
+        <!-- User Dropdown (Stubs for profile picture upload, user info) -->
+        <div class="dropdown">
+            <div class="user-profile-dropdown" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if user.is_authenticated and user.userprofile.profile_picture %}
+                    <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="user-avatar">
+                {% else %}
+                    <!-- Placeholder avatar if no picture exists -->
+                    <div class="user-avatar bg-success text-white d-flex align-items-center justify-content-center" style="font-weight: 700; font-size: 1rem;">
+                        {{ user.first_name|default:user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <div class="user-info d-none d-sm-flex">
+                    <span class="user-name">
+                        {% if user.is_authenticated and user.first_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% elif user_role == 'dean' %}
+                            Dr. Thomas Mathew
+                        {% elif user_role == 'committee_head' %}
+                            Dr. Priya Sharma
+                        {% else %}
+                            Arjun Menon
+                        {% endif %}
+                    </span>
+                    <span class="user-role text-capitalize">
+                        {% if user.is_staff or user_role == 'dean' %}
+                            Dean
+                        {% elif user.userprofile.role == 'committee_head' or user_role == 'committee_head' %}
+                            Committee Head
+                        {% else %}
+                            Student Volunteer
+                        {% endif %}
+                    </span>
+                </div>
+                <i class="fa-solid fa-chevron-down text-muted" style="font-size: 0.75rem;"></i>
+            </div>
+            
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="userDropdown" style="border-radius: var(--radius-md);">
+                <li>
+                    <a class="dropdown-item py-2" href="/accounts/profile/{% if user_role %}?role={{ user_role }}{% elif user.is_staff %}?role=dean{% endif %}">
+                        <i class="fa-regular fa-user me-2 text-success"></i> My Profile
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item py-2 text-danger" href="/accounts/logout/">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

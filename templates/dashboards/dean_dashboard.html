@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Dean Dashboard — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Welcome, {{ user_name }}</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Dean's Campus Volunteering Overview & Activity Log</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-success py-2 px-3 text-capitalize" style="font-size: 0.85rem; border-radius: 50px;">
+            <i class="fa-solid fa-shield-halved me-1"></i> Admin Access
+        </span>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid-dashboard">
+    <!-- Stat Card 1: Total Events -->
+    <div class="metric-card">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.total_events }}</span>
+            <span class="metric-label">Total Events</span>
+        </div>
+        <div class="metric-icon">
+            <i class="fa-solid fa-calendar-days"></i>
+        </div>
+    </div>
+
+    <!-- Stat Card 2: Active Events -->
+    <div class="metric-card success">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.active_events }}</span>
+            <span class="metric-label">Active Events</span>
+        </div>
+        <div class="metric-icon">
+            <i class="fa-solid fa-circle-play"></i>
+        </div>
+    </div>
+
+    <!-- Stat Card 3: Total Volunteers -->
+    <div class="metric-card info">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.total_volunteers }}</span>
+            <span class="metric-label">Volunteers</span>
+        </div>
+        <div class="metric-icon">
+            <i class="fa-solid fa-users"></i>
+        </div>
+    </div>
+
+    <!-- Stat Card 4: Pending Applications -->
+    <div class="metric-card warning">
+        <div class="metric-content">
+            <span class="metric-value">{{ stats.pending_applications }}</span>
+            <span class="metric-label">Pending Apps</span>
+        </div>
+        <div class="metric-icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Two-Column Activity Section -->
+<div class="row">
+    <!-- Left Column: Active Events Tracker -->
+    <div class="col-lg-8 mb-4">
+        <div class="content-card h-100">
+            <div class="content-card-title">
+                <span><i class="fa-solid fa-business-time text-success me-2"></i> Track Active & Recent Events</span>
+                <a href="/dean/events/" class="btn btn-secondary py-1 px-3" style="font-size: 0.8rem;">View All</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Event Name</th>
+                            <th>Date Duration</th>
+                            <th>Volunteers</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in recent_events %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ event.name }}</td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ event.start_date }} - {{ event.end_date }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="font-weight: 600; font-size: 0.85rem;">{{ event.assigned_volunteers }}/{{ event.max_volunteers }}</span>
+                                    <!-- Progress bar indicator -->
+                                    <div class="progress" style="width: 70px; height: 6px; border-radius: 5px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio event.assigned_volunteers event.max_volunteers 100 %}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if event.status == 'Open' %}
+                                    <span class="badge-custom badge-assigned">Open</span>
+                                {% elif event.status == 'Upcoming' %}
+                                    <span class="badge bg-light text-dark border" style="border-radius: 50px; font-size: 0.7rem; padding: 4px 10px;">Upcoming</span>
+                                {% else %}
+                                    <span class="badge-custom badge-rejected">Closed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/dean/events/{{ event.id }}/" class="btn btn-secondary py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);">
+                                    <i class="fa-regular fa-folder-open"></i> Manage
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Pending Applicants Notifications -->
+    <div class="col-lg-4 mb-4">
+        <div class="content-card h-100">
+            <div class="content-card-title">
+                <span><i class="fa-regular fa-bell text-success me-2"></i> Pending Applications</span>
+                <span class="badge bg-warning text-dark" style="font-size: 0.75rem; border-radius: 10px;">New</span>
+            </div>
+
+            <div class="d-flex flex-column gap-3 mt-2">
+                {% for app in pending_apps %}
+                <div class="p-3 bg-light rounded d-flex justify-content-between align-items-start" style="border-radius: var(--radius-md); border-left: 3px solid var(--clr-warning);">
+                    <div>
+                        <h5 class="mb-1" style="font-size: 0.9rem; font-weight: 600; color: var(--clr-text-main);">{{ app.student }}</h5>
+                        <p class="text-muted mb-0" style="font-size: 0.75rem;">
+                            Dept: {{ app.dept }} <br>
+                            Event: <span style="font-weight: 500;">{{ app.event }}</span>
+                        </p>
+                    </div>
+                    <span class="text-muted" style="font-size: 0.7rem; font-weight: 500;">{{ app.date }}</span>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted" style="font-size: 0.9rem;">
+                    <i class="fa-regular fa-circle-check text-success mb-2" style="font-size: 2rem; display: block;"></i>
+                    No pending applications.
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if pending_apps %}
+            <div class="text-center mt-3 pt-3 border-top" style="border-top-color: var(--clr-border);">
+                <a href="/dean/events/1/volunteer_pool/" class="text-success" style="font-size: 0.85rem; font-weight: 600;">
+                    Go to Central Volunteer Pool <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Admin Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="content-card-title mb-3">
+                <span><i class="fa-solid fa-sliders text-success me-2"></i> Quick Administrative Controls</span>
+            </div>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="/dean/events/create/" class="btn btn-primary">
+                    <i class="fa-solid fa-calendar-plus"></i> Create New Event
+                </a>
+                <a href="/dean/users/" class="btn btn-secondary">
+                    <i class="fa-solid fa-users-gear"></i> Manage Accounts
+                </a>
+                <a href="/dean/reports/" class="btn btn-secondary">
+                    <i class="fa-solid fa-chart-column"></i> Generate Reports
+                </a>
+                <a href="/dean/committees/" class="btn btn-secondary">
+                    <i class="fa-solid fa-cubes"></i> View Committees
+                </a>
+                <a href="/dean/approvals/" class="btn btn-secondary">
+                    <i class="fa-solid fa-stamp"></i> Review Approvals
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

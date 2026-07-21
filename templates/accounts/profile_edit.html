@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile — VolunteerHub{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Edit Profile</h2>
+        <p class="text-muted" style="font-size: 0.9rem;">Modify your contact number and profile picture</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
+                <span><i class="fa-solid fa-user-gear text-success me-2"></i> Update Settings</span>
+            </h4>
+
+            <form method="post" enctype="multipart/form-data" action="/accounts/profile/{% if user_role %}?role={{ user_role }}{% endif %}">
+                {% csrf_token %}
+
+                <!-- Profile Pic upload row -->
+                <div class="row align-items-center mb-4 pb-3 border-bottom" style="border-bottom-color: var(--clr-border);">
+                    <div class="col-md-3 text-center mb-3 mb-md-0">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center border border-3 border-white mx-auto shadow-sm" style="width: 100px; height: 100px; font-weight: 700; font-size: 3rem;">
+                            {{ profile_user.name|slice:":1"|upper }}
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label" for="profile_picture">Profile Image</label>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="form-control">
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">Supported formats: JPG, PNG. Max size: 2MB.</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Phone number input with verification trigger -->
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="phone">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-phone"></i></span>
+                            <input type="tel" id="phone" name="phone" class="form-control border-start-0 border-end-0" value="{{ profile_user.phone }}" required>
+                            <button type="button" class="btn btn-outline-success" style="margin: 0; padding: 0 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem; border-color: var(--clr-border); border-left: none;">
+                                Verified ✓
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="email">Email (Readonly)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-envelope"></i></span>
+                            <input type="email" id="email" class="form-control bg-light border-start-0" value="{{ profile_user.email }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Read-only academic details -->
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control bg-light" value="{{ profile_user.department }}" readonly>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Semester</label>
+                        <input type="text" class="form-control bg-light" value="{{ profile_user.semester }}" readonly>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label">Class</label>
+                        <input type="text" class="form-control bg-light" value="{{ profile_user.student_class }}" readonly>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-0 p-3 mt-4 d-flex gap-2 align-items-start" style="font-size: 0.8rem; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                    <span>Contact the admin office if your Department, Semester, or Class details need correction. Only phone numbers and profile pictures can be edited directly.</span>
+                </div>
+
+                <!-- Form Controls -->
+                <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
+                    <a href="/accounts/profile/{% if user_role %}?role={{ user_role }}{% endif %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

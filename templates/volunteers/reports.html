@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Analytics — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Reports & Analytics</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Monitor aggregate volunteering performance, statistics, and leaderboards</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <button class="btn btn-primary" onclick="alert('Exporting report as CSV...');">
+            <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Aggregated Metrics -->
+<div class="grid-dashboard">
+    <div class="metric-card">
+        <div class="metric-content">
+            <span class="metric-value">{{ summary.total_events }}</span>
+            <span class="metric-label">Completed Events</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-calendar-check"></i></div>
+    </div>
+    <div class="metric-card success">
+        <div class="metric-content">
+            <span class="metric-value">{{ summary.total_hours }}</span>
+            <span class="metric-label">Total Volunteer Hours</span>
+        </div>
+        <div class="metric-icon"><i class="fa-regular fa-clock"></i></div>
+    </div>
+    <div class="metric-card info">
+        <div class="metric-content">
+            <span class="metric-value">{{ summary.total_volunteers }}</span>
+            <span class="metric-label">Active Volunteers</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-user-group"></i></div>
+    </div>
+    <div class="metric-card warning">
+        <div class="metric-content">
+            <span class="metric-value">{{ summary.avg_attendance }}%</span>
+            <span class="metric-label">Avg Attendance Rate</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Area: Event Wise Metrics -->
+    <div class="col-lg-8 mb-4">
+        <div class="content-card h-100">
+            <div class="content-card-title">
+                <span><i class="fa-solid fa-table-list text-success me-2"></i> Event Performance breakdown</span>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Event Name</th>
+                            <th>Total Registered</th>
+                            <th>Total Hours</th>
+                            <th>Attendance</th>
+                            <th>Perform Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in event_stats %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ stat.event }}</td>
+                            <td>{{ stat.volunteers }} volunteers</td>
+                            <td style="font-weight: 600;">{{ stat.hours }} hrs</td>
+                            <td>
+                                <span class="badge bg-success" style="border-radius: 50px; font-size: 0.75rem; padding: 4px 10px;">{{ stat.attendance }}%</span>
+                            </td>
+                            <td>
+                                <div class="progress" style="width: 80px; height: 6px; border-radius: 5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ stat.attendance }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Area: Student Leaderboard -->
+    <div class="col-lg-4 mb-4">
+        <div class="content-card h-100">
+            <div class="content-card-title">
+                <span><i class="fa-solid fa-award text-success me-2"></i> Top Volunteers</span>
+            </div>
+
+            <div class="d-flex flex-column gap-3 mt-2">
+                {% for vol in top_volunteers %}
+                <div class="p-3 bg-light rounded d-flex align-items-center justify-content-between" style="border-radius: var(--radius-md);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 700; font-size: 0.95rem; background-color: var(--clr-primary) !important;">
+                            {{ forloop.counter }}
+                        </div>
+                        <div>
+                            <h5 class="mb-0" style="font-size: 0.9rem; font-weight: 600; color: var(--clr-text-main);">{{ vol.name }}</h5>
+                            <span class="text-muted" style="font-size: 0.75rem;">Dept: {{ vol.dept }}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <strong class="d-block text-success" style="font-size: 0.95rem;">{{ vol.hours }} hrs</strong>
+                        <span class="text-muted" style="font-size: 0.7rem;">{{ vol.events }} events</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% load static %}
+<!-- Sidebar Container with dark-green brand style -->
+<aside class="sidebar" id="sidebar">
+    <!-- Brand Branding Header -->
+    <div class="sidebar-brand">
+        <img src="{% static 'images/rcsslogo.png' %}" alt="RCSS Logo" class="sidebar-logo">
+        <span class="sidebar-title">VolunteerHub</span>
+    </div>
+
+    <!-- Navigation Menu list -->
+    <ul class="sidebar-menu">
+        {% if user.is_authenticated or user_role %}
+            <!-- ================= DEAN SIDEBAR NAVIGATION ================= -->
+            {% if user.is_staff or user_role == 'dean' %}
+                <li class="nav-item">
+                    <a href="/dean/dashboard/" class="sidebar-link {% if request.path == '/dean/dashboard/' or user_role == 'dean' and not 'events' in request.path and not 'users' in request.path and not 'reports' in request.path %}active{% endif %}" data-title="Dashboard">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/events/" class="sidebar-link {% if '/dean/events/' in request.path and not 'committees' in request.path or 'events' in request.path and user_role == 'dean' and not 'committees' in request.path %}active{% endif %}" data-title="Events">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Manage Events</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/committees/" class="sidebar-link {% if '/dean/committees/' in request.path or 'committees' in request.path and user_role == 'dean' %}active{% endif %}" data-title="Committees">
+                        <i class="fa-solid fa-cubes"></i>
+                        <span>Committees</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/approvals/" class="sidebar-link {% if '/dean/approvals/' in request.path or 'approvals' in request.path and user_role == 'dean' %}active{% endif %}" data-title="Approvals">
+                        <i class="fa-solid fa-stamp"></i>
+                        <span>Approvals</span>
+                        <span class="badge bg-danger ms-auto rounded-pill" style="font-size: 0.65rem; padding: 3px 6px;">2</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/users/" class="sidebar-link {% if '/dean/users/' in request.path or 'users' in request.path and user_role == 'dean' %}active{% endif %}" data-title="User Management">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/reports/" class="sidebar-link {% if '/dean/reports/' in request.path or 'reports' in request.path and user_role == 'dean' %}active{% endif %}" data-title="Reports">
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+
+            <!-- ================= COMMITTEE HEAD NAVIGATION ================= -->
+            {% elif user.userprofile.role == 'committee_head' or user_role == 'committee_head' %}
+                <li class="nav-item">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' %}active{% endif %}" data-title="Dashboard">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/committee/volunteers/" class="sidebar-link {% if '/committee/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
+                        <i class="fa-solid fa-users"></i>
+                        <span>My Volunteers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/committee/attendance/" class="sidebar-link {% if '/committee/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                        <span>Mark Attendance</span>
+                    </a>
+                </li>
+
+            <!-- ================= STUDENT NAVIGATION ================= -->
+            {% else %}
+                <li class="nav-item">
+                    <a href="/student/dashboard/" class="sidebar-link {% if request.path == '/student/dashboard/' or user_role == 'student' %}active{% endif %}" data-title="Dashboard">
+                        <i class="fa-solid fa-table-columns"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/events/" class="sidebar-link {% if request.path == '/events/' %}active{% endif %}" data-title="Browse Events">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Browse Events</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/student/applications/" class="sidebar-link {% if '/student/applications/' in request.path %}active{% endif %}" data-title="My Applications">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>My Applications</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/student/volunteering/" class="sidebar-link {% if '/student/volunteering/' in request.path %}active{% endif %}" data-title="My Hours">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>My Volunteering</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            <!-- Shared Profile links -->
+            <li class="nav-item mt-auto">
+                <a href="/accounts/profile/{% if user_role %}?role={{ user_role }}{% elif user.is_staff %}?role=dean{% endif %}" class="sidebar-link {% if '/accounts/profile/' in request.path %}active{% endif %}" data-title="Profile">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+        {% else %}
+            <!-- Guest / Unauthenticated Links -->
+            <li class="nav-item">
+                <a href="/accounts/login/" class="sidebar-link active" data-title="Login">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Log In</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</aside>

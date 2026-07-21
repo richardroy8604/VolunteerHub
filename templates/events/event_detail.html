@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.name }} — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header / Breadcrumbs -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">{{ event.name }}</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Event Overview, Committees & Assignment Control</p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <div class="d-flex justify-content-md-end gap-2 flex-wrap flex-md-nowrap">
+            {% if user.is_staff or user_role == 'dean' %}
+            <a href="/dean/events/{{ event.id }}/edit/" class="btn btn-secondary py-2 text-nowrap">
+                <i class="fa-solid fa-pen-to-square"></i> Edit Event
+            </a>
+            <button type="button" class="btn btn-danger py-2 text-nowrap" data-bs-toggle="modal" data-bs-target="#deleteEventModal">
+                <i class="fa-solid fa-trash-can"></i> Delete Event
+            </button>
+            <a href="/dean/events/{{ event.id }}/volunteer_pool/" class="btn btn-primary py-2 text-nowrap">
+                <i class="fa-solid fa-users-viewfinder"></i> Volunteer Pool
+            </a>
+            {% else %}
+            <a href="/events/{{ event.id }}/apply/" class="btn btn-primary py-2 text-nowrap">
+                <i class="fa-solid fa-paper-plane"></i> Apply to Volunteer
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Panels Row -->
+<div class="row">
+    <!-- Left Area: Event description, stats and committees table -->
+    <div class="col-lg-8 mb-4">
+        <div class="content-card mb-4">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">About the Event</h4>
+            <p style="line-height: 1.6; font-size: 0.95rem; color: var(--clr-text-main);">{{ event.description }}</p>
+        </div>
+
+        <div class="content-card">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">Committees Structure</h4>
+            
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Committee Name</th>
+                            <th>assigned Staff Head</th>
+                            <th>Required Slots</th>
+                            <th>Filled Slots</th>
+                            <th>Capacity Indicator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for committee in event.committees %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ committee.name }}</td>
+                            <td style="font-size: 0.85rem;">{{ committee.head }}</td>
+                            <td style="font-weight: 600;">{{ committee.required }}</td>
+                            <td>
+                                <span class="badge bg-success" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">{{ committee.assigned }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress" style="width: 80px; height: 8px; border-radius: 5px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required 100 %}%"></div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 500;" class="text-muted">{% widthratio committee.assigned committee.required 100 %}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No committees configured for this event.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Area: Logistics Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="content-card mb-4">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">Logistics Details</h4>
+            
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Venue</span>
+                        <strong style="font-size: 0.9rem;">{{ event.venue }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                        <i class="fa-regular fa-calendar-days"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Timelines</span>
+                        <strong style="font-size: 0.9rem;">{{ event.start_date }} - {{ event.end_date }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Registration Deadline</span>
+                        <strong style="font-size: 0.9rem; color: var(--clr-danger);">{{ event.registration_deadline }}</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                        <i class="fa-solid fa-users-rectangle"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Volunteers limit</span>
+                        <strong style="font-size: 0.9rem;">{{ event.max_volunteers }} Max limit</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">Allocation Actions</h4>
+            <p class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">Distribute the registered student list automatically based on priority preferences and class layouts.</p>
+            
+            <a href="/dean/events/{{ event.id }}/volunteer_pool/" class="btn btn-secondary w-100 py-2 mb-2 d-flex align-items-center justify-content-center gap-2">
+                <i class="fa-solid fa-clipboard-list"></i> Central Pool Panel
+            </a>
+            
+            <button type="button" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Run Auto-Allocation
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Allocation Settings Bootstrap Modal (R11 coverage) -->
+<div class="modal fade" id="autoAllocateModal" tabindex="-1" aria-labelledby="autoAllocateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="autoAllocateModalLabel" style="font-weight: 600;"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Auto-Allocation Settings</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/dean/events/{{ event.id }}/volunteer_pool/" method="get">
+                <div class="modal-body p-4">
+                    <p class="text-muted" style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+                        Configure algorithm constraints. The system will match students to their preferred committees using a greedy matching optimization.
+                    </p>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="prioritize_pref" name="prioritize_pref" checked>
+                        <label class="form-check-label" for="prioritize_pref" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
+                            Prioritize student preferences
+                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">Try to match Preference 1, then Preference 2, then Preference 3.</span>
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="balance_class" name="balance_class">
+                        <label class="form-check-label" for="balance_class" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
+                            Balance distribution by Class / Semester
+                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">Ensure that a single class or department does not dominate a committee.</span>
+                        </label>
+                    </div>
+
+                    <div class="row g-3" id="class-balance-limits" style="display:none;">
+                        <div class="col-6">
+                            <label class="form-label" style="font-size: 0.8rem;">Min per Class</label>
+                            <input type="number" class="form-control" name="min_per_class" placeholder="e.g. 2">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" style="font-size: 0.8rem;">Max per Class</label>
+                            <input type="number" class="form-control" name="max_per_class" placeholder="e.g. 6">
+                        </div>
+                    </div>
+
+                    <hr class="my-3" style="border-top: 1px solid var(--clr-border);">
+
+                    <div class="form-group mb-0">
+                        <label class="form-label mb-2" style="font-size: 0.9rem; font-weight: 600;">Target Committees for Auto-Allocation</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="select_all_comm" checked>
+                            <label class="form-check-label text-success" for="select_all_comm" style="cursor:pointer; font-weight: 600; font-size: 0.85rem;">
+                                Select All Committees
+                            </label>
+                        </div>
+                        <div class="ps-3 border-start" style="border-left: 2px solid var(--clr-primary-light) !important;">
+                            {% for committee in event.committees %}
+                            <div class="form-check mb-1">
+                                <input class="form-check-input committee-select-checkbox" type="checkbox" id="comm_{{ committee.id }}" name="target_committees[]" value="{{ committee.id }}" checked>
+                                <label class="form-check-label" for="comm_{{ committee.id }}" style="cursor:pointer; font-size: 0.85rem;">
+                                    {{ committee.name }} <span class="text-muted">({{ committee.assigned }}/{{ committee.required }})</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Run Algorithm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Event Confirmation Modal (AWS S3 style) -->
+<div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-danger text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-danger) !important;">
+                <h5 class="modal-title" id="deleteEventModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-start">
+                <p class="mb-3" style="font-size: 0.95rem; line-height: 1.5; color: var(--clr-text-main);">
+                    Are you sure you want to delete <strong>{{ event.name }}</strong>?
+                </p>
+                <div class="alert alert-danger border-0 p-3 mb-4" style="font-size: 0.8rem; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    This action is permanent. All associated committees, allocations, and data will be permanently deleted.
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label" for="confirm_delete_input" style="font-size: 0.85rem;">
+                        To confirm deletion, type <strong class="text-danger">DELETE</strong> in the box below:
+                    </label>
+                    <input type="text" id="confirm_delete_input" class="form-control" placeholder="Type DELETE" autocomplete="off" style="border-color: var(--clr-border);">
+                </div>
+            </div>
+            <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm_delete_btn" disabled onclick="alert('Mock: Event deleted successfully.'); window.location.href='/dean/events/';">
+                    Delete Event
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Class balance limits toggle
+        const balanceCheck = document.getElementById('balance_class');
+        const limitsRow = document.getElementById('class-balance-limits');
+
+        if (balanceCheck && limitsRow) {
+            balanceCheck.addEventListener('change', function() {
+                limitsRow.style.display = this.checked ? 'flex' : 'none';
+            });
+        }
+
+        // Select All Committees toggle
+        const selectAllComm = document.getElementById('select_all_comm');
+        const commCheckboxes = document.querySelectorAll('.committee-select-checkbox');
+
+        if (selectAllComm) {
+            selectAllComm.addEventListener('change', function() {
+                commCheckboxes.forEach(cb => cb.checked = this.checked);
+            });
+
+            commCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const checkedCount = document.querySelectorAll('.committee-select-checkbox:checked').length;
+                    selectAllComm.checked = checkedCount === commCheckboxes.length;
+                    selectAllComm.indeterminate = checkedCount > 0 && checkedCount < commCheckboxes.length;
+                });
+            });
+        }
+
+        // Type to confirm delete logic
+        const deleteInput = document.getElementById('confirm_delete_input');
+        const deleteBtn = document.getElementById('confirm_delete_btn');
+        if (deleteInput && deleteBtn) {
+            deleteInput.addEventListener('input', function() {
+                deleteBtn.disabled = this.value.trim() !== 'DELETE';
+            });
+        }
+    });
+</script>
+{% endblock %}

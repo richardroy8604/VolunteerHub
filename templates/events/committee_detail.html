@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Committee Details — {{ committee.name }} — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header / Breadcrumbs -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">{{ committee.name }}</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Committee coordinators and assigned student volunteers list</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/dean/committees/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Committees
+        </a>
+    </div>
+</div>
+
+<!-- Committee Coordinators Info & Stats Cards -->
+<div class="row mb-4">
+    <!-- Faculty & Student Coordinators Card -->
+    <div class="col-lg-7 mb-4 mb-lg-0">
+        <div class="content-card h-100">
+            <h4 class="content-card-title border-bottom pb-2 mb-4">
+                <span><i class="fa-solid fa-user-gear text-success me-2"></i> Committee Leadership</span>
+            </h4>
+            
+            <div class="row g-4">
+                <!-- Faculty in Charge -->
+                <div class="col-md-6 border-end" style="border-color: var(--clr-border) !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Faculty in Charge</span>
+                            <strong style="font-size: 0.95rem; color: var(--clr-text-main);">{{ committee.faculty_head }}</strong>
+                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 500;">Committee Coordinator</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student In Charge -->
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Student in Charge</span>
+                            <strong style="font-size: 0.95rem; color: var(--clr-text-main);">{{ committee.student_head }}</strong>
+                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 500;">Student Lead Representative</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Allocation Stats Card -->
+    <div class="col-lg-5">
+        <div class="content-card h-100">
+            <h4 class="content-card-title border-bottom pb-2 mb-3">
+                <span><i class="fa-solid fa-chart-pie text-success me-2"></i> Allocation Metrics</span>
+            </h4>
+            
+            <div class="d-flex flex-column gap-3 mt-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted" style="font-size: 0.85rem; font-weight: 500;">Parent Event:</span>
+                    <strong style="font-size: 0.9rem; color: var(--clr-primary);">{{ committee.event }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted" style="font-size: 0.85rem; font-weight: 500;">Capacity Details:</span>
+                    <strong style="font-size: 0.9rem;">{{ committee.assigned }} / {{ committee.required }} Slots Filled</strong>
+                </div>
+                <!-- Progress percentage bar -->
+                <div class="mt-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.75rem;">
+                        <span class="text-muted">Fill Rate</span>
+                        <strong class="text-success">{% widthratio committee.assigned committee.required 100 %}%</strong>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 5px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required 100 %}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Committee Volunteers Table List -->
+<div class="content-card">
+    <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
+        <span><i class="fa-solid fa-users text-success me-2"></i> Assigned Volunteers List</span>
+    </h4>
+    
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 80px; text-align: center;">Sl. No.</th>
+                    <th>Volunteer Name</th>
+                    <th>Class & Semester</th>
+                    <th>Department</th>
+                    <th>Email Address</th>
+                    <th>Phone Number</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for volunteer in volunteers %}
+                <tr>
+                    <td style="text-align: center; font-weight: 600; color: var(--clr-text-muted);">{{ forloop.counter }}</td>
+                    <td style="font-weight: 600;">{{ volunteer.name }}</td>
+                    <td style="font-size: 0.9rem; font-weight: 500;">{{ volunteer.class }}</td>
+                    <td style="font-size: 0.9rem;" class="text-muted">{{ volunteer.dept }}</td>
+                    <td style="font-size: 0.85rem;" class="text-muted">{{ volunteer.email }}</td>
+                    <td style="font-size: 0.85rem; font-weight: 500;" class="text-muted">{{ volunteer.phone }}</td>
+                    <td>
+                        <span class="badge-custom badge-assigned">Active</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-users-slash mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                        No volunteer students have been assigned to this committee yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
