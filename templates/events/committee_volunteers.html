@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Committee Volunteers Roster — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Volunteers Roster</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Complete team roster for committee: <strong>{{ committee.name }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/committee/dashboard/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Detailed Volunteers Roster Table -->
+<div class="content-card">
+    <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
+        <span><i class="fa-solid fa-users text-success me-2"></i> Team Members List</span>
+    </h4>
+    
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 80px; text-align: center;">Sl. No.</th>
+                    <th>Volunteer Name</th>
+                    <th>Class & Sem</th>
+                    <th>Department</th>
+                    <th>Email Address</th>
+                    <th>Phone Number</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for volunteer in volunteers %}
+                <tr>
+                    <td style="text-align: center; font-weight: 600; color: var(--clr-text-muted);">{{ forloop.counter }}</td>
+                    <td style="font-weight: 600;">{{ volunteer.name }}</td>
+                    <td style="font-size: 0.9rem; font-weight: 500;">{{ volunteer.class }}</td>
+                    <td style="font-size: 0.9rem;" class="text-muted">{{ volunteer.dept }}</td>
+                    <td style="font-size: 0.85rem;" class="text-muted">{{ volunteer.email }}</td>
+                    <td style="font-size: 0.85rem; font-weight: 500;" class="text-muted">{{ volunteer.phone }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge-custom badge-assigned">Active</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-users-slash mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                        No volunteers have been assigned to your committee yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

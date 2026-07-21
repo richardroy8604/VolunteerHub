@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Committee Head Dashboard — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">{{ committee.name }}</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Committee Head Portal: <strong>{{ committee.event }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-success py-2 px-3 text-capitalize" style="font-size: 0.85rem; border-radius: 50px; background-color: var(--clr-primary) !important;">
+            <i class="fa-solid fa-user-shield me-1"></i> Coordinator Access
+        </span>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid-dashboard mb-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+    <!-- Active Volunteers Card -->
+    <div class="metric-card success">
+        <div class="metric-content">
+            <span class="metric-value">{{ committee.assigned }} / {{ committee.required }}</span>
+            <span class="metric-label">Volunteers Assigned</span>
+            <span class="text-success mt-1 d-block" style="font-size: 0.7rem; font-weight: 500;">
+                <i class="fa-solid fa-circle-check"></i> {{ committee.required|subtract:committee.assigned|default:"3" }} open slots remaining
+            </span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+    </div>
+
+    <!-- Attendance Percentage Card -->
+    <div class="metric-card info">
+        <div class="metric-content">
+            <span class="metric-value">{{ committee.attendance_pct }}%</span>
+            <span class="metric-label">Average Attendance</span>
+            <span class="text-muted mt-1 d-block" style="font-size: 0.7rem;">Verified across sessions</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-clipboard-user"></i></div>
+    </div>
+
+    <!-- Active Event Details Card -->
+    <div class="metric-card">
+        <div class="metric-content w-100">
+            <span class="metric-value" style="font-size: 1.2rem; line-height: 1.4; font-weight: 700; color: var(--clr-primary); display: block;" class="mb-1">
+                {{ committee.event }}
+            </span>
+            <span class="metric-label" style="margin-top: 4px;">Parent Event Timeline</span>
+            <span class="text-muted mt-1 d-block" style="font-size: 0.72rem; font-weight: 500;">Jul 25 - Jul 27, 2026</span>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-calendar-week"></i></div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Assigned Volunteers Brief Summary -->
+    <div class="col-lg-8 mb-4">
+        <div class="content-card h-100">
+            <div class="content-card-title border-bottom pb-2 mb-3">
+                <span><i class="fa-solid fa-users-viewfinder text-success me-2"></i> Committee Volunteers Snapshot</span>
+                <a href="/committee/1/volunteers/" class="btn btn-secondary py-1 px-3" style="font-size: 0.8rem;">View All</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Class & Sem</th>
+                            <th>Phone Number</th>
+                            <th>Last Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for volunteer in volunteers %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ volunteer.name }}</td>
+                            <td class="text-muted" style="font-size: 0.88rem;">{{ volunteer.class }} / {{ volunteer.dept }}</td>
+                            <td style="font-size: 0.85rem;" class="text-muted">{{ volunteer.phone }}</td>
+                            <td>
+                                {% if volunteer.attendance == 'Present' %}
+                                <span class="badge bg-success-light text-success rounded-pill px-2.5" style="font-size: 0.72rem; background-color: rgba(25, 135, 84, 0.1); font-weight: 600;">Present</span>
+                                {% else %}
+                                <span class="badge bg-danger-light text-danger rounded-pill px-2.5" style="font-size: 0.72rem; background-color: rgba(220, 53, 69, 0.1); font-weight: 600;">Absent</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Quick Administrative Coordinator Actions -->
+    <div class="col-lg-4 mb-4">
+        <div class="content-card h-100">
+            <h4 class="content-card-title border-bottom pb-2 mb-4">
+                <span><i class="fa-solid fa-sliders text-success me-2"></i> Coordinator Controls</span>
+            </h4>
+
+            <div class="d-flex flex-column gap-3">
+                <a href="/committee/1/attendance/" class="btn btn-primary py-3 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.95rem; font-weight: 600;">
+                    <i class="fa-solid fa-clipboard-user"></i> Mark Attendance & Hours
+                </a>
+                
+                <a href="/committee/1/volunteers/" class="btn btn-secondary py-3 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.95rem; font-weight: 600; border-color: var(--clr-border);">
+                    <i class="fa-solid fa-users"></i> View Complete Roster
+                </a>
+
+                <div class="alert alert-info border-0 p-3 mt-2 mb-0 text-start" style="font-size: 0.8rem; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    <strong>Dean Final Approval:</strong> After submitting daily volunteering hours, they will appear as pending for the Dean. Once approved, hours will be credited automatically.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
