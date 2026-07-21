@@ -17,10 +17,11 @@ def student_dashboard_view(request):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
         'stats': {
             'active_events': 2,
             'total_applications': 5,
-            'total_hours': 47.5,
+            'total_hours': 48,
             'upcoming_events': 3,
         },
         'active_assignments': [
@@ -51,6 +52,7 @@ def my_applications_view(request):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
         'applications': [
             {'id': 1, 'event': 'Rajagiri Tech Fest 2026',
              'pref1': 'Registration & Reception',
@@ -88,24 +90,25 @@ def my_volunteering_view(request):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
-        'total_hours': 47.5,
+        'is_student_coordinator': True,
+        'total_hours': 47,
         'total_events': 8,
         'history': [
             {'event': 'NSS Social Service Camp',
              'committee': 'Education Drive',
-             'dates': 'Jun 5-10, 2026', 'hours': 30.0,
+             'dates': 'Jun 5-10, 2026', 'hours': 30,
              'attendance': 100, 'status': 'Completed'},
             {'event': 'College Open Day',
              'committee': 'Campus Tour',
-             'dates': 'May 15, 2026', 'hours': 6.5,
+             'dates': 'May 15, 2026', 'hours': 6,
              'attendance': 100, 'status': 'Completed'},
             {'event': 'Blood Donation Drive',
              'committee': 'Registration',
-             'dates': 'Apr 20, 2026', 'hours': 5.0,
+             'dates': 'Apr 20, 2026', 'hours': 5,
              'attendance': 100, 'status': 'Completed'},
             {'event': 'Literary Fest 2026',
              'committee': 'Stage Management',
-             'dates': 'Mar 10-12, 2026', 'hours': 6.0,
+             'dates': 'Mar 10-12, 2026', 'hours': 6,
              'attendance': 83, 'status': 'Completed'},
         ],
     }
@@ -131,6 +134,7 @@ def student_committee_detail_view(request, pk):
     context = {
         'user_role': 'student',
         'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
         'committee': {
             'id': pk,
             'name': committee_name,
@@ -150,6 +154,70 @@ def student_committee_detail_view(request, pk):
         ]
     }
     return render(request, 'volunteers/student_committee_detail.html', context)
+
+
+def student_coordinators_collaboration_view(request):
+    """Collaboration page for Student Leads (Main Event & Committee Student Leads)."""
+    context = {
+        'user_role': 'student',
+        'user_name': 'Arjun Menon',
+        'is_student_coordinator': True,
+        'event': {
+            'name': 'Rajagiri Tech Fest 2026',
+        },
+        'my_role': 'Main Student Coordinator',
+        'coordinators': [
+            {
+                'name': 'Arjun Menon',
+                'role': 'Main Student Coordinator',
+                'committee': 'Overall Event Coordinator',
+                'phone': '+91 98765 43210',
+                'email': 'arjun.menon@rajagiri.edu',
+                'is_me': True
+            },
+            {
+                'name': 'Anika Sharma',
+                'role': 'Committee Student Lead',
+                'committee': 'Registration & Reception',
+                'phone': '+91 87654 32109',
+                'email': 'anika.sharma@rajagiri.edu',
+                'is_me': False
+            },
+            {
+                'name': 'Vishnu Prasad',
+                'role': 'Committee Student Lead',
+                'committee': 'Technical Events',
+                'phone': '+91 65432 10987',
+                'email': 'vishnu.p@rajagiri.edu',
+                'is_me': False
+            },
+            {
+                'name': 'Sneha Thomas',
+                'role': 'Committee Student Lead',
+                'committee': 'Media & Publicity',
+                'phone': '+91 54321 09876',
+                'email': 'sneha.t@rajagiri.edu',
+                'is_me': False
+            },
+            {
+                'name': 'Rohit Menon',
+                'role': 'Committee Student Lead',
+                'committee': 'Logistics & Venue',
+                'phone': '+91 76543 21098',
+                'email': 'rohit.menon@rajagiri.edu',
+                'is_me': False
+            },
+            {
+                'name': 'Deepa Nair',
+                'role': 'Committee Student Lead',
+                'committee': 'Food & Hospitality',
+                'phone': '+91 91234 56789',
+                'email': 'deepa.nair@rajagiri.edu',
+                'is_me': False
+            }
+        ]
+    }
+    return render(request, 'volunteers/student_coordinators_collaboration.html', context)
 
 
 # =============================================================================

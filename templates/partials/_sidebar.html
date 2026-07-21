@@ -53,21 +53,27 @@
             <!-- ================= COMMITTEE HEAD NAVIGATION ================= -->
             {% elif user.userprofile.role == 'committee_head' or user_role == 'committee_head' %}
                 <li class="nav-item">
-                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' %}active{% endif %}" data-title="Dashboard">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' and not 'volunteers' in request.path and not 'attendance' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-circle-nodes"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/committee/volunteers/" class="sidebar-link {% if '/committee/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
+                    <a href="/committee/1/volunteers/" class="sidebar-link {% if '/committee/1/volunteers/' in request.path or '/committee/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
                         <i class="fa-solid fa-users"></i>
                         <span>My Volunteers</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/committee/attendance/" class="sidebar-link {% if '/committee/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
+                    <a href="/committee/1/attendance/" class="sidebar-link {% if '/committee/1/attendance/' in request.path or '/committee/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
                         <i class="fa-solid fa-clipboard-user"></i>
                         <span>Mark Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/committee/1/coordinators/" class="sidebar-link {% if '/committee/1/coordinators/' in request.path or '/committee/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <span>Coordinators</span>
                     </a>
                 </li>
 
@@ -97,6 +103,14 @@
                         <span>My Volunteering</span>
                     </a>
                 </li>
+                {% if is_student_coordinator %}
+                <li class="nav-item">
+                    <a href="/student/coordinators/" class="sidebar-link {% if '/student/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators Board">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <span>Coordinators Board</span>
+                    </a>
+                </li>
+                {% endif %}
             {% endif %}
             
             <!-- Shared Profile links -->

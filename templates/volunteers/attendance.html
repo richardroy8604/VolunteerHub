@@ -2,6 +2,53 @@
 
 {% block title %}Mark Attendance & Hours — {{ committee.name }} — VolunteerHub{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Hour toggle badges styling */
+    .hour-toggle-badge {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 14px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+        border: 1px solid transparent;
+    }
+    .hour-toggle-badge.present {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+        border-color: rgba(25, 135, 84, 0.25);
+    }
+    .hour-toggle-badge.absent {
+        background-color: rgba(220, 53, 69, 0.08);
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.2);
+    }
+    
+    /* Hover effects for editable sheets */
+    .attendance-row:not(.row-locked) .hour-toggle-badge.present:hover {
+        background-color: #198754;
+        color: white;
+        box-shadow: 0 2px 6px rgba(25, 135, 84, 0.2);
+    }
+    .attendance-row:not(.row-locked) .hour-toggle-badge.absent:hover {
+        background-color: #dc3545;
+        color: white;
+        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
+    }
+    
+    /* Disabled pointer events on locked rows */
+    .row-locked .hour-toggle-badge {
+        pointer-events: none;
+        cursor: default;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Page Header -->
 <div class="row align-items-center mb-4">
@@ -16,69 +63,136 @@
     </div>
 </div>
 
+<!-- Lock Alerts -->
+{% if sheet_status == 'Approved' %}
+<div class="alert alert-success border-0 p-3 mb-4 d-flex align-items-center gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
+    <i class="fa-solid fa-lock" style="font-size: 1.1rem;"></i>
+    <div>
+        <strong>Sheet Locked (Approved):</strong> This hours sheet has been approved by the Dean. The hours have been credited and cannot be modified.
+    </div>
+</div>
+{% elif sheet_status == 'Pending' %}
+<div class="alert alert-info border-0 p-3 mb-4 d-flex align-items-center gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
+    <i class="fa-solid fa-hourglass-half" style="font-size: 1.1rem;"></i>
+    <div>
+        <strong>Sheet Locked (Pending Review):</strong> This hours sheet has been submitted to the Dean and is currently awaiting verification. Editing is disabled.
+    </div>
+</div>
+{% elif sheet_status == 'Sent Back' %}
+<div class="alert alert-danger border-0 p-3 mb-4 d-flex align-items-start gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
+    <i class="fa-solid fa-triangle-exclamation mt-0.5" style="font-size: 1.15rem;"></i>
+    <div>
+        <strong class="d-block mb-1">Action Required (Sent Back by Dean):</strong>
+        <p class="mb-1" style="line-height: 1.4;">The Dean has requested revisions to this sheet. Please make the corrections below and resubmit.</p>
+        <div class="bg-white text-danger px-3 py-2 mt-2 rounded border border-danger-subtle font-weight-bold" style="font-size: 0.82rem; border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-quote-left me-1"></i> Dean Feedback: "{{ feedback }}"
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Attendance Form -->
-<form action="." method="post" id="attendance-form">
-    {% csrf_token %}
-    
-    <!-- Timeline date selector card -->
-    <div class="content-card mb-4" style="padding: 16px 24px;">
+<form action="." method="get" id="date-select-form" class="mb-4">
+    <!-- Date selector & hours control card -->
+    <div class="content-card" style="padding: 16px 24px;">
         <div class="row align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3 mb-md-0">
                 <label class="form-label" for="attendance-date" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px;">Select Duty Date</label>
-                <select name="date" id="attendance-date" class="form-control" style="border-color: var(--clr-border); cursor: pointer;">
+                <select name="date" id="attendance-date" class="form-control" style="border-color: var(--clr-border); cursor: pointer;" onchange="document.getElementById('date-select-form').submit();">
                     {% for date in event_dates %}
                     <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>{{ date }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-8 text-md-end mt-3 mt-md-0 text-muted" style="font-size: 0.82rem;">
+            
+            <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label" for="shift-hours" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px;">Shift Operation Hours (Periods)</label>
+                <input type="number" id="shift-hours" name="shift_hours" class="form-control text-center" value="{{ num_hours }}" min="1" max="12" style="border-color: var(--clr-border); font-weight: 700; color: var(--clr-primary); width: 120px;" {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}disabled{% endif %}>
+            </div>
+            
+            <div class="col-md-4 text-md-end text-muted" style="font-size: 0.82rem;">
                 <i class="fa-solid fa-circle-info text-success me-1"></i>
-                Mark attendance and input the actual hours volunteered by each student for the selected date.
+                Set the shift operation hours for today. The attendance grid will adjust periods dynamically.
             </div>
         </div>
     </div>
+</form>
+
+<form action="." method="post" id="attendance-form">
+    {% csrf_token %}
+    <input type="hidden" name="date" value="{{ selected_date }}">
 
     <!-- Volunteers marking table -->
     <div class="content-card">
         <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
-            <span><i class="fa-solid fa-clipboard-user text-success me-2"></i> Attendance Log</span>
+            <span><i class="fa-solid fa-clipboard-user text-success me-2"></i> Attendance Grid ({{ selected_date }})</span>
+            <span class="badge float-end bg-secondary-light text-capitalize" style="font-size:0.75rem; color: var(--clr-text-muted) !important; background-color: var(--clr-primary-light) !important;">
+                Sheet Status: {{ sheet_status }}
+            </span>
         </h4>
 
         <div class="table-responsive">
-            <table class="table-custom text-center align-middle">
+            <table class="table-custom text-center align-middle" id="attendance-table">
                 <thead>
-                    <tr>
-                        <th style="width: 80px; text-align: center;">Sl. No.</th>
+                    <tr id="table-headers-row">
+                        <th style="width: 70px; text-align: center;">Sl. No.</th>
                         <th style="text-align: left; padding-left: 12px;">Student Name</th>
                         <th>Class</th>
-                        <th style="width: 320px;">Attendance Status</th>
-                        <th style="width: 150px;">Hours Volunteered</th>
+                        
+                        <!-- Dynamic Hour Columns -->
+                        {% for h in hours_range %}
+                        <th class="hour-header-col" data-hour="{{ h }}" style="width: 120px;">Hour {{ h }}</th>
+                        {% endfor %}
+                        
+                        <th style="width: 130px;">Total Hours</th>
+                        <th style="width: 160px; text-align: center;">Quick Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for volunteer in volunteers %}
-                    <tr class="attendance-row">
+                    <tr class="attendance-row {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}row-locked{% endif %}" data-student-id="{{ volunteer.id }}">
                         <td style="text-align: center; font-weight: 600; color: var(--clr-text-muted);">{{ forloop.counter }}</td>
                         <td style="text-align: left; padding-left: 12px; font-weight: 600;" class="student-name-cell">{{ volunteer.name }}</td>
                         <td style="font-size: 0.90rem;">{{ volunteer.class }}</td>
-                        <td>
-                            <!-- Status Radio Buttons styled nicely -->
-                            <div class="btn-group w-100" role="group" aria-label="Attendance radio button group" style="max-width: 280px; margin: 0 auto;">
-                                <input type="radio" class="btn-check status-radio present-radio" name="status_{{ volunteer.id }}" id="present_{{ volunteer.id }}" value="present" {% if volunteer.status == 'present' %}checked{% endif %}>
-                                <label class="btn btn-outline-success py-1" for="present_{{ volunteer.id }}" style="font-size: 0.78rem; font-weight: 600;">Present</label>
-
-                                <input type="radio" class="btn-check status-radio late-radio" name="status_{{ volunteer.id }}" id="late_{{ volunteer.id }}" value="late" {% if volunteer.status == 'late' %}checked{% endif %}>
-                                <label class="btn btn-outline-warning py-1" for="late_{{ volunteer.id }}" style="font-size: 0.78rem; font-weight: 600;">Late</label>
-
-                                <input type="radio" class="btn-check status-radio absent-radio" name="status_{{ volunteer.id }}" id="absent_{{ volunteer.id }}" value="absent" {% if volunteer.status == 'absent' %}checked{% endif %}>
-                                <label class="btn btn-outline-danger py-1" for="absent_{{ volunteer.id }}" style="font-size: 0.78rem; font-weight: 600;">Absent</label>
-                            </div>
+                        
+                        <!-- Dynamic Hour Toggles -->
+                        {% for is_present in volunteer.hours %}
+                        <td class="hour-toggle-cell" data-hour-index="{{ forloop.counter0 }}">
+                            <!-- Hidden checkbox to capture POST data -->
+                            <input type="checkbox" class="d-none hour-checkbox" id="check_{{ volunteer.id }}_{{ forloop.counter0 }}" name="hours_{{ volunteer.id }}[]" value="{{ forloop.counter0 }}" {% if is_present %}checked{% endif %} {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}disabled{% endif %}>
+                            
+                            <!-- Toggle badge styled label -->
+                            <label for="check_{{ volunteer.id }}_{{ forloop.counter0 }}" class="hour-toggle-badge {% if is_present %}present{% else %}absent{% endif %}">
+                                <span class="badge-text">
+                                    {% if is_present %}
+                                    <i class="fa-solid fa-circle-check me-1"></i> Present
+                                    {% else %}
+                                    <i class="fa-solid fa-circle-xmark me-1"></i> Absent
+                                    {% endif %}
+                                </span>
+                            </label>
                         </td>
-                        <td>
+                        {% endfor %}
+                        
+                        <!-- Dynamic calculated total hours display -->
+                        <td class="total-hours-cell">
                             <div class="d-flex align-items-center justify-content-center gap-1">
-                                <input type="number" step="0.5" min="0" max="24" class="form-control text-center hours-input" name="hours_{{ volunteer.id }}" value="{{ volunteer.hours }}" style="width: 80px; border-color: var(--clr-border); height: 32px; font-weight: 700; color: var(--clr-primary);">
+                                <span class="total-hours-display font-weight-bold" style="font-size: 1.05rem; color: var(--clr-primary); font-weight: 700;">{{ volunteer.total_hours }}</span>
                                 <span style="font-size: 0.78rem;" class="text-muted">hrs</span>
                             </div>
+                        </td>
+                        
+                        <!-- Absent All row toggle button -->
+                        <td>
+                            {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" disabled style="font-size: 0.78rem; font-weight: 600;">
+                                Locked
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 absent-all-btn" style="font-size: 0.78rem; font-weight: 600; transition: all 0.2s;">
+                                Absent All
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -88,11 +202,18 @@
 
         <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
             <a href="/committee/dashboard/" class="btn btn-secondary py-2 px-4" style="border-color: var(--clr-border);">
-                Cancel
+                {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}Back{% else %}Cancel{% endif %}
             </a>
+            
+            {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}
+            <button type="button" class="btn btn-secondary py-2 px-4" disabled style="font-weight: 600;">
+                <i class="fa-solid fa-lock me-1"></i> Submitted
+            </button>
+            {% else %}
             <button type="submit" class="btn btn-primary py-2 px-4" style="font-weight: 600;">
                 <i class="fa-solid fa-paper-plane me-1"></i> Submit Hours Sheet
             </button>
+            {% endif %}
         </div>
     </div>
 </form>
@@ -103,39 +224,157 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('attendance-form');
         const rows = document.querySelectorAll('.attendance-row');
+        const shiftHoursInput = document.getElementById('shift-hours');
+        const headersRow = document.getElementById('table-headers-row');
+        const isLocked = {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}true{% else %}false{% endif %};
 
-        rows.forEach(row => {
-            const hoursInput = row.querySelector('.hours-input');
-            const absentRadio = row.querySelector('.absent-radio');
-            const presentRadio = row.querySelector('.present-radio');
-            const lateRadio = row.querySelector('.late-radio');
-
-            // Cache original hours
-            let originalHours = hoursInput.value;
-
-            // Enforce logic: if Absent is checked, hours should be 0 and disabled
-            function updateHoursState() {
-                if (absentRadio.checked) {
-                    hoursInput.value = 0;
-                    hoursInput.disabled = true;
-                    hoursInput.style.opacity = '0.5';
+        // Recalculates total present hours in a row
+        function recalculateRowTotal(row) {
+            const checkboxes = row.querySelectorAll('.hour-checkbox');
+            const totalDisplay = row.querySelector('.total-hours-display');
+            const absentAllBtn = row.querySelector('.absent-all-btn');
+            
+            let presentCount = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) presentCount++;
+            });
+            totalDisplay.textContent = presentCount;
+            
+            // Update Absent All / Present All button text and style dynamically
+            if (absentAllBtn) {
+                if (presentCount === 0) {
+                    absentAllBtn.textContent = "Present All";
+                    absentAllBtn.className = "btn btn-outline-success btn-sm w-100 absent-all-btn";
                 } else {
-                    hoursInput.disabled = false;
-                    hoursInput.style.opacity = '1';
-                    if (hoursInput.value == 0) {
-                        hoursInput.value = originalHours > 0 ? originalHours : 6.0;
-                    }
+                    absentAllBtn.textContent = "Absent All";
+                    absentAllBtn.className = "btn btn-outline-danger btn-sm w-100 absent-all-btn";
                 }
             }
+        }
 
-            // Bind listeners
-            absentRadio.addEventListener('change', updateHoursState);
-            presentRadio.addEventListener('change', updateHoursState);
-            lateRadio.addEventListener('change', updateHoursState);
+        // Binds toggle change events to a single checkbox
+        function bindCheckboxHandler(cb) {
+            cb.addEventListener('change', function() {
+                const label = this.nextElementSibling;
+                const badgeText = label.querySelector('.badge-text');
+                const row = this.closest('.attendance-row');
 
-            // Initial check
-            updateHoursState();
+                if (this.checked) {
+                    label.className = "hour-toggle-badge present";
+                    badgeText.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Present';
+                } else {
+                    label.className = "hour-toggle-badge absent";
+                    badgeText.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Absent';
+                }
+                recalculateRowTotal(row);
+            });
+        }
+
+        // Dynamically adjusts table periods columns (adding/removing on the fly)
+        function adjustShiftHours(newCount) {
+            if (newCount < 1) newCount = 1;
+            if (newCount > 12) newCount = 12;
+            shiftHoursInput.value = newCount;
+
+            // 1. Rebuild headers
+            const existingHeaders = headersRow.querySelectorAll('.hour-header-col');
+            existingHeaders.forEach(el => el.remove());
+
+            const totalHoursHeader = headersRow.querySelector('th:nth-last-child(2)');
+            for (let i = 1; i <= newCount; i++) {
+                const th = document.createElement('th');
+                th.className = 'hour-header-col';
+                th.setAttribute('data-hour', i);
+                th.style.width = '120px';
+                th.textContent = 'Hour ' + i;
+                headersRow.insertBefore(th, totalHoursHeader);
+            }
+
+            // 2. Adjust checkboxes and badges for each row
+            rows.forEach(row => {
+                const studentId = row.getAttribute('data-student-id');
+                const totalHoursCell = row.querySelector('.total-hours-cell');
+                const existingCells = row.querySelectorAll('.hour-toggle-cell');
+                const currentCount = existingCells.length;
+
+                if (newCount > currentCount) {
+                    // Add new Present cells
+                    for (let idx = currentCount; idx < newCount; idx++) {
+                        const td = document.createElement('td');
+                        td.className = 'hour-toggle-cell';
+                        td.setAttribute('data-hour-index', idx);
+
+                        const rowLocked = row.classList.contains('row-locked');
+                        const disabledAttr = rowLocked ? 'disabled' : '';
+
+                        td.innerHTML = `
+                            <input type="checkbox" class="d-none hour-checkbox" id="check_${studentId}_${idx}" name="hours_${studentId}[]" value="${idx}" checked ${disabledAttr}>
+                            <label for="check_${studentId}_${idx}" class="hour-toggle-badge present">
+                                <span class="badge-text">
+                                    <i class="fa-solid fa-circle-check me-1"></i> Present
+                                </span>
+                            </label>
+                        `;
+                        row.insertBefore(td, totalHoursCell);
+
+                        if (!rowLocked) {
+                            const cb = td.querySelector('.hour-checkbox');
+                            bindCheckboxHandler(cb);
+                        }
+                    }
+                } else if (newCount < currentCount) {
+                    // Remove excess cells from the right side
+                    for (let idx = currentCount - 1; idx >= newCount; idx--) {
+                        existingCells[idx].remove();
+                    }
+                }
+
+                recalculateRowTotal(row);
+            });
+        }
+
+        // Bind initial elements and row handlers
+        rows.forEach(row => {
+            const checkboxes = row.querySelectorAll('.hour-checkbox');
+            const absentAllBtn = row.querySelector('.absent-all-btn');
+
+            checkboxes.forEach(cb => {
+                bindCheckboxHandler(cb);
+            });
+
+            if (absentAllBtn && !row.classList.contains('row-locked')) {
+                absentAllBtn.addEventListener('click', function() {
+                    const currentCheckboxes = row.querySelectorAll('.hour-checkbox');
+                    const areAllAbsent = Array.from(currentCheckboxes).every(cb => !cb.checked);
+                    
+                    currentCheckboxes.forEach(cb => {
+                        cb.checked = areAllAbsent;
+                        const label = cb.nextElementSibling;
+                        const badgeText = label.querySelector('.badge-text');
+                        
+                        if (cb.checked) {
+                            label.className = "hour-toggle-badge present";
+                            badgeText.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Present';
+                        } else {
+                            label.className = "hour-toggle-badge absent";
+                            badgeText.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Absent';
+                        }
+                    });
+                    
+                    recalculateRowTotal(row);
+                });
+            }
+
+            recalculateRowTotal(row);
         });
+
+        // Listen for shift operation hours changes
+        if (shiftHoursInput && !isLocked) {
+            shiftHoursInput.addEventListener('input', function() {
+                const val = parseInt(this.value) || 1;
+                adjustShiftHours(val);
+            });
+        }
 
         // Handle form submission
         if (form) {

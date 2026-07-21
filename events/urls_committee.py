@@ -12,4 +12,5 @@ urlpatterns = [
     path('dashboard/', views.committee_dashboard_view, name='committee_dashboard'),
     path('<int:pk>/volunteers/', views.committee_volunteers_view, name='committee_volunteers'),
     path('<int:pk>/attendance/', views.committee_attendance_view, name='committee_attendance'),
+    path('<int:pk>/coordinators/', views.committee_coordinators_view, name='committee_coordinators'),
 ]

@@ -74,6 +74,31 @@
                     <input type="file" id="id_banner_image" name="banner_image" class="form-control border-0 bg-transparent text-center" style="font-size: 0.8rem;">
                 </div>
 
+                <div class="form-group mb-3">
+                    <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Main Student Coordinator (Optional)</label>
+                    <input type="hidden" id="id_main_student_coordinator" name="main_student_coordinator" value="{{ event.main_student_coordinator|default:"" }}">
+                    
+                    <!-- Selected display card -->
+                    <div id="main-coordinator-display" class="border rounded p-3 mb-2 bg-light {% if not event.main_student_coordinator %}d-none{% endif %}" style="border-radius: var(--radius-md) !important; border-color: var(--clr-border) !important;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-graduation-cap text-success" style="font-size: 1.1rem;"></i>
+                                <strong id="selected-coordinator-name" style="color: var(--clr-primary); font-size: 0.9rem;">{{ event.main_student_coordinator }}</strong>
+                            </div>
+                            <button type="button" id="remove-coordinator-btn" class="btn btn-link text-danger p-0" style="font-size: 0.8rem; text-decoration: none;">
+                                <i class="fa-solid fa-trash-can"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Trigger button -->
+                    <button type="button" id="select-coordinator-trigger" class="btn btn-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#searchStudentModal" style="font-size: 0.85rem; font-weight: 600; border-color: var(--clr-border);">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span id="trigger-btn-text">{% if event.main_student_coordinator %}Change Coordinator{% else %}Select Main Coordinator{% endif %}</span>
+                    </button>
+                    <span class="d-block text-muted mt-1.5" style="font-size: 0.72rem;">Allows picking anyone from the entire student pool of this event.</span>
+                </div>
+
                 <div class="form-group mt-4">
                     <label class="form-label">Allocation Mode</label>
                     <div class="form-check mb-2">
@@ -227,6 +252,61 @@
                 deleteBtn.disabled = this.value.trim() !== 'DELETE';
             });
         }
+
+        // Student Coordinator search & selection popup logic
+        const searchInput = document.getElementById('student-search-input');
+        const searchResults = document.getElementById('student-search-results');
+        const triggerText = document.getElementById('trigger-btn-text');
+        const coordinatorDisplay = document.getElementById('main-coordinator-display');
+        const coordinatorNameText = document.getElementById('selected-coordinator-name');
+        const removeBtn = document.getElementById('remove-coordinator-btn');
+        const hiddenInput = document.getElementById('id_main_student_coordinator');
+
+        if (searchInput && searchResults) {
+            // Search filter
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const items = searchResults.querySelectorAll('.student-select-item');
+                items.forEach(item => {
+                    const name = item.getAttribute('data-name').toLowerCase();
+                    const text = item.textContent.toLowerCase();
+                    if (name.includes(query) || text.includes(query)) {
+                        item.style.setProperty('display', 'block', 'important');
+                    } else {
+                        item.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            });
+
+            // Selection
+            searchResults.querySelectorAll('.student-select-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const selectedName = this.getAttribute('data-name');
+                    hiddenInput.value = selectedName;
+                    coordinatorNameText.textContent = selectedName;
+                    coordinatorDisplay.classList.remove('d-none');
+                    triggerText.textContent = "Change Coordinator";
+                    
+                    // Close Bootstrap modal
+                    const modalEl = document.getElementById('searchStudentModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    }
+                });
+            });
+        }
+
+        // Remove selection
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                hiddenInput.value = "";
+                coordinatorDisplay.classList.add('d-none');
+                triggerText.textContent = "Select Main Coordinator";
+            });
+        }
     });
 </script>
 
@@ -266,4 +346,51 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Search Student Modal for Event Main Student Coordinator -->
+<div class="modal fade" id="searchStudentModal" tabindex="-1" aria-labelledby="searchStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="searchStudentModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-graduation-cap me-2"></i> Select Main Coordinator
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-start">
+                <p class="text-muted" style="font-size: 0.85rem; line-height: 1.4; margin-bottom: 20px;">
+                    Search and choose any student from the entire event volunteer registry pool.
+                </p>
+                
+                <!-- Search box -->
+                <div class="form-group mb-3">
+                    <div class="input-group" style="box-shadow: none;">
+                        <span class="input-group-text bg-transparent border-end-0" style="border-color: var(--clr-border);"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" id="student-search-input" class="form-control border-start-0" placeholder="Search student name or class..." style="border-color: var(--clr-border); font-size: 0.88rem; height: 38px;">
+                    </div>
+                </div>
+
+                <!-- Scrollable results list -->
+                <div class="list-group border rounded" id="student-search-results" style="max-height: 250px; overflow-y: auto; border-color: var(--clr-border) !important;">
+                    {% for stud in students_pool %}
+                    <button type="button" class="list-group-item list-group-item-action student-select-item p-3 border-0 border-bottom d-flex justify-content-between align-items-center" data-name="{{ stud.name }}" style="border-bottom-color: var(--clr-border) !important;">
+                        <div>
+                            <h6 class="mb-0 text-success" style="font-weight: 700; font-size: 0.9rem;">{{ stud.name }}</h6>
+                            <span class="text-muted" style="font-size: 0.75rem;">Class: CS-B | {{ stud.name|lower|cut:" " }}@rajagiri.edu</span>
+                        </div>
+                        <span class="btn btn-outline-success py-1 px-3" style="font-size: 0.75rem; font-weight: 700; border-radius: 50px;">Choose</span>
+                    </button>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted" style="font-size: 0.85rem;">
+                        No volunteers in the pool yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer p-3 border-top-0 d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

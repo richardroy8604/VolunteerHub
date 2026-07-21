@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Lead Collaboration — {{ event.name }} — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Student Coordinators Directory</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Event: <strong>{{ event.name }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/student/dashboard/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Intro Banner -->
+<div class="alert alert-success border-0 p-3.5 mb-4 d-flex align-items-start gap-2.5" style="border-radius: var(--radius-md); font-size: 0.88rem;">
+    <i class="fa-solid fa-circle-info mt-0.5" style="font-size: 1.15rem;"></i>
+    <div>
+        <strong>Student Leads Collaboration Board:</strong> As a student coordinator, you have permission to view contact channels of fellow coordinators for the <strong>{{ event.name }}</strong>. Use this registry to sync duties, report delays, or manage shifts.
+    </div>
+</div>
+
+<!-- Coordinators Card Grid -->
+<div class="row">
+    {% for coord in coordinators %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="content-card h-100 d-flex flex-column justify-content-between p-4" style="border-radius: var(--radius-lg); {% if coord.is_me %}border: 2px solid var(--clr-primary); background-color: rgba(27, 77, 62, 0.02);{% endif %}">
+            <div>
+                <!-- Header: Role badge and 'You' indicator -->
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge {% if coord.role == 'Main Student Coordinator' %}bg-primary{% else %}bg-secondary-light{% endif %} text-capitalize" style="font-size: 0.72rem; {% if coord.role != 'Main Student Coordinator' %}color: var(--clr-text-muted) !important; background-color: var(--clr-primary-light) !important;{% endif %} font-weight: 600;">
+                        {{ coord.role }}
+                    </span>
+                    {% if coord.is_me %}
+                    <span class="badge bg-success py-1 px-2.5 rounded-pill" style="font-size: 0.68rem; background-color: var(--clr-primary) !important;">
+                        You
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Coordinator Profile details -->
+                <h5 style="font-size: 1.08rem; font-weight: 700; color: var(--clr-text-main); margin-bottom: 4px;">
+                    {{ coord.name }}
+                </h5>
+                <p class="text-success mb-3" style="font-size: 0.85rem; font-weight: 600;">
+                    <i class="fa-solid fa-network-wired me-1"></i> Area: {{ coord.committee }}
+                </p>
+
+                <hr class="my-3" style="border-top: 1px dashed var(--clr-border);">
+
+                <!-- Contact Ledger details -->
+                <div class="d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                    <div class="d-flex align-items-center text-muted">
+                        <i class="fa-solid fa-phone me-2" style="width: 16px;"></i>
+                        <span>{{ coord.phone }}</span>
+                    </div>
+                    <div class="d-flex align-items-center text-muted">
+                        <i class="fa-regular fa-envelope me-2" style="width: 16px;"></i>
+                        <span style="word-break: break-all;">{{ coord.email }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons footer -->
+            <div class="d-flex gap-2 mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
+                <a href="tel:{{ coord.phone }}" class="btn btn-secondary py-1 px-3 d-flex align-items-center justify-content-center gap-1.5 flex-fill" style="font-size: 0.78rem; border-color: var(--clr-border);">
+                    <i class="fa-solid fa-phone-flip"></i> Call
+                </a>
+                <button type="button" class="btn btn-secondary py-1 px-3 copy-phone-btn d-flex align-items-center justify-content-center gap-1.5 flex-fill" data-phone="{{ coord.phone }}" style="font-size: 0.78rem; border-color: var(--clr-border);">
+                    <i class="fa-regular fa-copy"></i> Copy
+                </button>
+                <a href="mailto:{{ coord.email }}" class="btn btn-primary py-1 px-3 d-flex align-items-center justify-content-center gap-1.5 flex-fill" style="font-size: 0.78rem;">
+                    <i class="fa-regular fa-paper-plane"></i> Email
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy phone to clipboard animation
+        const copyBtns = document.querySelectorAll('.copy-phone-btn');
+        copyBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const phone = this.getAttribute('data-phone');
+                
+                navigator.clipboard.writeText(phone).then(() => {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fa-solid fa-check text-success"></i> Copied';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

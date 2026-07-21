@@ -31,17 +31,18 @@ DUMMY_EVENTS = [
         'assigned_volunteers': 65,
         'status': 'Open',
         'banner': None,
+        'main_student_coordinator': 'Arjun Menon',
         'committees': [
             {'id': 1, 'name': 'Registration & Reception', 'required': 15,
-             'assigned': 12, 'head': 'Dr. Priya Sharma'},
+             'assigned': 12, 'head': 'Dr. Priya Sharma', 'student_coordinator': 'Anika Sharma'},
             {'id': 2, 'name': 'Technical Events', 'required': 20,
-             'assigned': 18, 'head': 'Prof. Rahul Nair'},
+             'assigned': 18, 'head': 'Prof. Rahul Nair', 'student_coordinator': None},
             {'id': 3, 'name': 'Media & Publicity', 'required': 10,
-             'assigned': 8, 'head': 'Dr. Anita Joseph'},
+             'assigned': 8, 'head': 'Dr. Anita Joseph', 'student_coordinator': None},
             {'id': 4, 'name': 'Logistics & Venue', 'required': 15,
-             'assigned': 12, 'head': 'Prof. Suresh Kumar'},
+             'assigned': 12, 'head': 'Prof. Suresh Kumar', 'student_coordinator': None},
             {'id': 5, 'name': 'Food & Hospitality', 'required': 10,
-             'assigned': 8, 'head': 'Dr. Meera Krishnan'},
+             'assigned': 8, 'head': 'Dr. Meera Krishnan', 'student_coordinator': None},
         ],
     },
     {
@@ -60,13 +61,14 @@ DUMMY_EVENTS = [
         'assigned_volunteers': 0,
         'status': 'Open',
         'banner': None,
+        'main_student_coordinator': None,
         'committees': [
             {'id': 6, 'name': 'Event Coordination', 'required': 20,
-             'assigned': 0, 'head': 'Prof. Deepak Menon'},
+             'assigned': 0, 'head': 'Prof. Deepak Menon', 'student_coordinator': None},
             {'id': 7, 'name': 'Scoring & Results', 'required': 10,
-             'assigned': 0, 'head': 'Dr. Kavitha Raj'},
+             'assigned': 0, 'head': 'Dr. Kavitha Raj', 'student_coordinator': None},
             {'id': 8, 'name': 'First Aid & Safety', 'required': 8,
-             'assigned': 0, 'head': 'Dr. Anil Thomas'},
+             'assigned': 0, 'head': 'Dr. Anil Thomas', 'student_coordinator': None},
         ],
     },
     {
@@ -175,6 +177,13 @@ def event_create_view(request):
             {'id': 5, 'name': 'Dr. Meera Krishnan'},
             {'id': 6, 'name': 'Prof. Deepak Menon'},
         ],
+        'students_pool': [
+            {'id': 1, 'name': 'Arjun Menon'},
+            {'id': 2, 'name': 'Anika Sharma'},
+            {'id': 3, 'name': 'Rohit Menon'},
+            {'id': 4, 'name': 'Vishnu Prasad'},
+            {'id': 5, 'name': 'Sneha Thomas'},
+        ],
     }
     return render(request, 'events/event_form.html', context)
 
@@ -204,6 +213,13 @@ def event_edit_view(request, pk):
             {'id': 3, 'name': 'Dr. Anita Joseph'},
             {'id': 4, 'name': 'Prof. Suresh Kumar'},
             {'id': 5, 'name': 'Dr. Meera Krishnan'},
+        ],
+        'students_pool': [
+            {'id': 1, 'name': 'Arjun Menon'},
+            {'id': 2, 'name': 'Anika Sharma'},
+            {'id': 3, 'name': 'Rohit Menon'},
+            {'id': 4, 'name': 'Vishnu Prasad'},
+            {'id': 5, 'name': 'Sneha Thomas'},
         ],
     }
     return render(request, 'events/event_form.html', context)
@@ -330,17 +346,50 @@ def event_public_detail_view(request, pk):
 # =============================================================================
 
 def committee_dashboard_view(request):
-    """Committee Head's dashboard with their committee overview."""
+    """Committee Head's dashboard with their committee overview and history tracking."""
     context = {
         'user_role': 'committee_head',
         'user_name': 'Dr. Priya Sharma',
         'committee': {
+            'id': 1,
             'name': 'Registration & Reception',
             'event': 'Rajagiri Tech Fest 2026',
             'required': 15,
             'assigned': 12,
             'attendance_pct': 92,
+            'total_hours_logged': 133,
+            'open_slots': 3,
+            'student_coordinator': 'Anika Sharma',
         },
+        'submission_history': [
+            {
+                'date': 'July 25, 2026',
+                'day': 'Day 1',
+                'status': 'Approved',
+                'status_color': 'success',
+                'student_count': 12,
+                'hours_logged': 66,
+                'feedback': ''
+            },
+            {
+                'date': 'July 26, 2026',
+                'day': 'Day 2',
+                'status': 'Sent Back',
+                'status_color': 'danger',
+                'student_count': 12,
+                'hours_logged': 67,
+                'feedback': 'Arjun Menon left early. Please adjust his hours to 3.0.'
+            },
+            {
+                'date': 'July 27, 2026',
+                'day': 'Day 3',
+                'status': 'Not Submitted',
+                'status_color': 'secondary',
+                'student_count': 0,
+                'hours_logged': 0,
+                'feedback': ''
+            }
+        ],
         'volunteers': [
             {'name': 'Arjun Menon', 'class': 'CS-B',
              'dept': 'Computer Science', 'phone': '+91 98765 43210',
@@ -351,6 +400,12 @@ def committee_dashboard_view(request):
             {'name': 'Rohit Menon', 'class': 'MA-A',
              'dept': 'Mathematics', 'phone': '+91 76543 21098',
              'status': 'Active', 'attendance': 'Absent'},
+            {'name': 'Vishnu Prasad', 'class': 'EC-B',
+             'dept': 'Electronics', 'phone': '+91 65432 10987',
+             'status': 'Active', 'attendance': 'Present'},
+            {'name': 'Sneha Thomas', 'class': 'CS-A',
+             'dept': 'Computer Science', 'phone': '+91 54321 09876',
+             'status': 'Active', 'attendance': 'Present'},
         ],
     }
     return render(request, 'dashboards/committee_dashboard.html', context)
@@ -387,7 +442,55 @@ def committee_volunteers_view(request, pk):
 
 
 def committee_attendance_view(request, pk):
-    """Mark/view attendance for volunteers on a specific date."""
+    """Mark/view attendance for volunteers on a specific date, supporting locking and feedback states."""
+    selected_date = request.GET.get('date', 'July 26, 2026')
+    
+    # Mock different states and hour counts based on date selected
+    sheet_status = "Not Submitted"
+    feedback = ""
+    num_hours = 3
+    
+    if selected_date == 'July 25, 2026':
+        sheet_status = "Approved"
+        num_hours = 6
+    elif selected_date == 'July 26, 2026':
+        sheet_status = "Sent Back"
+        feedback = "Arjun Menon left early. Please adjust his hours to 3.0."
+        num_hours = 4
+    elif selected_date == 'July 27, 2026':
+        sheet_status = "Not Submitted"
+        num_hours = 3
+
+    # Generate student mock hourly status records (OD leave specific periods)
+    if selected_date == 'July 25, 2026':
+        volunteers_data = [
+            {'id': 1, 'name': 'Arjun Menon', 'class': 'CS-B', 'hours': [True, True, True, True, True, True]},
+            {'id': 2, 'name': 'Anika Sharma', 'class': 'CS-A', 'hours': [True, True, True, True, True, True]},
+            {'id': 3, 'name': 'Rohit Menon', 'class': 'MA-A', 'hours': [False, False, False, False, False, False]},
+            {'id': 4, 'name': 'Vishnu Prasad', 'class': 'EC-B', 'hours': [True, True, True, True, True, False]},
+            {'id': 5, 'name': 'Sneha Thomas', 'class': 'CS-A', 'hours': [True, True, True, True, True, True]},
+        ]
+    elif selected_date == 'July 26, 2026':
+        volunteers_data = [
+            {'id': 1, 'name': 'Arjun Menon', 'class': 'CS-B', 'hours': [True, True, False, False]},
+            {'id': 2, 'name': 'Anika Sharma', 'class': 'CS-A', 'hours': [True, True, True, True]},
+            {'id': 3, 'name': 'Rohit Menon', 'class': 'MA-A', 'hours': [False, False, False, False]},
+            {'id': 4, 'name': 'Vishnu Prasad', 'class': 'EC-B', 'hours': [True, True, True, False]},
+            {'id': 5, 'name': 'Sneha Thomas', 'class': 'CS-A', 'hours': [True, True, True, True]},
+        ]
+    else: # July 27, 2026
+        volunteers_data = [
+            {'id': 1, 'name': 'Arjun Menon', 'class': 'CS-B', 'hours': [True, True, True]},
+            {'id': 2, 'name': 'Anika Sharma', 'class': 'CS-A', 'hours': [True, True, True]},
+            {'id': 3, 'name': 'Rohit Menon', 'class': 'MA-A', 'hours': [True, True, True]},
+            {'id': 4, 'name': 'Vishnu Prasad', 'class': 'EC-B', 'hours': [True, True, True]},
+            {'id': 5, 'name': 'Sneha Thomas', 'class': 'CS-A', 'hours': [True, True, True]},
+        ]
+
+    # Calculate initial totals for each volunteer to display in context
+    for vol in volunteers_data:
+        vol['total_hours'] = sum(1 for h in vol['hours'] if h)
+
     context = {
         'user_role': 'committee_head',
         'user_name': 'Dr. Priya Sharma',
@@ -396,21 +499,70 @@ def committee_attendance_view(request, pk):
             'event': 'Rajagiri Tech Fest 2026',
         },
         'event_dates': ['July 25, 2026', 'July 26, 2026', 'July 27, 2026'],
-        'selected_date': 'July 25, 2026',
-        'volunteers': [
-            {'id': 1, 'name': 'Arjun Menon', 'class': 'CS-B',
-             'status': 'present', 'hours': 6.0},
-            {'id': 2, 'name': 'Anika Sharma', 'class': 'CS-A',
-             'status': 'present', 'hours': 5.5},
-            {'id': 3, 'name': 'Rohit Menon', 'class': 'MA-A',
-             'status': 'absent', 'hours': 0},
-            {'id': 4, 'name': 'Vishnu Prasad', 'class': 'EC-B',
-             'status': 'late', 'hours': 4.0},
-            {'id': 5, 'name': 'Sneha Thomas', 'class': 'CS-A',
-             'status': 'present', 'hours': 6.0},
-        ],
+        'selected_date': selected_date,
+        'sheet_status': sheet_status,
+        'feedback': feedback,
+        'num_hours': num_hours,
+        'hours_range': range(1, num_hours + 1),
+        'volunteers': volunteers_data,
     }
     return render(request, 'volunteers/attendance.html', context)
+
+
+def committee_coordinators_view(request, pk):
+    """View fellow committee coordinators of the same event."""
+    context = {
+        'user_role': 'committee_head',
+        'user_name': 'Dr. Priya Sharma',
+        'active_committee_id': pk,
+        'committee': {
+            'name': 'Registration & Reception',
+            'event': 'Rajagiri Tech Fest 2026',
+        },
+        'coordinators': [
+            {
+                'name': 'Dr. Priya Sharma',
+                'committee': 'Registration & Reception',
+                'phone': '+91 94471 23456',
+                'email': 'priya.sharma@rajagiri.edu',
+                'role': 'Faculty Head',
+                'is_me': True
+            },
+            {
+                'name': 'Prof. Rahul Nair',
+                'committee': 'Technical Events',
+                'phone': '+91 98765 01234',
+                'email': 'rahul.nair@rajagiri.edu',
+                'role': 'Faculty Head',
+                'is_me': False
+            },
+            {
+                'name': 'Dr. Anita Joseph',
+                'committee': 'Media & Publicity',
+                'phone': '+91 87654 32109',
+                'email': 'anita.joseph@rajagiri.edu',
+                'role': 'Faculty Head',
+                'is_me': False
+            },
+            {
+                'name': 'Prof. Suresh Kumar',
+                'committee': 'Logistics & Venue',
+                'phone': '+91 76543 21098',
+                'email': 'suresh.kumar@rajagiri.edu',
+                'role': 'Faculty Head',
+                'is_me': False
+            },
+            {
+                'name': 'Dr. Meera Krishnan',
+                'committee': 'Food & Hospitality',
+                'phone': '+91 65432 10987',
+                'email': 'meera.krishnan@rajagiri.edu',
+                'role': 'Faculty Head',
+                'is_me': False
+            }
+        ]
+    }
+    return render(request, 'events/committee_coordinators.html', context)
 
 
 def dean_committee_detail_view(request, pk):
@@ -445,7 +597,7 @@ def dean_committee_detail_view(request, pk):
             'name': committee_data['name'],
             'event': event_name,
             'faculty_head': committee_data['head'],
-            'student_head': 'Arjun Menon',  # Mock student head/incharge
+            'student_head': committee_data.get('student_coordinator', None),
             'required': committee_data['required'],
             'assigned': committee_data['assigned'] if committee_data['assigned'] > 0 else 12,
         },
