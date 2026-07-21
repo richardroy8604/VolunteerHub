@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Committee Mates — {{ committee.name }} — VolunteerHub{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">{{ committee.name }} Mates</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Parent Event: <strong>{{ committee.event }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="/student/dashboard/" class="btn btn-secondary py-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Committee Coordinators Row -->
+<div class="row mb-4">
+    <!-- Faculty Coordinator -->
+    <div class="col-md-6 mb-3 mb-md-0">
+        <div class="content-card h-100">
+            <h5 class="content-card-title border-bottom pb-2 mb-3" style="font-size: 0.95rem;">
+                <span><i class="fa-solid fa-user-tie text-success me-2"></i> Faculty Coordinator</span>
+            </h5>
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.15rem; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0" style="font-weight: 700; color: var(--clr-text-main);">{{ committee.faculty_head }}</h6>
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem;">Committee Coordinator</span>
+                    <div class="d-flex gap-2" style="font-size: 0.8rem;">
+                        <a href="tel:{{ committee.faculty_phone }}" class="text-success" style="font-weight: 500;"><i class="fa-solid fa-phone me-1"></i> Call</a>
+                        <span class="text-muted">|</span>
+                        <a href="mailto:{{ committee.faculty_email }}" class="text-success" style="font-weight: 500;"><i class="fa-regular fa-envelope me-1"></i> Email</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Representative -->
+    <div class="col-md-6">
+        <div class="content-card h-100">
+            <h5 class="content-card-title border-bottom pb-2 mb-3" style="font-size: 0.95rem;">
+                <span><i class="fa-solid fa-star text-success me-2"></i> Student Lead</span>
+            </h5>
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.15rem; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0" style="font-weight: 700; color: var(--clr-text-main);">{{ committee.student_head }}</h6>
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem;">Student Representative</span>
+                    <span style="font-size: 0.75rem;" class="badge bg-success">Active Duty</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Committee Mates List Table -->
+<div class="content-card">
+    <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
+        <span><i class="fa-solid fa-users text-success me-2"></i> Committee Volunteers ({{ volunteers|length }} members)</span>
+    </h4>
+    
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 80px; text-align: center;">Sl. No.</th>
+                    <th>Volunteer Name</th>
+                    <th>Class</th>
+                    <th>Department</th>
+                    <th>Email Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mate in volunteers %}
+                <tr style="{% if mate.is_me %}background-color: rgba(27, 77, 62, 0.03); font-weight: 600;{% endif %}">
+                    <td style="text-align: center; font-weight: 600; color: var(--clr-text-muted);">{{ forloop.counter }}</td>
+                    <td>
+                        {{ mate.name }}
+                        {% if mate.is_me %}
+                        <span class="badge bg-success-light text-success ms-1 rounded-pill" style="font-size: 0.65rem; background-color: rgba(25, 135, 84, 0.1);">You</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.9rem;">{{ mate.class }}</td>
+                    <td style="font-size: 0.9rem;" class="text-muted">{{ mate.dept }}</td>
+                    <td style="font-size: 0.85rem;" class="text-muted">{{ mate.email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

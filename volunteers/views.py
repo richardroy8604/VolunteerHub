@@ -26,10 +26,13 @@ def student_dashboard_view(request):
         'active_assignments': [
             {'event': 'Rajagiri Tech Fest 2026',
              'committee': 'Registration & Reception',
-             'date': 'Jul 25-27, 2026', 'status': 'Assigned'},
+             'date': 'Jul 25-27, 2026', 'status': 'Assigned',
+             'event_id': 1, 'committee_id': 1,
+             'coordinator': 'Dr. Priya Sharma', 'coordinator_phone': '+91 94471 23456'},
             {'event': 'Annual Sports Day',
              'committee': 'Pending Assignment',
-             'date': 'Aug 10-12, 2026', 'status': 'Pending'},
+             'date': 'Aug 10-12, 2026', 'status': 'Pending',
+             'event_id': 2},
         ],
         'recent_events': [
             {'name': 'Rajagiri Tech Fest 2026', 'date': 'Jul 25, 2026',
@@ -55,6 +58,8 @@ def my_applications_view(request):
              'pref3': 'Media & Publicity',
              'status': 'Assigned',
              'assigned_committee': 'Registration & Reception',
+             'event_id': 1, 'committee_id': 1,
+             'coordinator': 'Dr. Priya Sharma', 'coordinator_phone': '+91 94471 23456',
              'date': 'Jul 10, 2026'},
             {'id': 2, 'event': 'Annual Sports Day',
              'pref1': 'Event Coordination',
@@ -62,6 +67,7 @@ def my_applications_view(request):
              'pref3': 'First Aid & Safety',
              'status': 'Pending',
              'assigned_committee': None,
+             'event_id': 2, 'committee_id': None,
              'date': 'Jul 13, 2026'},
             {'id': 3, 'event': 'NSS Social Service Camp',
              'pref1': 'Education Drive',
@@ -69,6 +75,8 @@ def my_applications_view(request):
              'pref3': 'Documentation',
              'status': 'Assigned',
              'assigned_committee': 'Education Drive',
+             'event_id': 3, 'committee_id': 3,
+             'coordinator': 'Prof. Deepak Menon', 'coordinator_phone': '+91 98765 01234',
              'date': 'May 28, 2026'},
         ],
     }
@@ -102,6 +110,46 @@ def my_volunteering_view(request):
         ],
     }
     return render(request, 'volunteers/my_volunteering.html', context)
+
+
+def student_committee_detail_view(request, pk):
+    """Student's view of their assigned committee details, coordinator, and fellow committee mates."""
+    # Mock committee names and coordinators based on pk
+    if pk == 3:
+        committee_name = "Education Drive"
+        event_name = "NSS Social Service Camp"
+        coordinator_name = "Prof. Deepak Menon"
+        coordinator_phone = "+91 98765 01234"
+        coordinator_email = "deepak.menon@rajagiri.edu"
+    else:
+        committee_name = "Registration & Reception"
+        event_name = "Rajagiri Tech Fest 2026"
+        coordinator_name = "Dr. Priya Sharma"
+        coordinator_phone = "+91 94471 23456"
+        coordinator_email = "priya.sharma@rajagiri.edu"
+
+    context = {
+        'user_role': 'student',
+        'user_name': 'Arjun Menon',
+        'committee': {
+            'id': pk,
+            'name': committee_name,
+            'event': event_name,
+            'faculty_head': coordinator_name,
+            'faculty_phone': coordinator_phone,
+            'faculty_email': coordinator_email,
+            'student_head': 'Arjun Menon'  # Student incharge
+        },
+        'volunteers': [
+            {'name': 'Arjun Menon', 'class': 'CS-B', 'dept': 'Computer Science', 'email': 'arjun.menon@rajagiri.edu', 'is_me': True},
+            {'name': 'Anika Sharma', 'class': 'CS-A', 'dept': 'Computer Science', 'email': 'anika.sharma@rajagiri.edu', 'is_me': False},
+            {'name': 'Vishnu Prasad', 'class': 'EC-B', 'dept': 'Electronics', 'email': 'vishnu.p@rajagiri.edu', 'is_me': False},
+            {'name': 'Sneha Thomas', 'class': 'CS-A', 'dept': 'Computer Science', 'email': 'sneha.t@rajagiri.edu', 'is_me': False},
+            {'name': 'Rohit Menon', 'class': 'MA-A', 'dept': 'Mathematics', 'email': 'rohit.menon@rajagiri.edu', 'is_me': False},
+            {'name': 'Deepa Nair', 'class': 'EC-A', 'dept': 'Electronics', 'email': 'deepa.nair@rajagiri.edu', 'is_me': False},
+        ]
+    }
+    return render(request, 'volunteers/student_committee_detail.html', context)
 
 
 # =============================================================================

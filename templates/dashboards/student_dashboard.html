@@ -81,12 +81,24 @@
                         <h5 class="mb-1" style="font-size: 0.95rem; font-weight: 700; color: var(--clr-text-main);">{{ assignment.event }}</h5>
                         <div class="d-flex flex-wrap gap-x-3 text-muted" style="font-size: 0.8rem;">
                             <span class="me-3"><i class="fa-solid fa-users-gear me-1"></i> Committee: <strong>{{ assignment.committee }}</strong></span>
+                            {% if assignment.coordinator %}
+                            <span class="me-3">
+                                <i class="fa-solid fa-user-tie me-1"></i> Coordinator: <strong>{{ assignment.coordinator }}</strong>
+                                <a href="tel:{{ assignment.coordinator_phone }}" class="text-success ms-1" title="Call Coordinator"><i class="fa-solid fa-phone" style="font-size: 0.72rem;"></i></a>
+                                <button type="button" class="btn btn-link text-success p-0 ms-1 copy-phone-btn" data-phone="{{ assignment.coordinator_phone }}" title="Copy Phone Number" style="border:0; background:none; vertical-align: baseline; font-size: 0.75rem;">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </span>
+                            {% endif %}
                             <span><i class="fa-regular fa-clock me-1"></i> Dates: {{ assignment.date }}</span>
                         </div>
                     </div>
-                    <div>
+                    <div class="text-end">
                         {% if assignment.status == 'Assigned' %}
-                        <span class="badge bg-success py-1 px-3 text-white rounded-pill" style="font-size: 0.75rem; background-color: var(--clr-primary) !important;">Assigned</span>
+                        <span class="badge bg-success py-1 px-3 text-white rounded-pill mb-2" style="font-size: 0.75rem; background-color: var(--clr-primary) !important; display: inline-block;">Assigned</span>
+                        <a href="/student/committees/{{ assignment.committee_id }}/" class="btn btn-secondary py-1 px-2.5 d-block" style="font-size: 0.7rem; border-radius: var(--radius-sm); border-color: var(--clr-border);">
+                            <i class="fa-solid fa-users me-1"></i> View Mates
+                        </a>
                         {% else %}
                         <span class="badge bg-warning text-dark py-1 px-3 rounded-pill" style="font-size: 0.75rem;">Pending</span>
                         {% endif %}
@@ -167,4 +179,30 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy phone to clipboard animation
+        const copyBtns = document.querySelectorAll('.copy-phone-btn');
+        copyBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const phone = this.getAttribute('data-phone');
+                
+                navigator.clipboard.writeText(phone).then(() => {
+                    const icon = this.querySelector('i');
+                    // Success visual flash feedback
+                    icon.className = 'fa-solid fa-check text-success';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

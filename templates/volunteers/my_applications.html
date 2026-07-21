@@ -2,6 +2,23 @@
 
 {% block title %}My Volunteer Applications — VolunteerHub{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Premium Clickable Cards with Subtle Lift & Float Animation */
+    .clickable-card {
+        cursor: pointer;
+        transition: transform var(--transition-speed) var(--transition-smooth),
+                    box-shadow var(--transition-speed) var(--transition-smooth),
+                    border-color var(--transition-speed) var(--transition-smooth);
+    }
+    .clickable-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: rgba(27, 77, 62, 0.2) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Page Header -->
 <div class="row align-items-center mb-4">
@@ -19,7 +36,7 @@
 <!-- Applications Listing -->
 <div class="d-flex flex-column gap-4">
     {% for app in applications %}
-    <div class="content-card p-4" style="border-radius: var(--radius-lg); {% if app.status == 'Assigned' %}border-left: 4px solid var(--clr-primary);{% else %}border-left: 4px solid var(--clr-warning);{% endif %}">
+    <div class="content-card p-4 clickable-card" style="border-radius: var(--radius-lg); {% if app.status == 'Assigned' %}border-left: 4px solid var(--clr-primary);{% else %}border-left: 4px solid var(--clr-warning);{% endif %}" onclick="{% if app.status == 'Assigned' %}window.location.href='/student/committees/{{ app.committee_id }}/';{% else %}window.location.href='/events/{{ app.event_id }}/';{% endif %}">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 border-bottom pb-3 mb-3">
             <div>
                 <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
@@ -100,11 +117,22 @@
                     </div>
 
                     {% if app.status == 'Assigned' %}
-                    <div class="d-flex align-items-center gap-2 position-relative" style="z-index: 2;">
-                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 0.65rem; background-color: var(--clr-primary) !important;">
+                    <div class="d-flex align-items-start gap-2 position-relative" style="z-index: 2;">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mt-0.5" style="width: 20px; height: 20px; font-size: 0.65rem; background-color: var(--clr-primary) !important; flex-shrink: 0;">
                             <i class="fa-solid fa-check"></i>
                         </div>
-                        <span class="text-muted">Allocated by Dean: <strong class="text-success">{{ app.assigned_committee }}</strong></span>
+                        <div>
+                            <span class="text-muted d-block">Allocated by Dean: <strong class="text-success">{{ app.assigned_committee }}</strong></span>
+                            {% if app.coordinator %}
+                            <span class="text-muted d-block mt-1" style="font-size: 0.78rem;">
+                                <i class="fa-solid fa-user-tie text-success me-1"></i> Coordinator: <strong>{{ app.coordinator }}</strong>
+                                <a href="tel:{{ app.coordinator_phone }}" class="text-success ms-1" title="Call Coordinator" onclick="event.stopPropagation();"><i class="fa-solid fa-phone" style="font-size: 0.72rem;"></i></a>
+                                <button type="button" class="btn btn-link text-success p-0 ms-1 copy-phone-btn" data-phone="{{ app.coordinator_phone }}" title="Copy Phone Number" style="border:0; background:none; vertical-align: baseline; font-size: 0.75rem;" onclick="event.stopPropagation();">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% elif app.status == 'Pending' %}
                     <div class="d-flex align-items-center gap-2 position-relative" style="z-index: 2;">
@@ -127,7 +155,7 @@
 
         {% if app.status == 'Pending' %}
         <div class="d-flex justify-content-end mt-3 pt-3 border-top" style="border-top-color: var(--clr-border);">
-            <button type="button" class="btn btn-secondary py-1 px-3 text-danger" style="font-size: 0.8rem; border-color: var(--clr-border);" onclick="cancelApplication('{{ app.event }}')">
+            <button type="button" class="btn btn-secondary py-1 px-3 text-danger" style="font-size: 0.8rem; border-color: var(--clr-border);" onclick="event.stopPropagation(); cancelApplication('{{ app.event }}');">
                 <i class="fa-solid fa-circle-xmark"></i> Cancel Registration
             </button>
         </div>
@@ -151,5 +179,27 @@
             window.location.reload();
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy phone to clipboard animation
+        const copyBtns = document.querySelectorAll('.copy-phone-btn');
+        copyBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const phone = this.getAttribute('data-phone');
+                
+                navigator.clipboard.writeText(phone).then(() => {
+                    const icon = this.querySelector('i');
+                    // Success visual flash feedback
+                    icon.className = 'fa-solid fa-check text-success';
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+        });
+    });
 </script>
 {% endblock %}
