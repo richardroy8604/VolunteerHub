@@ -264,7 +264,6 @@ def user_management_view(request):
             'Associate Professor',
             'Professor',
             'Teaching Associate',
-            'Dean',
         ],
         'users': [
             {

@@ -19,56 +19,92 @@
     </div>
 </div>
 
-<!-- Detailed Technical Banner Explanation of Student Email Parsing Script -->
-<div class="content-card mb-4" style="border-left: 5px solid var(--clr-primary); background: linear-gradient(to right, #f8fafc, #f1f5f9);">
-    <div class="d-flex align-items-start gap-3 p-1">
-        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background-color: var(--clr-primary) !important;">
+<!-- Technical Explanation Banner Card for Student Email Parsing Script -->
+<div class="content-card mb-4 p-4 border-0 shadow-sm" style="border-radius: var(--radius-lg); background: #ffffff; border-top: 4px solid var(--clr-primary) !important;">
+    <div class="d-flex align-items-center gap-3 mb-3 pb-2 border-bottom">
+        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: var(--clr-primary) !important;">
             <i class="fa-solid fa-robot fs-5"></i>
         </div>
         <div>
-            <h5 class="fw-bold mb-1" style="color: var(--clr-primary); font-size: 1.05rem;">
-                How Student Email Parsing & Auto-Registration Works
+            <h5 class="fw-bold mb-0" style="color: var(--clr-primary); font-size: 1.1rem;">
+                Automated Student Email Parsing & Registration Pipeline
             </h5>
-            <p class="text-muted mb-2" style="font-size: 0.88rem; line-height: 1.5;">
-                When a student signs in with their official <strong>@rajagiri.edu</strong> Google account, the system automatically executes a zero-touch registration script:
-            </p>
-            <div class="row g-2 mb-2">
-                <div class="col-md-4">
-                    <div class="p-2 rounded bg-white border" style="font-size: 0.8rem;">
-                        <strong class="text-primary d-block mb-1"><i class="fa-solid fa-at me-1"></i> 1. Email Extraction</strong>
-                        E.g. <code>msccs2524@rajagiri.edu</code> &rarr; Extracts <code>msccs</code> (Short Code) and <code>25</code> (Year) + <code>24</code> (Roll).
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-2 rounded bg-white border" style="font-size: 0.8rem;">
-                        <strong class="text-success d-block mb-1"><i class="fa-solid fa-table me-1"></i> 2. Table Lookup</strong>
-                        Matches <code>msccs</code> against this Course table &rarr; Course: <strong>MSc Computer Science</strong> (2 Years), Dept: <strong>Computer Science</strong>.
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-2 rounded bg-white border" style="font-size: 0.8rem;">
-                        <strong class="text-purple d-block mb-1" style="color: #6f42c1;"><i class="fa-solid fa-calculator me-1"></i> 3. Auto Batch & Semester</strong>
-                        Computes Batch: <strong>MSCCS - 25-27</strong> and calculates current Semester dynamically (e.g. <strong>Semester 3</strong>).
-                    </div>
-                </div>
-            </div>
-            <span class="badge bg-light text-dark border" style="font-size: 0.75rem;">
-                💡 Adding a course short form here immediately enables instant Google Auth registration for all students of that course.
+            <span class="text-muted" style="font-size: 0.85rem;">
+                Zero-touch onboarding algorithm executed automatically when students log in via Google Auth (<code>@rajagiri.edu</code>)
             </span>
         </div>
+    </div>
+
+    <!-- 3 Step Breakdown Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-4">
+            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 1</span>
+                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-at me-1 text-primary"></i> Email Tokenizer</strong>
+                </div>
+                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                    Extracts the course code prefix and the trailing 4 digits from the email address before <code>@rajagiri.edu</code>.
+                </p>
+                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                    <code>msccs2524@rajagiri.edu</code> &rarr;<br>
+                    Prefix: <strong class="text-success">msccs</strong> | Year: <strong class="text-primary">25</strong> | Roll: <strong>24</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-success text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 2</span>
+                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-table-list me-1 text-success"></i> Short Form Lookup</strong>
+                </div>
+                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                    Matches prefix (<code>msccs</code>) against this Course Configuration ledger to resolve metadata.
+                </p>
+                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                    Course: <strong>MSc Computer Science</strong><br>
+                    Duration: <strong>2 Years</strong> | Dept: <strong>Computer Science</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge text-white rounded-pill px-2 py-1" style="font-size: 0.75rem; background-color: #6f42c1;">Step 3</span>
+                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-wand-magic-sparkles me-1" style="color: #6f42c1;"></i> Auto Batch & Semester</strong>
+                </div>
+                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                    Calculates graduation range and auto-computes current semester from current date.
+                </p>
+                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                    Batch: <strong class="text-purple" style="color: #6f42c1;">MSCCS - 25-27</strong><br>
+                    Current Status: <strong class="text-success">Semester 3</strong> (Auto-Calculated)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tip Banner -->
+    <div class="p-2.5 px-3 rounded-3 d-flex align-items-center gap-2" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+        <i class="fa-solid fa-lightbulb text-success"></i>
+        <span class="text-dark" style="font-size: 0.82rem;">
+            <strong>Pro Tip:</strong> Adding a new course short form here instantly enables automatic Google Auth onboarding for all students in that program.
+        </span>
     </div>
 </div>
 
 <!-- ========================================================================= -->
 <!-- SECTION 1: COURSE CONFIGURATIONS TABLE -->
 <!-- ========================================================================= -->
-<div class="content-card mb-5">
+<div class="content-card mb-4 shadow-sm" style="border-radius: var(--radius-lg);">
     <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
         <div>
-            <h4 class="h5 font-weight-bold mb-0" style="color: var(--clr-primary); font-weight: 700;">
+            <h4 class="h5 font-weight-bold mb-1" style="color: var(--clr-primary); font-weight: 700;">
                 <i class="fa-solid fa-graduation-cap me-2"></i> Configured Academic Courses
             </h4>
-            <span class="text-muted" style="font-size: 0.8rem;">Courses registered for student email code parsing and volunteering allocation</span>
+            <span class="text-muted" style="font-size: 0.82rem;">Courses registered for student email code parsing and volunteer allocation</span>
         </div>
         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
             <i class="fa-solid fa-plus me-1"></i> Add New Course
@@ -79,12 +115,12 @@
         <table class="table-custom">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th style="width: 50px;">#</th>
                     <th>Course Title</th>
                     <th>Email Short Form (Code)</th>
                     <th>Duration</th>
                     <th>Department</th>
-                    <th>Actions</th>
+                    <th style="width: 100px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -93,11 +129,11 @@
                     <td class="text-muted" style="font-size: 0.85rem;">{{ forloop.counter }}</td>
                     <td style="font-weight: 600;">{{ course.name }}</td>
                     <td>
-                        <code class="px-2 py-1 bg-light border rounded text-success fw-bold" style="font-size: 0.88rem;">{{ course.code }}</code>
+                        <code class="px-2 py-1 bg-light border rounded text-success fw-bold" style="font-size: 0.88rem; letter-spacing: 0.5px;">{{ course.code }}</code>
                     </td>
                     <td style="font-size: 0.88rem;">{{ course.years }} Year{% if course.years > 1 %}s{% endif %}</td>
                     <td>
-                        <span class="badge bg-light text-dark border" style="font-size: 0.8rem;">{{ course.dept }}</span>
+                        <span class="badge bg-light text-dark border" style="font-size: 0.8rem; font-weight: 500;">{{ course.dept }}</span>
                     </td>
                     <td>
                         <div class="d-flex gap-2">
@@ -121,15 +157,15 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- SECTION 2: INSTITUTIONAL DEPARTMENTS MANAGEMENT (RESEVED BELOW) -->
+<!-- SECTION 2: INSTITUTIONAL DEPARTMENTS MANAGEMENT -->
 <!-- ========================================================================= -->
-<div class="content-card mb-4" style="background: #fafafa; border: 1px solid var(--clr-border);">
+<div class="content-card mb-4 shadow-sm" style="border-radius: var(--radius-lg); background: #fafafa; border: 1px solid var(--clr-border);">
     <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
         <div>
-            <h4 class="h5 font-weight-bold mb-0 text-secondary" style="font-weight: 700;">
+            <h4 class="h5 font-weight-bold mb-1 text-secondary" style="font-weight: 700;">
                 <i class="fa-solid fa-building-columns me-2"></i> Institutional Departments
             </h4>
-            <span class="text-muted" style="font-size: 0.8rem;">Configures department options displayed across Faculty user creation and filters (rarely modified)</span>
+            <span class="text-muted" style="font-size: 0.82rem;">Configures department options displayed across Faculty user creation dropdowns</span>
         </div>
         <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addDeptModal">
             <i class="fa-solid fa-plus me-1"></i> Add Department
@@ -144,7 +180,7 @@
                     <th>Department Dean / HOD</th>
                     <th>Faculty Count</th>
                     <th>Active Courses</th>
-                    <th>Actions</th>
+                    <th style="width: 100px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -203,7 +239,7 @@
                         <div class="col-md-6 form-group">
                             <label class="form-label" for="course_code">Email Short Form (Code)</label>
                             <input type="text" id="course_code" name="code" class="form-control text-lowercase" placeholder="e.g. mca or msccs" required>
-                            <span class="d-block text-muted mt-1" style="font-size: 0.72rem;">Lowercase letters matching email prefix before digits.</span>
+                            <span class="d-block text-muted mt-1" style="font-size: 0.72rem;">Lowercase prefix before 4-digit year+roll.</span>
                         </div>
                         <div class="col-md-6 form-group">
                             <label class="form-label" for="course_years">Duration (Years)</label>
