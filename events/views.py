@@ -251,32 +251,145 @@ def user_management_view(request):
     """User management page for Dean to manage all system users."""
     context = {
         'user_role': 'dean',
-        'user_name': 'Dr. Thomas Mathew',
+        'user_name': 'Dr. Jaya Vijayan',
+        'departments': [
+            'Computer Science',
+            'Business Administration',
+            'Commerce',
+            'Psychology',
+            'Social Work',
+        ],
+        'designations': [
+            'Assistant Professor',
+            'Associate Professor',
+            'Professor',
+            'Teaching Associate',
+            'Dean',
+        ],
         'users': [
-            {'id': 1, 'name': 'Dr. Thomas Mathew',
-             'email': 'thomas.mathew@rajagiri.edu', 'role': 'Dean',
-             'status': 'Active', 'last_login': 'Jul 15, 2026'},
-            {'id': 2, 'name': 'Dr. Priya Sharma',
-             'email': 'priya.sharma@rajagiri.edu', 'role': 'Committee Head',
-             'status': 'Active', 'last_login': 'Jul 14, 2026'},
-            {'id': 3, 'name': 'Prof. Rahul Nair',
-             'email': 'rahul.nair@rajagiri.edu', 'role': 'Committee Head',
-             'status': 'Active', 'last_login': 'Jul 13, 2026'},
-            {'id': 4, 'name': 'Arjun Menon',
-             'email': 'arjun.menon@rajagiri.edu', 'role': 'Student',
-             'status': 'Active', 'last_login': 'Jul 15, 2026'},
-            {'id': 5, 'name': 'Anika Sharma',
-             'email': 'anika.sharma@rajagiri.edu', 'role': 'Student',
-             'status': 'Active', 'last_login': 'Jul 14, 2026'},
-            {'id': 6, 'name': 'Vishnu Prasad',
-             'email': 'vishnu.prasad@rajagiri.edu', 'role': 'Student',
-             'status': 'Active', 'last_login': 'Jul 12, 2026'},
-            {'id': 7, 'name': 'Nandita Krishnan',
-             'email': 'nandita.k@rajagiri.edu', 'role': 'Student',
-             'status': 'Inactive', 'last_login': 'Jun 20, 2026'},
+            {
+                'id': 1,
+                'name': 'Dr. Jaya Vijayan',
+                'email': 'jayad@rajagiri.edu',
+                'role': 'Dean', # System Admin
+                'is_admin': True,
+                'designation': 'Dean of Student Affairs',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 22, 2026'
+            },
+            {
+                'id': 2,
+                'name': 'Dr. Bindiya M Varghese',
+                'email': 'bindiyad@rajagiri.edu',
+                'role': 'Committee Head',
+                'is_admin': False,
+                'designation': 'Dean',
+                'department': 'Computer Science',
+                'is_hod': True, # Dept Dean / HOD
+                'status': 'Active',
+                'last_login': 'Jul 21, 2026'
+            },
+            {
+                'id': 3,
+                'name': 'Mr. Diljith K Benny',
+                'email': 'diljithd@rajagiri.edu',
+                'role': 'Committee Head',
+                'is_admin': False,
+                'designation': 'Assistant Professor',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 20, 2026'
+            },
+            {
+                'id': 4,
+                'name': 'Dr. Ann Baby',
+                'email': 'annd@rajagiri.edu',
+                'role': 'Committee Head',
+                'is_admin': False,
+                'designation': 'Assistant Professor',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 19, 2026'
+            },
+            {
+                'id': 5,
+                'name': 'Jobin Jaison K',
+                'email': 'jobinjaisond@rajagiri.edu',
+                'role': 'Committee Head',
+                'is_admin': False,
+                'designation': 'Teaching Associate',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 18, 2026'
+            },
+            {
+                'id': 6,
+                'name': 'Arjun Menon',
+                'email': 'arjun.menon@rajagiri.edu',
+                'role': 'Student',
+                'is_admin': False,
+                'designation': 'Student',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 22, 2026'
+            },
+            {
+                'id': 7,
+                'name': 'Anika Sharma',
+                'email': 'anika.sharma@rajagiri.edu',
+                'role': 'Student',
+                'is_admin': False,
+                'designation': 'Student',
+                'department': 'Computer Science',
+                'is_hod': False,
+                'status': 'Active',
+                'last_login': 'Jul 21, 2026'
+            },
         ],
     }
     return render(request, 'accounts/user_management.html', context)
+
+
+def course_dept_management_view(request):
+    """Course and Department management page for Dean."""
+    context = {
+        'user_role': 'dean',
+        'user_name': 'Dr. Jaya Vijayan',
+        'courses': [
+            {'id': 1, 'name': 'BBA F&B', 'code': 'bba', 'years': 3, 'dept': 'Business Administration'},
+            {'id': 2, 'name': 'IMBA (Integrated MBA)', 'code': 'imba', 'years': 5, 'dept': 'Business Administration'},
+            {'id': 3, 'name': 'BCA', 'code': 'bca', 'years': 3, 'dept': 'Computer Science'},
+            {'id': 4, 'name': 'BSc Computer Science', 'code': 'bsccs', 'years': 3, 'dept': 'Computer Science'},
+            {'id': 5, 'name': 'IMCA (Integrated MCA)', 'code': 'imca', 'years': 5, 'dept': 'Computer Science'},
+            {'id': 6, 'name': 'MCA (Master of Computer Applications)', 'code': 'mca', 'years': 2, 'dept': 'Computer Science'},
+            {'id': 7, 'name': 'MSc Computer Science', 'code': 'msccs', 'years': 2, 'dept': 'Computer Science'},
+            {'id': 8, 'name': 'BSc Psychology', 'code': 'psy', 'years': 3, 'dept': 'Psychology'},
+            {'id': 9, 'name': 'MSc Counselling Psychology', 'code': 'msycp', 'years': 2, 'dept': 'Psychology'},
+            {'id': 10, 'name': 'MSW', 'code': 'msw', 'years': 2, 'dept': 'Social Work'},
+            {'id': 11, 'name': 'PGDCSW', 'code': 'pgd', 'years': 1, 'dept': 'Social Work'},
+        ],
+        'departments': [
+            {'id': 1, 'name': 'Computer Science', 'hod': 'Dr. Bindiya M Varghese', 'faculty_count': 21, 'courses_count': 5},
+            {'id': 2, 'name': 'Business Administration', 'hod': 'Unassigned', 'faculty_count': 0, 'courses_count': 2},
+            {'id': 3, 'name': 'Commerce', 'hod': 'Unassigned', 'faculty_count': 0, 'courses_count': 0},
+            {'id': 4, 'name': 'Psychology', 'hod': 'Unassigned', 'faculty_count': 0, 'courses_count': 2},
+            {'id': 5, 'name': 'Social Work', 'hod': 'Dr. Kiran Thampi', 'faculty_count': 1, 'courses_count': 2},
+        ],
+        'faculty_members': [
+            {'id': 1, 'name': 'Dr. Bindiya M Varghese', 'dept': 'Computer Science'},
+            {'id': 2, 'name': 'Dr. Kiran Thampi', 'dept': 'Social Work'},
+            {'id': 3, 'name': 'Dr. Jaya Vijayan', 'dept': 'Computer Science'},
+            {'id': 4, 'name': 'Mr. Diljith K Benny', 'dept': 'Computer Science'},
+        ]
+    }
+    return render(request, 'events/course_dept_management.html', context)
+
 
 
 def reports_view(request):

@@ -13,7 +13,7 @@
             <!-- ================= DEAN SIDEBAR NAVIGATION ================= -->
             {% if user.is_staff or user_role == 'dean' %}
                 <li class="nav-item">
-                    <a href="/dean/dashboard/" class="sidebar-link {% if request.path == '/dean/dashboard/' or user_role == 'dean' and not 'events' in request.path and not 'committees' in request.path and not 'approvals' in request.path and not 'users' in request.path and not 'reports' in request.path %}active{% endif %}" data-title="Dashboard">
+                    <a href="/dean/dashboard/" class="sidebar-link {% if request.path == '/dean/dashboard/' or user_role == 'dean' and not 'events' in request.path and not 'committees' in request.path and not 'approvals' in request.path and not 'users' in request.path and not 'courses' in request.path and not 'reports' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Dashboard</span>
                     </a>
@@ -41,6 +41,12 @@
                     <a href="/dean/users/" class="sidebar-link {% if '/dean/users/' in request.path or 'users' in request.path and user_role == 'dean' %}active{% endif %}" data-title="User Management">
                         <i class="fa-solid fa-users-gear"></i>
                         <span>Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dean/courses/" class="sidebar-link {% if '/dean/courses/' in request.path or 'courses' in request.path and user_role == 'dean' %}active{% endif %}" data-title="Courses & Depts">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Courses & Depts</span>
                     </a>
                 </li>
                 <li class="nav-item">
