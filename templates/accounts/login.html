@@ -32,8 +32,17 @@
         <h1 class="login-title">VolunteerHub</h1>
         <p class="login-subtitle">Rajagiri College of Social Sciences</p>
 
-        <!-- Dummy form for UI representation (will wire up to Django view later) -->
-        <form method="post" action="/dashboard/" novalidate>
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} py-2 px-3 mb-2" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'accounts:login' %}" novalidate>
             {% csrf_token %}
 
             <div class="form-group text-start">

@@ -3,11 +3,16 @@
 {% block title %}Courses & Departments Management — VolunteerHub{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
+<!-- Page Header with ? Help Toggle Button (Fix 2) -->
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
     <div>
-        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Courses & Department Setup</h2>
-        <p class="text-muted mb-0" style="font-size: 0.9rem;">Configure student email short codes, course durations, and institutional departments</p>
+        <div class="d-flex align-items-center gap-2">
+            <h2 class="h3 font-weight-bold mb-0" style="color: var(--clr-primary); font-weight: 700;">Courses & Department Setup</h2>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm" id="toggleInfoBtn" data-bs-toggle="collapse" data-bs-target="#emailParsingInfoCard" aria-expanded="false" aria-controls="emailParsingInfoCard" title="How automated email parsing works" style="width: 32px; height: 32px; padding: 0; line-height: 30px; border-color: #cbd5e1;">
+                <i class="fa-solid fa-circle-question fs-6 text-primary"></i>
+            </button>
+        </div>
+        <p class="text-muted mb-0 mt-1" style="font-size: 0.9rem;">Configure student email short codes, course durations, and institutional departments</p>
     </div>
     <div class="d-flex gap-2">
         <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCourseModal">
@@ -19,79 +24,83 @@
     </div>
 </div>
 
-<!-- Technical Explanation Banner Card for Student Email Parsing Script -->
-<div class="content-card mb-4 p-4 border-0 shadow-sm" style="border-radius: var(--radius-lg); background: #ffffff; border-top: 4px solid var(--clr-primary) !important;">
-    <div class="d-flex align-items-center gap-3 mb-3 pb-2 border-bottom">
-        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: var(--clr-primary) !important;">
-            <i class="fa-solid fa-robot fs-5"></i>
+<!-- Technical Explanation Banner Card (Collapsible via ? button, Fix 2) -->
+<div class="collapse mb-4" id="emailParsingInfoCard">
+    <div class="content-card p-4 border-0 shadow-sm" style="border-radius: var(--radius-lg); background: #ffffff; border-top: 4px solid var(--clr-primary) !important;">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: var(--clr-primary) !important;">
+                    <i class="fa-solid fa-robot fs-5"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: var(--clr-primary); font-size: 1.1rem;">
+                        Automated Student Email Parsing & Registration Pipeline
+                    </h5>
+                    <span class="text-muted" style="font-size: 0.85rem;">
+                        Zero-touch onboarding algorithm executed automatically when students log in via Google Auth (<code>@rajagiri.edu</code>)
+                    </span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#emailParsingInfoCard" aria-label="Close"></button>
         </div>
-        <div>
-            <h5 class="fw-bold mb-0" style="color: var(--clr-primary); font-size: 1.1rem;">
-                Automated Student Email Parsing & Registration Pipeline
-            </h5>
-            <span class="text-muted" style="font-size: 0.85rem;">
-                Zero-touch onboarding algorithm executed automatically when students log in via Google Auth (<code>@rajagiri.edu</code>)
+
+        <!-- 3 Step Breakdown Cards -->
+        <div class="row g-3 mb-3">
+            <div class="col-lg-4">
+                <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 1</span>
+                        <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-at me-1 text-primary"></i> Email Tokenizer</strong>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                        Extracts the course code prefix and the trailing 4 digits from the email address before <code>@rajagiri.edu</code>.
+                    </p>
+                    <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                        <code>msccs2524@rajagiri.edu</code> &rarr;<br>
+                        Prefix: <strong class="text-success">msccs</strong> | Year: <strong class="text-primary">25</strong> | Roll: <strong>24</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-success text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 2</span>
+                        <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-table-list me-1 text-success"></i> Short Form Lookup</strong>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                        Matches prefix (<code>msccs</code>) against this Course Configuration ledger to resolve metadata.
+                    </p>
+                    <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                        Course: <strong>MSc Computer Science</strong><br>
+                        Duration: <strong>2 Years</strong> | Dept: <strong>Computer Science</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge text-white rounded-pill px-2 py-1" style="font-size: 0.75rem; background-color: #6f42c1;">Step 3</span>
+                        <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-wand-magic-sparkles me-1" style="color: #6f42c1;"></i> Auto Batch & Semester</strong>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
+                        Calculates graduation range and auto-computes current semester from current date.
+                    </p>
+                    <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
+                        Batch: <strong style="color: #6f42c1;">MSCCS - 25-27</strong><br>
+                        Current Status: <strong class="text-success">Semester 3</strong> (Auto-Calculated)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-2.5 px-3 rounded-3 d-flex align-items-center gap-2" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+            <i class="fa-solid fa-lightbulb text-success"></i>
+            <span class="text-success fw-medium" style="font-size: 0.83rem;">
+                <strong>Pro Tip:</strong> Adding a new course short form here instantly enables automatic Google Auth onboarding for all students in that program.
             </span>
         </div>
-    </div>
-
-    <!-- 3 Step Breakdown Cards -->
-    <div class="row g-3 mb-3">
-        <div class="col-lg-4">
-            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-primary text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 1</span>
-                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-at me-1 text-primary"></i> Email Tokenizer</strong>
-                </div>
-                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
-                    Extracts the course code prefix and the trailing 4 digits from the email address before <code>@rajagiri.edu</code>.
-                </p>
-                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
-                    <code>msccs2524@rajagiri.edu</code> &rarr;<br>
-                    Prefix: <strong class="text-success">msccs</strong> | Year: <strong class="text-primary">25</strong> | Roll: <strong>24</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-success text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">Step 2</span>
-                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-table-list me-1 text-success"></i> Short Form Lookup</strong>
-                </div>
-                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
-                    Matches prefix (<code>msccs</code>) against this Course Configuration ledger to resolve metadata.
-                </p>
-                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
-                    Course: <strong>MSc Computer Science</strong><br>
-                    Duration: <strong>2 Years</strong> | Dept: <strong>Computer Science</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="p-3 rounded-3 h-100 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge text-white rounded-pill px-2 py-1" style="font-size: 0.75rem; background-color: #6f42c1;">Step 3</span>
-                    <strong class="text-dark" style="font-size: 0.9rem;"><i class="fa-solid fa-wand-magic-sparkles me-1" style="color: #6f42c1;"></i> Auto Batch & Semester</strong>
-                </div>
-                <p class="text-muted mb-2" style="font-size: 0.82rem; line-height: 1.45;">
-                    Calculates graduation range and auto-computes current semester from current date.
-                </p>
-                <div class="bg-white p-2 rounded border" style="font-size: 0.78rem;">
-                    Batch: <strong class="text-purple" style="color: #6f42c1;">MSCCS - 25-27</strong><br>
-                    Current Status: <strong class="text-success">Semester 3</strong> (Auto-Calculated)
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tip Banner -->
-    <div class="p-2.5 px-3 rounded-3 d-flex align-items-center gap-2" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
-        <i class="fa-solid fa-lightbulb text-success"></i>
-        <span class="text-dark" style="font-size: 0.82rem;">
-            <strong>Pro Tip:</strong> Adding a new course short form here instantly enables automatic Google Auth onboarding for all students in that program.
-        </span>
     </div>
 </div>
 
@@ -99,20 +108,34 @@
 <!-- SECTION 1: COURSE CONFIGURATIONS TABLE -->
 <!-- ========================================================================= -->
 <div class="content-card mb-4 shadow-sm" style="border-radius: var(--radius-lg);">
-    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 pb-2 border-bottom gap-2">
         <div>
             <h4 class="h5 font-weight-bold mb-1" style="color: var(--clr-primary); font-weight: 700;">
                 <i class="fa-solid fa-graduation-cap me-2"></i> Configured Academic Courses
             </h4>
             <span class="text-muted" style="font-size: 0.82rem;">Courses registered for student email code parsing and volunteer allocation</span>
         </div>
-        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-            <i class="fa-solid fa-plus me-1"></i> Add New Course
-        </button>
+
+        <!-- Fix 3: Course Search Bar & Dept Filter -->
+        <div class="d-flex gap-2 w-100 w-md-auto align-items-center">
+            <div class="input-group input-group-sm" style="max-width: 220px;">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="courseSearchInput" class="form-control border-start-0" placeholder="Search course or code..." style="font-size: 0.82rem;">
+            </div>
+            <select id="courseDeptFilter" class="form-select form-select-sm" style="max-width: 180px; font-size: 0.82rem;">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.name }}">{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-sm btn-primary flex-shrink-0" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                <i class="fa-solid fa-plus me-1"></i> Add Course
+            </button>
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table-custom">
+        <table class="table-custom text-nowrap" id="coursesTable" style="font-size: 0.88rem; width: 100%;">
             <thead>
                 <tr>
                     <th style="width: 50px;">#</th>
@@ -120,27 +143,31 @@
                     <th>Email Short Form (Code)</th>
                     <th>Duration</th>
                     <th>Department</th>
-                    <th style="width: 100px;">Actions</th>
+                    <th style="width: 110px;" class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for course in courses %}
-                <tr>
+                <tr class="course-row" data-name="{{ course.name|lower }}" data-code="{{ course.code|lower }}" data-dept="{{ course.dept }}">
                     <td class="text-muted" style="font-size: 0.85rem;">{{ forloop.counter }}</td>
-                    <td style="font-weight: 600;">{{ course.name }}</td>
+                    <td style="font-weight: 600;" class="course-title-cell">{{ course.name }}</td>
                     <td>
                         <code class="px-2 py-1 bg-light border rounded text-success fw-bold" style="font-size: 0.88rem; letter-spacing: 0.5px;">{{ course.code }}</code>
                     </td>
                     <td style="font-size: 0.88rem;">{{ course.years }} Year{% if course.years > 1 %}s{% endif %}</td>
                     <td>
-                        <span class="badge bg-light text-dark border" style="font-size: 0.8rem; font-weight: 500;">{{ course.dept }}</span>
+                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.8rem; font-weight: 500;">{{ course.dept }}</span>
                     </td>
-                    <td>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-secondary py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Edit Course">
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <!-- Edit Course Button -->
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Edit Course"
+                                    onclick="openEditCourseModal('{{ course.id }}', '{{ course.name|escapejs }}', '{{ course.code|escapejs }}', '{{ course.years }}', '{{ course.dept|escapejs }}')">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-secondary py-1 px-2 text-danger" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Remove Course">
+                            <!-- Delete Course Button -->
+                            <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Delete Course"
+                                    onclick="openDeleteCourseModal('{{ course.id }}', '{{ course.name|escapejs }}')">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -173,14 +200,14 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table-custom bg-white">
+        <table class="table-custom bg-white text-nowrap" style="font-size: 0.88rem; width: 100%;">
             <thead>
                 <tr>
                     <th>Department Name</th>
                     <th>Department Dean / HOD</th>
                     <th>Faculty Count</th>
                     <th>Active Courses</th>
-                    <th style="width: 100px;">Actions</th>
+                    <th style="width: 110px;" class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -196,10 +223,15 @@
                     </td>
                     <td style="font-size: 0.85rem;">{{ dept.faculty_count }} Faculty Member{% if dept.faculty_count != 1 %}s{% endif %}</td>
                     <td style="font-size: 0.85rem;">{{ dept.courses_count }} Course{% if dept.courses_count != 1 %}s{% endif %}</td>
-                    <td>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-secondary py-1 px-2" style="font-size: 0.75rem;" title="Edit Department">
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;" title="Edit Department"
+                                    onclick="openEditDeptModal('{{ dept.name|escapejs }}', '{{ dept.hod_id }}')">
                                 <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem;" title="Delete Department"
+                                    onclick="openDeleteDeptModal('{{ dept.name|escapejs }}')">
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -216,8 +248,10 @@
 
 
 <!-- ========================================================================= -->
-<!-- MODAL 1: ADD NEW COURSE MODAL -->
+<!-- MODALS -->
 <!-- ========================================================================= -->
+
+<!-- MODAL 1: ADD NEW COURSE MODAL -->
 <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
@@ -227,29 +261,30 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="." method="post" id="addCourseForm">
+            <form action="" method="post" id="addCourseForm">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="add_course">
                 <div class="modal-body p-4 text-start">
                     <div class="form-group mb-3">
-                        <label class="form-label" for="course_name">Full Course Name</label>
-                        <input type="text" id="course_name" name="name" class="form-control" placeholder="e.g. Master of Computer Applications" required>
+                        <label class="form-label" for="add_course_name">Full Course Name</label>
+                        <input type="text" id="add_course_name" name="course_name" class="form-control" placeholder="e.g. Master of Computer Applications" required>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6 form-group">
-                            <label class="form-label" for="course_code">Email Short Form (Code)</label>
-                            <input type="text" id="course_code" name="code" class="form-control text-lowercase" placeholder="e.g. mca or msccs" required>
+                            <label class="form-label" for="add_course_code">Email Short Form (Code)</label>
+                            <input type="text" id="add_course_code" name="course_code" class="form-control text-lowercase" placeholder="e.g. mca or msccs" required>
                             <span class="d-block text-muted mt-1" style="font-size: 0.72rem;">Lowercase prefix before 4-digit year+roll.</span>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label class="form-label" for="course_years">Duration (Years)</label>
-                            <input type="number" id="course_years" name="years" class="form-control" min="1" max="6" value="2" required>
+                            <label class="form-label" for="add_course_years">Duration (Years)</label>
+                            <input type="number" id="add_course_years" name="course_years" class="form-control" min="1" max="6" value="2" required>
                         </div>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="form-label" for="course_dept">Department</label>
-                        <select id="course_dept" name="department" class="form-select" required>
+                        <label class="form-label" for="add_course_dept">Department</label>
+                        <select id="add_course_dept" name="course_dept" class="form-select" required>
                             {% for dept in departments %}
                                 <option value="{{ dept.name }}">{{ dept.name }}</option>
                             {% empty %}
@@ -261,10 +296,6 @@
                             {% endfor %}
                         </select>
                     </div>
-
-                    <div class="alert alert-success py-2 px-3 mb-0" style="font-size: 0.78rem;">
-                        <i class="fa-solid fa-circle-check me-1"></i> Saving this course will immediately support auto-registration for student emails like <code>mca2501@rajagiri.edu</code>.
-                    </div>
                 </div>
                 <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -275,10 +306,93 @@
     </div>
 </div>
 
+<!-- MODAL 2: EDIT COURSE MODAL (Fix 6) -->
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="editCourseModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> Edit Course Configuration
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="editCourseForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_course">
+                <input type="hidden" name="course_id" id="edit_course_id">
+                <div class="modal-body p-4 text-start">
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="edit_course_name">Full Course Name</label>
+                        <input type="text" id="edit_course_name" name="course_name" class="form-control" required>
+                    </div>
 
-<!-- ========================================================================= -->
-<!-- MODAL 2: ADD NEW DEPARTMENT MODAL -->
-<!-- ========================================================================= -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="edit_course_code">Email Short Form (Code)</label>
+                            <input type="text" id="edit_course_code" name="course_code" class="form-control text-lowercase" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="edit_course_years">Duration (Years)</label>
+                            <input type="number" id="edit_course_years" name="course_years" class="form-control" min="1" max="6" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="edit_course_dept">Department</label>
+                        <select id="edit_course_dept" name="course_dept" class="form-select" required>
+                            {% for dept in departments %}
+                                <option value="{{ dept.name }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: DELETE COURSE CONFIRMATION MODAL (Type DELETE to confirm - Fix 6) -->
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-danger text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="modal-title" id="deleteCourseModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Delete Course
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="deleteCourseForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_course">
+                <input type="hidden" name="course_id" id="delete_course_id">
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-3 text-dark">
+                        Are you sure you want to delete the course <strong id="delete_course_name_display" class="text-danger"></strong>?
+                    </p>
+                    <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i> This action cannot be undone and will prevent new student logins for this short code.
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label text-muted" style="font-size: 0.85rem;" for="deleteCourseConfirmInput">
+                            Please type <strong class="text-danger">DELETE</strong> to confirm:
+                        </label>
+                        <input type="text" id="deleteCourseConfirmInput" name="confirm_delete" class="form-control text-uppercase" placeholder="DELETE" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteCourseSubmitBtn" class="btn btn-danger" disabled>Delete Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: ADD NEW DEPARTMENT MODAL -->
 <div class="modal fade" id="addDeptModal" tabindex="-1" aria-labelledby="addDeptModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
@@ -288,20 +402,21 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="." method="post" id="addDeptForm">
+            <form action="" method="post" id="addDeptForm">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="add_department">
                 <div class="modal-body p-4 text-start">
                     <div class="form-group mb-3">
-                        <label class="form-label" for="dept_name">Department Name</label>
-                        <input type="text" id="dept_name" name="name" class="form-control" placeholder="e.g. Commerce" required>
+                        <label class="form-label" for="add_dept_name">Department Name</label>
+                        <input type="text" id="add_dept_name" name="dept_name" class="form-control" placeholder="e.g. Commerce" required>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="form-label" for="dept_hod">Department Dean / HOD (Optional)</label>
-                        <select id="dept_hod" name="hod" class="form-select">
+                        <label class="form-label" for="add_dept_hod">Department Dean / HOD (Optional)</label>
+                        <select id="add_dept_hod" name="dept_hod" class="form-select">
                             <option value="">Unassigned (Assign Later)</option>
                             {% for faculty in faculty_members %}
-                                <option value="{{ faculty.name }}">{{ faculty.name }} ({{ faculty.dept }})</option>
+                                <option value="{{ faculty.id }}">{{ faculty.name }} ({{ faculty.dept }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -315,4 +430,174 @@
     </div>
 </div>
 
+<!-- MODAL 5: EDIT DEPARTMENT MODAL (Fix 6) -->
+<div class="modal fade" id="editDeptModal" tabindex="-1" aria-labelledby="editDeptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="editDeptModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> Edit Department
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="editDeptForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_department">
+                <input type="hidden" name="old_dept_name" id="edit_old_dept_name">
+                <div class="modal-body p-4 text-start">
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="edit_dept_name">Department Name</label>
+                        <input type="text" id="edit_dept_name" name="dept_name" class="form-control" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="edit_dept_hod">Department Dean / HOD</label>
+                        <select id="edit_dept_hod" name="dept_hod" class="form-select">
+                            <option value="">Unassigned</option>
+                            {% for faculty in faculty_members %}
+                                <option value="{{ faculty.id }}">{{ faculty.name }} ({{ faculty.dept }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 6: DELETE DEPARTMENT MODAL (Type DELETE to confirm - Fix 6) -->
+<div class="modal fade" id="deleteDeptModal" tabindex="-1" aria-labelledby="deleteDeptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-danger text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="modal-title" id="deleteDeptModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Delete Department
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="deleteDeptForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_department">
+                <input type="hidden" name="dept_name" id="delete_dept_name">
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-3 text-dark">
+                        Are you sure you want to delete the department <strong id="delete_dept_name_display" class="text-danger"></strong>?
+                    </p>
+                    <div class="form-group mb-0">
+                        <label class="form-label text-muted" style="font-size: 0.85rem;" for="deleteDeptConfirmInput">
+                            Please type <strong class="text-danger">DELETE</strong> to confirm:
+                        </label>
+                        <input type="text" id="deleteDeptConfirmInput" name="confirm_delete" class="form-control text-uppercase" placeholder="DELETE" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteDeptSubmitBtn" class="btn btn-danger" disabled>Delete Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Inline JavaScript for Fix 3 (Course Search & Filter) and Fix 6 (Modals & DELETE confirmation) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // -------------------------------------------------------------
+    // Fix 3: Live Course Table Search & Department Filtering
+    // -------------------------------------------------------------
+    const searchInput = document.getElementById('courseSearchInput');
+    const deptFilter = document.getElementById('courseDeptFilter');
+    const rows = document.querySelectorAll('.course-row');
+
+    function filterCourses() {
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const dept = deptFilter ? deptFilter.value : '';
+
+        rows.forEach(row => {
+            const rName = row.getAttribute('data-name') || '';
+            const rCode = row.getAttribute('data-code') || '';
+            const rDept = row.getAttribute('data-dept') || '';
+
+            const matchesSearch = !query || rName.includes(query) || rCode.includes(query);
+            const matchesDept = !dept || rDept === dept;
+
+            if (matchesSearch && matchesDept) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterCourses);
+    if (deptFilter) deptFilter.addEventListener('change', filterCourses);
+
+    // -------------------------------------------------------------
+    // Fix 6: Delete Confirmation Input Enabling ('DELETE' logic)
+    // -------------------------------------------------------------
+    const deleteCourseConfirmInput = document.getElementById('deleteCourseConfirmInput');
+    const deleteCourseSubmitBtn = document.getElementById('deleteCourseSubmitBtn');
+
+    if (deleteCourseConfirmInput && deleteCourseSubmitBtn) {
+        deleteCourseConfirmInput.addEventListener('input', function() {
+            deleteCourseSubmitBtn.disabled = (this.value.trim() !== 'DELETE');
+        });
+    }
+
+    const deleteDeptConfirmInput = document.getElementById('deleteDeptConfirmInput');
+    const deleteDeptSubmitBtn = document.getElementById('deleteDeptSubmitBtn');
+
+    if (deleteDeptConfirmInput && deleteDeptSubmitBtn) {
+        deleteDeptConfirmInput.addEventListener('input', function() {
+            deleteDeptSubmitBtn.disabled = (this.value.trim() !== 'DELETE');
+        });
+    }
+});
+
+// Modal prefill functions
+function openEditCourseModal(id, name, code, years, dept) {
+    document.getElementById('edit_course_id').value = id;
+    document.getElementById('edit_course_name').value = name;
+    document.getElementById('edit_course_code').value = code;
+    document.getElementById('edit_course_years').value = years;
+    document.getElementById('edit_course_dept').value = dept;
+
+    const modal = new bootstrap.Modal(document.getElementById('editCourseModal'));
+    modal.show();
+}
+
+function openDeleteCourseModal(id, name) {
+    document.getElementById('delete_course_id').value = id;
+    document.getElementById('delete_course_name_display').textContent = name;
+    document.getElementById('deleteCourseConfirmInput').value = '';
+    document.getElementById('deleteCourseSubmitBtn').disabled = true;
+
+    const modal = new bootstrap.Modal(document.getElementById('deleteCourseModal'));
+    modal.show();
+}
+
+function openEditDeptModal(name, hodId) {
+    document.getElementById('edit_old_dept_name').value = name;
+    document.getElementById('edit_dept_name').value = name;
+    document.getElementById('edit_dept_hod').value = hodId || '';
+
+    const modal = new bootstrap.Modal(document.getElementById('editDeptModal'));
+    modal.show();
+}
+
+function openDeleteDeptModal(name) {
+    document.getElementById('delete_dept_name').value = name;
+    document.getElementById('delete_dept_name_display').textContent = name;
+    document.getElementById('deleteDeptConfirmInput').value = '';
+    document.getElementById('deleteDeptSubmitBtn').disabled = true;
+
+    const modal = new bootstrap.Modal(document.getElementById('deleteDeptModal'));
+    modal.show();
+}
+</script>
 {% endblock %}

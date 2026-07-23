@@ -14,111 +14,183 @@
     </button>
 </div>
 
-<!-- Filters -->
+<!-- Filters Bar (Fix 2: Instant search, x clear button, onchange submit) -->
 <div class="content-card mb-4" style="padding: 16px 24px;">
-    <form method="get" class="row g-3 align-items-center">
+    <form method="get" id="userFilterForm" class="row g-3 align-items-center">
         <div class="col-md-6">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: var(--clr-border);"><i class="fa-solid fa-user-tag"></i></span>
-                <input type="text" name="search" class="form-control border-start-0" placeholder="Search user by name or email..." style="border-color: var(--clr-border);">
+                <input type="text" name="search" id="userSearchInput" class="form-control border-start-0 border-end-0" placeholder="Search user by name, email, or department..." style="border-color: var(--clr-border);" value="{{ search_query }}" autocomplete="off">
+                <button type="button" class="input-group-text bg-white border-start-0 text-muted {% if not search_query %}d-none{% endif %}" id="clearUserSearchBtn" style="border-color: var(--clr-border); cursor: pointer;" title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
         </div>
-        <div class="col-md-3">
-            <select name="role" class="form-control" style="border-color: var(--clr-border);">
+        <div class="col-md-4">
+            <select name="role" class="form-control" onchange="this.form.submit();" style="border-color: var(--clr-border); cursor: pointer;">
                 <option value="">All Roles</option>
-                <option value="dean">Dean (Admin)</option>
-                <option value="committee_head">Committee Head</option>
-                <option value="student">Student Volunteer</option>
+                <option value="dean" {% if selected_role == 'dean' %}selected{% endif %}>Dean (System Admin)</option>
+                <option value="committee_head" {% if selected_role == 'committee_head' %}selected{% endif %}>Committee Head / Faculty</option>
+                <option value="student" {% if selected_role == 'student' %}selected{% endif %}>Student Volunteer</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <button type="submit" class="btn btn-primary w-100 p-2" style="font-size: 0.9rem;">Search Users</button>
+        <div class="col-md-2">
+            {% if search_query or selected_role %}
+            <a href="." class="btn btn-outline-secondary w-100 p-2" style="font-size: 0.9rem;">
+                <i class="fa-solid fa-filter-circle-xmark me-1"></i> Clear Filters
+            </a>
+            {% else %}
+            <button type="submit" class="btn btn-primary w-100 p-2" style="font-size: 0.9rem;">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Search
+            </button>
+            {% endif %}
         </div>
     </form>
 </div>
 
-<!-- Users List -->
+<!-- Users List Table -->
 <div class="content-card">
-    <div class="table-responsive">
-        <table class="table-custom">
+    <div class="table-responsive" style="overflow-x: auto;">
+        <table class="table-custom text-nowrap" id="usersTable" style="font-size: 0.85rem; width: 100%;">
             <thead>
                 <tr>
-                    <th>Full Name</th>
-                    <th>Email Address</th>
-                    <th>Department</th>
-                    <th>Designation / Role</th>
-                    <th>Privileges</th>
-                    <th>Account Status</th>
-                    <th>Last Active</th>
-                    <th>Actions</th>
+                    <th style="padding: 10px 12px;">Full Name</th>
+                    <th style="padding: 10px 12px;">Email Address</th>
+                    <th style="padding: 10px 12px;">Department</th>
+                    <th style="padding: 10px 12px;">Designation / Role</th>
+                    <th style="padding: 10px 12px;">Privileges</th>
+                    <th style="padding: 10px 12px;">Account Status</th>
+                    <th style="padding: 10px 12px;">Last Active</th>
+                    <th style="padding: 10px 12px;" class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user_row in users %}
-                <tr>
-                    <td>
-                        <div class="fw-bold">{{ user_row.name }}</div>
+                <tr class="user-row" data-name="{{ user_row.name|lower }}" data-email="{{ user_row.email|lower }}" data-dept="{{ user_row.department|lower }}">
+                    <td style="padding: 10px 12px;">
+                        <div class="fw-bold text-dark">{{ user_row.name }}</div>
                     </td>
-                    <td class="text-muted" style="font-size: 0.85rem;">{{ user_row.email }}</td>
-                    <td style="font-size: 0.85rem;">{{ user_row.department|default:"Computer Science" }}</td>
-                    <td>
-                        {% if user_row.is_admin %}
-                            <span class="badge text-white" style="font-size: 0.75rem; border-radius: 50px; padding: 4px 10px; background-color: #6f42c1;">
-                                <i class="fa-solid fa-user-shield me-1"></i> {{ user_row.designation|default:"Dean of Student Affairs" }}
+                    <td style="padding: 10px 12px;">
+                        <span class="text-muted" style="font-family: monospace; font-size: 0.82rem;">{{ user_row.email }}</span>
+                    </td>
+                    <td style="padding: 10px 12px;">
+                        <span class="text-secondary fw-medium">{{ user_row.department|default:"—" }}</span>
+                    </td>
+                    <td style="padding: 10px 12px;">
+                        {% if user_row.designation == 'Dean of Student Affairs' %}
+                            <span class="badge rounded-pill text-white px-2.5 py-1" style="background-color: #6f42c1; font-size: 0.75rem; font-weight: 600;">
+                                <i class="fa-solid fa-user-shield me-1"></i> Dean of Student Affairs
                             </span>
                         {% elif user_row.is_hod %}
-                            <span class="badge bg-primary text-white" style="font-size: 0.75rem; border-radius: 50px; padding: 4px 10px; background-color: var(--clr-primary) !important;">
-                                <i class="fa-solid fa-graduation-cap me-1"></i> Dean of {{ user_row.department }}
+                            <span class="badge rounded-pill text-white px-2.5 py-1" style="background-color: #0d6efd; font-size: 0.75rem; font-weight: 600;">
+                                <i class="fa-solid fa-building-columns me-1"></i> Dean (HOD)
                             </span>
                         {% elif user_row.role == 'Committee Head' %}
-                            <span class="badge bg-info text-dark" style="font-size: 0.75rem; border-radius: 50px; padding: 4px 10px;">
+                            <span class="badge rounded-pill text-white px-2.5 py-1" style="background-color: #0dcaf0; font-size: 0.75rem; font-weight: 600;">
                                 {{ user_row.designation|default:"Faculty" }}
                             </span>
                         {% else %}
-                            <span class="badge bg-secondary text-white" style="font-size: 0.75rem; border-radius: 50px; padding: 4px 10px; background-color: #6c757d;">
+                            <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1" style="font-size: 0.75rem; font-weight: 500;">
                                 Student
                             </span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td style="padding: 10px 12px;">
                         {% if user_row.is_admin %}
-                            <span class="badge bg-purple-light text-purple fw-semibold" style="font-size: 0.72rem; padding: 3px 8px; border: 1px solid #6f42c1; border-radius: 4px; color: #6f42c1; background: #f3ebff;">
+                            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.73rem; font-weight: 600; border: 1px solid #ffe69c;">
                                 🔑 System Admin
                             </span>
                         {% elif user_row.is_hod %}
-                            <span class="badge bg-success-light text-success fw-semibold" style="font-size: 0.72rem; padding: 3px 8px; border: 1px solid #198754; border-radius: 4px; color: #198754; background: #e8f5e9;">
-                                🏛️ Department Dean
+                            <span class="badge bg-info text-dark px-2 py-1" style="font-size: 0.73rem; font-weight: 600; border: 1px solid #9eeaf9;">
+                                🏛️ Dept Dean
                             </span>
                         {% else %}
                             <span class="text-muted" style="font-size: 0.8rem;">Standard</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td style="padding: 10px 12px;">
                         {% if user_row.status == 'Active' %}
                             <span class="badge-custom badge-assigned">Active</span>
                         {% else %}
                             <span class="badge-custom badge-rejected">Inactive</span>
                         {% endif %}
                     </td>
-                    <td class="text-muted" style="font-size: 0.85rem;">{{ user_row.last_login }}</td>
-                    <td>
-                        <div class="d-flex gap-2">
-                            <a href="#" class="btn btn-secondary py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Edit User Details">
+                    <td class="text-muted" style="padding: 10px 12px; font-size: 0.82rem;">{{ user_row.last_login }}</td>
+                    <td style="padding: 10px 12px;" class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <!-- Fix 3: Working Edit Button -->
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Edit User Details"
+                                    onclick="openEditUserModal('{{ user_row.id }}', '{{ user_row.name|escapejs }}', '{{ user_row.email|escapejs }}', '{{ user_row.role }}', '{{ user_row.department|escapejs }}', '{{ user_row.designation|escapejs }}', {{ user_row.is_hod|yesno:'true,false' }})">
                                 <i class="fa-solid fa-user-pen"></i>
-                            </a>
-                            <a href="#" class="btn btn-secondary py-1 px-2 text-danger" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Deactivate User">
+                            </button>
+                            <!-- Fix 3: Working Delete Button -->
+                            <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.75rem; border-radius: var(--radius-sm);" title="Delete User"
+                                    onclick="openDeleteUserModal('{{ user_row.id }}', '{{ user_row.name|escapejs }}')">
                                 <i class="fa-solid fa-user-slash"></i>
-                            </a>
+                            </button>
                         </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-user-xmark fs-4 d-block mb-2"></i>
+                        No users found matching the filter criteria.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Controls (15 users per slide) -->
+    {% if users.has_other_pages %}
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-3 pt-3 border-top px-2 gap-2">
+        <div class="text-muted small">
+            Showing <strong>{{ users.start_index }}–{{ users.end_index }}</strong> of <strong>{{ total_user_count }}</strong> users
+        </div>
+        <nav aria-label="Users pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if users.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_role %}&role={{ selected_role }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo; Prev</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+                {% endif %}
+
+                {% for i in users.paginator.page_range %}
+                    {% if users.number == i %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link bg-primary border-primary">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_role %}&role={{ selected_role }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if users.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_role %}&role={{ selected_role }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">Next &raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Create User Modal -->
+<!-- ========================================================================= -->
+<!-- MODAL 1: CREATE USER MODAL -->
+<!-- ========================================================================= -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
@@ -128,52 +200,57 @@
             </div>
             <form action="." method="post" id="createUserForm">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="create_faculty">
                 <div class="modal-body p-4 text-start">
-                    <div class="row mb-3">
-                        <div class="col-6 form-group">
+                    <!-- System Role Choice -->
+                    <div class="form-group mb-4">
+                        <label class="form-label fw-bold" style="color: var(--clr-primary);">Assign System Role</label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded h-100 text-center role-option-card" style="background: #f8fafc; cursor: pointer;">
+                                    <input class="form-check-input mb-2 role-radio-choice" type="radio" name="role" id="role_student" value="student" checked>
+                                    <label class="form-check-label d-block fw-bold" for="role_student">Student Volunteer</label>
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Standard event volunteer access</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded h-100 text-center role-option-card" style="background: #f8fafc; cursor: pointer;">
+                                    <input class="form-check-input mb-2 role-radio-choice" type="radio" name="role" id="role_faculty" value="faculty">
+                                    <label class="form-check-label d-block fw-bold" for="role_faculty">Faculty / Committee Head</label>
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Manages committees & attendance</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded h-100 text-center role-option-card" style="background: #f8fafc; cursor: pointer;">
+                                    <input class="form-check-input mb-2 role-radio-choice" type="radio" name="role" id="role_dean" value="dean">
+                                    <label class="form-check-label d-block fw-bold" for="role_dean">System Admin (Dean)</label>
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Full system & approval privileges</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Information -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 form-group">
                             <label class="form-label" for="first_name">First Name</label>
-                            <input type="text" id="first_name" name="first_name" class="form-control" placeholder="e.g. Rahul" required>
+                            <input type="text" id="first_name" name="first_name" class="form-control" placeholder="e.g. Diljith" required>
                         </div>
-                        <div class="col-6 form-group">
+                        <div class="col-md-6 form-group">
                             <label class="form-label" for="last_name">Last Name</label>
-                            <input type="text" id="last_name" name="last_name" class="form-control" placeholder="e.g. Sharma" required>
+                            <input type="text" id="last_name" name="last_name" class="form-control" placeholder="e.g. Benny" required>
                         </div>
                     </div>
+
                     <div class="form-group mb-3">
-                        <label class="form-label" for="email">Institutional Email (@rajagiri.edu)</label>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="e.g. rahul@rajagiri.edu" required>
+                        <label class="form-label" for="email">Institutional Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="e.g. diljithd@rajagiri.edu" required>
                     </div>
 
-                    <!-- System Access Level Radio Choices -->
-                    <div class="form-group mb-3 p-3 bg-light rounded" style="border: 1px solid var(--clr-border);">
-                        <label class="form-label fw-bold d-block mb-2" style="font-size: 0.9rem;">System Access Role</label>
-                        <div class="d-flex flex-wrap gap-4">
-                            <div class="form-check">
-                                <input class="form-check-input role-radio-choice" type="radio" name="role" id="role_student" value="student" checked>
-                                <label class="form-check-label" for="role_student" style="cursor:pointer; font-size:0.9rem;">
-                                    <strong>Student Volunteer</strong>
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input role-radio-choice" type="radio" name="role" id="role_head" value="committee_head">
-                                <label class="form-check-label" for="role_head" style="cursor:pointer; font-size:0.9rem;">
-                                    <strong>Faculty Coordinator</strong>
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input role-radio-choice" type="radio" name="role" id="role_dean" value="dean">
-                                <label class="form-check-label" for="role_dean" style="cursor:pointer; font-size:0.9rem;">
-                                    <strong class="text-purple" style="color: #6f42c1;">System Admin (Dean of Student Affairs)</strong>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Faculty Specific Fields -->
+                    <div id="facultyFieldsSection" class="p-3 border rounded bg-light mb-3 d-none">
+                        <h6 class="fw-bold mb-3" style="color: var(--clr-primary);"><i class="fa-solid fa-graduation-cap me-1"></i> Institutional Faculty Details</h6>
 
-                    <!-- Faculty / Staff Specific Fields (Shown for Faculty / Admin) -->
-                    <div id="facultyFieldsSection" class="p-3 border rounded bg-white mb-3 d-none" style="border-color: #cbd5e1 !important;">
-                        <h6 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--clr-primary); font-size: 0.9rem;">
-                            <i class="fa-solid fa-id-badge me-1"></i> Faculty & Organizational Details
-                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label" for="department">Department</label>
@@ -203,24 +280,24 @@
                                 </select>
                             </div>
                             <div class="col-12 mt-3">
-                                <div class="p-3 bg-light rounded border d-flex align-items-center justify-content-between">
+                                <div class="p-3 bg-white rounded border d-flex align-items-center justify-content-between">
                                     <div>
                                         <label class="form-check-label fw-bold d-block mb-1" for="is_hod" style="cursor: pointer; color: var(--clr-primary); font-size: 0.9rem;">
                                             🏛️ Department Dean / HOD Status
                                         </label>
                                         <span class="text-muted d-block" style="font-size: 0.78rem;">
-                                            Check if this user is Head/Dean of their department (e.g. Dr. Bindiya M Varghese for CS). Retains standard faculty access in system.
+                                            Check if this user is Head/Dean of their department (e.g. Dr. Bindiya M Varghese for CS). Retains standard faculty access.
                                         </span>
                                     </div>
                                     <div class="form-check form-switch m-0 p-0 ps-3">
-                                        <input class="form-check-input" type="checkbox" id="is_hod" name="is_hod" style="width: 2.6em; height: 1.3em; cursor: pointer; float: none; margin: 0;">
+                                        <input class="form-check-input" type="checkbox" id="is_hod" name="is_hod" style="width: 2.6em; height: 1.3em; cursor: pointer;">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Student Specific Fields (Shown for Student) -->
+                    <!-- Student Specific Fields -->
                     <div id="studentFieldsSection" class="p-3 border rounded bg-white mb-3">
                         <div class="alert alert-info py-2 px-3 mb-0" style="font-size: 0.8rem;">
                             <i class="fa-solid fa-circle-info me-1"></i> Student batch, course, and semester details will be automatically assigned when the student logs in via Google Auth.
@@ -236,32 +313,252 @@
     </div>
 </div>
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleRadios = document.querySelectorAll('.role-radio-choice');
-        const facultySection = document.getElementById('facultyFieldsSection');
-        const studentSection = document.getElementById('studentFieldsSection');
+<!-- ========================================================================= -->
+<!-- MODAL 2: EDIT USER MODAL (Fix 3) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="editUserModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-user-pen me-2"></i> Edit User Profile & Credentials
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="editUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_user">
+                <input type="hidden" name="user_profile_id" id="edit_user_profile_id">
+                <div class="modal-body p-4 text-start">
+                    <div class="p-3 border rounded bg-light mb-3">
+                        <div class="fw-bold text-dark fs-6" id="edit_user_name_display"></div>
+                        <div class="text-muted small" id="edit_user_email_display" style="font-family: monospace;"></div>
+                    </div>
 
-        function toggleUserFields() {
-            const selectedRole = document.querySelector('.role-radio-choice:checked').value;
-            if (selectedRole === 'committee_head' || selectedRole === 'dean') {
-                facultySection.classList.remove('d-none');
-                studentSection.classList.add('d-none');
-            } else {
-                facultySection.classList.add('d-none');
-                studentSection.classList.remove('d-none');
-            }
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold" for="edit_user_role">System Role</label>
+                        <select id="edit_user_role" name="role" class="form-select">
+                            <option value="student">Student Volunteer</option>
+                            <option value="faculty">Faculty / Committee Head</option>
+                            <option value="dean">System Admin (Dean of Student Affairs)</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="edit_user_dept">Department</label>
+                            <select id="edit_user_dept" name="department" class="form-select">
+                                <option value="">None / Unassigned</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="edit_user_designation">Academic Designation</label>
+                            <select id="edit_user_designation" name="designation" class="form-select">
+                                <option value="">Student / None</option>
+                                {% for desig in designations %}
+                                    <option value="{{ desig }}">{{ desig }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-white rounded border d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <label class="form-check-label fw-bold d-block mb-1" for="edit_user_is_hod" style="cursor: pointer; color: var(--clr-primary); font-size: 0.9rem;">
+                                🏛️ Department Dean / HOD Status
+                            </label>
+                            <span class="text-muted d-block" style="font-size: 0.78rem;">
+                                Check if this user is Head/Dean of their department.
+                            </span>
+                        </div>
+                        <div class="form-check form-switch m-0 p-0 ps-3">
+                            <input class="form-check-input" type="checkbox" id="edit_user_is_hod" name="is_hod" style="width: 2.6em; height: 1.3em; cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save User Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: DELETE USER MODAL (Type DELETE to confirm - Fix 3) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-danger text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="modal-title" id="deleteUserModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-user-slash me-2"></i> Confirm Delete User Account
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="deleteUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_user">
+                <input type="hidden" name="user_profile_id" id="delete_user_profile_id">
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-3 text-dark">
+                        Are you sure you want to delete the user account <strong id="delete_user_name_display" class="text-danger"></strong>?
+                    </p>
+                    <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i> This will delete the user profile and credentials from the system.
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label text-muted" style="font-size: 0.85rem;" for="deleteUserConfirmInput">
+                            Please type <strong class="text-danger">DELETE</strong> to confirm:
+                        </label>
+                        <input type="text" id="deleteUserConfirmInput" name="confirm_delete" class="form-control text-uppercase" placeholder="DELETE" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteUserSubmitBtn" class="btn btn-danger" disabled>Delete Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Inline JavaScript for Fix 2 (Instant Search & Clear) and Fix 3 (Edit/Delete User Modals) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // -------------------------------------------------------------
+    // Fix 2: Instant Search, x clear button, and debounced submit
+    // -------------------------------------------------------------
+    const searchInput = document.getElementById('userSearchInput');
+    const clearBtn = document.getElementById('clearUserSearchBtn');
+    const form = document.getElementById('userFilterForm');
+    const userRows = document.querySelectorAll('.user-row');
+    let searchTimeout = null;
+
+    if (searchInput && clearBtn) {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Restore focus & cursor position whenever a search was executed (even if backspaced to empty)
+        if (urlParams.has('search')) {
+            searchInput.focus();
+            const len = searchInput.value.length;
+            try {
+                searchInput.setSelectionRange(len, len);
+            } catch(e) {}
         }
 
-        roleRadios.forEach(radio => {
-            radio.addEventListener('change', toggleUserFields);
+        if (searchInput.value.length > 0) {
+            clearBtn.classList.remove('d-none');
+        }
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+
+            if (this.value.length > 0) {
+                clearBtn.classList.remove('d-none');
+            } else {
+                clearBtn.classList.add('d-none');
+            }
+
+            // Instant client-side filtering on active visible page
+            userRows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const email = row.getAttribute('data-email') || '';
+                const dept = row.getAttribute('data-dept') || '';
+                if (!query || name.includes(query) || email.includes(query) || dept.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Debounced auto-submit after 700ms typing stops for full DB search
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                if (form) form.submit();
+            }, 700);
         });
 
-        // Initialize on load
-        toggleUserFields();
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            clearBtn.classList.add('d-none');
+            window.location.href = '.';
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Fix 3: Delete Confirmation Input Enabling ('DELETE' logic)
+    // -------------------------------------------------------------
+    const deleteUserConfirmInput = document.getElementById('deleteUserConfirmInput');
+    const deleteUserSubmitBtn = document.getElementById('deleteUserSubmitBtn');
+
+    if (deleteUserConfirmInput && deleteUserSubmitBtn) {
+        deleteUserConfirmInput.addEventListener('input', function() {
+            deleteUserSubmitBtn.disabled = (this.value.trim() !== 'DELETE');
+        });
+    }
+
+    // Role radio choices in Create User Modal
+    const roleRadios = document.querySelectorAll('.role-radio-choice');
+    const facultySection = document.getElementById('facultyFieldsSection');
+    const studentSection = document.getElementById('studentFieldsSection');
+
+    function toggleUserFields() {
+        const checkedRadio = document.querySelector('.role-radio-choice:checked');
+        if (!checkedRadio) return;
+        const selectedRole = checkedRadio.value;
+        if (selectedRole === 'faculty' || selectedRole === 'dean') {
+            if (facultySection) facultySection.classList.remove('d-none');
+            if (studentSection) studentSection.classList.add('d-none');
+        } else {
+            if (facultySection) facultySection.classList.add('d-none');
+            if (studentSection) studentSection.classList.remove('d-none');
+        }
+    }
+
+    roleRadios.forEach(radio => {
+        radio.addEventListener('change', toggleUserFields);
     });
+    toggleUserFields();
+});
+
+// Modal prefill functions (Fix 3)
+function openEditUserModal(profileId, name, email, displayRole, dept, designation, isHod) {
+    document.getElementById('edit_user_profile_id').value = profileId;
+    document.getElementById('edit_user_name_display').textContent = name;
+    document.getElementById('edit_user_email_display').textContent = email;
+
+    // Set role
+    const roleSelect = document.getElementById('edit_user_role');
+    if (displayRole === 'Dean' || displayRole === 'dean') {
+        roleSelect.value = 'dean';
+    } else if (displayRole === 'Student' || displayRole === 'student') {
+        roleSelect.value = 'student';
+    } else {
+        roleSelect.value = 'faculty';
+    }
+
+    // Set department & designation
+    document.getElementById('edit_user_dept').value = dept || '';
+    document.getElementById('edit_user_designation').value = designation || '';
+    document.getElementById('edit_user_is_hod').checked = !!isHod;
+
+    const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+    modal.show();
+}
+
+function openDeleteUserModal(profileId, name) {
+    document.getElementById('delete_user_profile_id').value = profileId;
+    document.getElementById('delete_user_name_display').textContent = name;
+    document.getElementById('deleteUserConfirmInput').value = '';
+    document.getElementById('deleteUserSubmitBtn').disabled = true;
+
+    const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+    modal.show();
+}
 </script>
 {% endblock %}
-{% endblock %}
-

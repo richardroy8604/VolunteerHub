@@ -57,9 +57,9 @@
                 </li>
 
             <!-- ================= COMMITTEE HEAD NAVIGATION ================= -->
-            {% elif user.userprofile.role == 'committee_head' or user_role == 'committee_head' %}
+            {% elif user_role == 'faculty' %}
                 <li class="nav-item">
-                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'committee_head' and not 'volunteers' in request.path and not 'attendance' in request.path and not 'coordinators' in request.path %}active{% endif %}" data-title="Dashboard">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if request.path == '/committee/dashboard/' or user_role == 'faculty' and not 'volunteers' in request.path and not 'attendance' in request.path and not 'coordinators' in request.path %}active{% endif %}" data-title="Dashboard">
                         <i class="fa-solid fa-circle-nodes"></i>
                         <span>Dashboard</span>
                     </a>
@@ -121,7 +121,7 @@
             
             <!-- Shared Profile links -->
             <li class="nav-item mt-auto">
-                <a href="/accounts/profile/{% if user_role %}?role={{ user_role }}{% elif user.is_staff %}?role=dean{% endif %}" class="sidebar-link {% if '/accounts/profile/' in request.path %}active{% endif %}" data-title="Profile">
+                <a href="/accounts/profile/" class="sidebar-link {% if '/accounts/profile/' in request.path %}active{% endif %}" data-title="Profile">
                     <i class="fa-solid fa-id-card"></i>
                     <span>My Profile</span>
                 </a>

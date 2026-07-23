@@ -20,13 +20,19 @@ from django.shortcuts import redirect
 
 
 def dashboard_redirect(request):
-    """Redirect to role-appropriate dashboard"""
+    """Redirect to role-appropriate dashboard based on UserProfile.role."""
     if not request.user.is_authenticated:
         return redirect('accounts:login')
-    if request.user.is_staff:
+    try:
+        role = request.user.profile.role
+    except Exception:
+        return redirect('accounts:login')
+    if role == 'dean':
         return redirect('events_dean:dean_dashboard')
-    # For now, default to student dashboard
-    return redirect('volunteers_student:student_dashboard')
+    elif role == 'faculty':
+        return redirect('events_committee:committee_dashboard')
+    else:
+        return redirect('volunteers_student:student_dashboard')
 
 
 urlpatterns = [

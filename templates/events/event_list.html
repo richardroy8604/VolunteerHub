@@ -16,28 +16,36 @@
     {% endif %}
 </div>
 
-<!-- Filters Bar -->
+<!-- Filters Bar (Fix 1: Instant search, x clear button, onchange submit) -->
 <div class="content-card mb-4" style="padding: 16px 24px;">
-    <form method="get" class="row g-3 align-items-center">
-        <div class="col-md-5">
+    <form method="get" id="eventFilterForm" class="row g-3 align-items-center">
+        <div class="col-md-6">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: var(--clr-border);"><i class="fa-solid fa-magnifying-glass"></i></span>
-                <input type="text" name="search" class="form-control border-start-0" placeholder="Search event by name or location..." style="border-color: var(--clr-border);">
+                <input type="text" name="search" id="eventSearchInput" class="form-control border-start-0 border-end-0" placeholder="Search event by name, venue, or description..." style="border-color: var(--clr-border);" value="{{ search_query }}" autocomplete="off">
+                <button type="button" class="input-group-text bg-white border-start-0 text-muted {% if not search_query %}d-none{% endif %}" id="clearEventSearchBtn" style="border-color: var(--clr-border); cursor: pointer;" title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
         </div>
-        <div class="col-md-3">
-            <select name="status" class="form-control" style="border-color: var(--clr-border);">
-                <option value="">All Statuses</option>
-                <option value="open">Open (Registering)</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
+        <div class="col-md-4">
+            <select name="status" class="form-control" onchange="this.form.submit();" style="border-color: var(--clr-border); cursor: pointer;">
+                <option value="">All Event Statuses</option>
+                <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open (Registering)</option>
+                <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
             </select>
         </div>
-        <div class="col-md-2 col-6">
-            <button type="submit" class="btn btn-primary w-100 p-2" style="font-size: 0.9rem;">Filter</button>
-        </div>
-        <div class="col-md-2 col-6">
-            <a href="." class="btn btn-secondary w-100 p-2" style="font-size: 0.9rem; border-color: var(--clr-border);">Clear</a>
+        <div class="col-md-2">
+            {% if search_query or status_filter %}
+            <a href="." class="btn btn-outline-secondary w-100 p-2" style="font-size: 0.9rem;">
+                <i class="fa-solid fa-filter-circle-xmark me-1"></i> Clear Filters
+            </a>
+            {% else %}
+            <button type="submit" class="btn btn-primary w-100 p-2" style="font-size: 0.9rem;">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Search
+            </button>
+            {% endif %}
         </div>
     </form>
 </div>
@@ -192,6 +200,48 @@
                     deleteBtn.disabled = this.value.trim() !== 'DELETE';
                 });
             }
+        }
+
+        // Instant search & clear (x) button logic
+        const searchInput = document.getElementById('eventSearchInput');
+        const clearBtn = document.getElementById('clearEventSearchBtn');
+        const form = document.getElementById('eventFilterForm');
+        let searchTimeout = null;
+
+        if (searchInput && clearBtn) {
+            const urlParams = new URLSearchParams(window.location.search);
+            // Restore focus & cursor position whenever a search was executed (even if backspaced to empty)
+            if (urlParams.has('search')) {
+                searchInput.focus();
+                const len = searchInput.value.length;
+                try {
+                    searchInput.setSelectionRange(len, len);
+                } catch(e) {}
+            }
+
+            if (searchInput.value.length > 0) {
+                clearBtn.classList.remove('d-none');
+            }
+
+            searchInput.addEventListener('input', function() {
+                if (this.value.length > 0) {
+                    clearBtn.classList.remove('d-none');
+                } else {
+                    clearBtn.classList.add('d-none');
+                }
+                
+                // Debounced auto-submit after 700ms when typing stops
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    if (form) form.submit();
+                }, 700);
+            });
+
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                clearBtn.classList.add('d-none');
+                window.location.href = '.';
+            });
         }
     });
 </script>

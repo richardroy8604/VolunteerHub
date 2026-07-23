@@ -18,7 +18,7 @@
                 <span><i class="fa-solid fa-user-gear text-success me-2"></i> Update Settings</span>
             </h4>
 
-            <form method="post" enctype="multipart/form-data" action="/accounts/profile/{% if user_role %}?role={{ user_role }}{% endif %}">
+            <form method="post" enctype="multipart/form-data" action="">
                 {% csrf_token %}
 
                 <!-- Profile Pic upload row -->
