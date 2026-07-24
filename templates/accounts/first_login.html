@@ -14,9 +14,6 @@
     <!-- Bootstrap 5 CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-    <!-- Bootstrap Icons CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <!-- Font Awesome 6 CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
 
@@ -24,15 +21,63 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <style>
+        body.setup-bg {
+            min-height: 100vh;
+            background: #0d2820 linear-gradient(135deg, #0d2820 0%, #1b4d3e 50%, #081813 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 15px;
+        }
+
+        .setup-card-wrapper {
+            width: 100%;
+            max-width: 980px;
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* Left Split Column - Personal Intro Panel */
+        .setup-intro-panel {
+            background: linear-gradient(145deg, #1b4d3e 0%, #113328 100%);
+            color: #ffffff;
+            padding: 45px 40px;
+            width: 42%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .setup-intro-panel::after {
+            content: "";
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Right Split Column - Form Container */
+        .setup-form-panel {
+            padding: 40px 45px;
+            width: 58%;
+            background: #ffffff;
+        }
+
         .profile-upload-wrapper {
             position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 24px;
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 16px;
         }
+
         .profile-upload-preview {
-            width: 120px;
-            height: 120px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid var(--clr-primary);
@@ -40,98 +85,214 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: var(--clr-primary);
         }
+
         .profile-upload-btn {
             position: absolute;
-            bottom: 0;
-            right: 0;
+            bottom: -2px;
+            right: -2px;
             background-color: var(--clr-primary);
             color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
+            border: 2px solid white;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            font-size: 0.75rem;
             box-shadow: var(--shadow-sm);
-            transition: background-color var(--transition-speed);
+            transition: transform var(--transition-speed);
         }
         .profile-upload-btn:hover {
-            background-color: var(--clr-primary-hover);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 860px) {
+            .setup-card-wrapper {
+                flex-direction: column;
+                max-width: 540px;
+            }
+            .setup-intro-panel, .setup-form-panel {
+                width: 100%;
+                padding: 30px 25px;
+            }
         }
     </style>
 </head>
-<body class="login-container">
+<body class="setup-bg">
 
-    <div class="login-card" style="max-width: 480px;">
-        <img src="{% static 'images/rcsslogo.png' %}" alt="RCSS Logo" class="login-logo" style="width: 55px; height: 55px; margin-bottom: 12px;">
-        
-        <h1 class="login-title" style="font-size: 1.35rem;">Welcome to VolunteerHub!</h1>
-        <p class="login-subtitle" style="margin-bottom: 24px;">Please complete your profile to continue</p>
-
-        <form method="post" action="" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <!-- Profile Picture Upload Widget -->
-            <div class="profile-upload-wrapper">
-                <div class="profile-upload-preview" id="pic-preview">
-                    <i class="fa-solid fa-user"></i>
+    <div class="setup-card-wrapper">
+        <!-- LEFT COLUMN: Personalized Welcome & Platform Intro -->
+        <div class="setup-intro-panel">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <img src="{% static 'images/rcsslogo.png' %}" alt="RCSS Logo" style="width: 42px; height: 42px;">
+                    <span class="h4 mb-0 font-weight-bold" style="letter-spacing: -0.5px; color: #ffffff;">VolunteerHub</span>
                 </div>
-                <label for="id_profile_picture" class="profile-upload-btn" title="Upload Photo">
-                    <i class="fa-solid fa-camera"></i>
-                </label>
-                <input type="file" id="id_profile_picture" name="profile_picture" accept="image/*" class="d-none">
-            </div>
 
-            <!-- Mandatory Phone Input & Verification -->
-            <div class="form-group text-start">
-                <label class="form-label" for="phone-field">Mandatory Phone Number</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 text-muted">
-                        <i class="fa-solid fa-phone"></i>
+                <div class="mb-3">
+                    <span class="badge bg-white text-success px-3 py-1.5 rounded-pill" style="font-size: 0.75rem; font-weight: 700; color: #1b4d3e !important;">
+                        <i class="fa-solid fa-user-shield me-1"></i> {{ role_title|default:'Member Access' }}
                     </span>
-                    <input type="tel" id="phone-field" name="phone" class="form-control border-start-0 border-end-0" placeholder="e.g. +91 9876543210" required>
-                    <button type="button" id="verify-btn" class="btn btn-outline-success" style="margin: 0; padding: 0 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem; border-color: var(--clr-border); border-left: none;">
-                        Verify
-                    </button>
                 </div>
-                <div class="form-text text-muted" id="verification-status" style="font-size: 0.75rem; margin-top: 6px;">
-                    <i class="fa-solid fa-circle-info text-warning me-1"></i> Phone verification is mandatory to unlock access.
+
+                <h2 class="h3 font-weight-bold mb-2" style="color: #ffffff;">Welcome, {{ user_name }}!</h2>
+                <p class="text-white-50 mb-4" style="font-size: 0.88rem; line-height: 1.5;">
+                    Your personalized portal for campus event coordination and volunteering lifecycle management.
+                </p>
+
+                <!-- Role-tailored feature intro list -->
+                <div class="d-flex flex-column gap-3 mt-4">
+                    {% if profile.role == 'student' %}
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Committee Preferences</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Apply to events with up to 3 ranked committee preferences.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Semester Target Progress</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Track your verified shift hours towards your 30-hour target.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.78rem;">Team Coordination</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Access coordinator rosters and connect with committee leads.</span>
+                        </div>
+                    </div>
+                    {% elif profile.role == 'faculty' %}
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Committee Management</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Oversee assigned volunteers and appoint student coordinators.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-clipboard-user"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Daily Attendance Sheets</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Log student shift hours per event day and submit locked sheets to Dean.</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Auto-Allocation Engine</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Run greedy matching optimization for student volunteer pools.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
+                            <i class="fa-solid fa-stamp"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Attendance Governance</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Audit, approve, or request revisions on faculty attendance sheets.</span>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Department and Class information (readonly verification) -->
-            <div class="row text-start mt-3">
-                <div class="col-md-6 form-group">
-                    <label class="form-label">Department</label>
-                    <input type="text" class="form-control" value="Computer Science" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem;">
-                </div>
-                <div class="col-md-6 form-group">
-                    <label class="form-label">Semester / Class</label>
-                    <input type="text" class="form-control" value="6th Sem / CS-B" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem;">
-                </div>
+            <div class="mt-4 pt-3 border-top border-white-50 text-white-50 small">
+                © 2026 Rajagiri College of Social Sciences (RCSS)
             </div>
+        </div>
 
-            <!-- Warning notice -->
-            <div class="alert alert-warning border-0 p-3 mt-2 text-start d-flex gap-2 align-items-start" style="font-size: 0.8rem; border-radius: var(--radius-md);">
-                <i class="fa-solid fa-triangle-exclamation mt-1"></i>
-                <span>Confirm your department info is correct. If it is wrong, contact the college administrator immediately.</span>
-            </div>
+        <!-- RIGHT COLUMN: Compact Profile Setup Form -->
+        <div class="setup-form-panel">
+            <h3 class="h4 font-weight-bold text-dark mb-1">Complete Account Setup</h3>
+            <p class="text-muted mb-3" style="font-size: 0.82rem;">Set your contact info and security credentials to unlock access.</p>
 
-            <button type="submit" id="submit-btn" class="btn btn-primary w-100 py-2 mt-3" disabled>
-                <i class="fa-solid fa-circle-check me-2"></i> Complete Profile Setup
-            </button>
-        </form>
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Profile Photo Widget -->
+                <div class="profile-upload-wrapper">
+                    <div class="profile-upload-preview" id="pic-preview">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <label for="id_profile_picture" class="profile-upload-btn" title="Upload Photo">
+                        <i class="fa-solid fa-camera"></i>
+                    </label>
+                    <input type="file" id="id_profile_picture" name="profile_picture" accept="image/*" class="d-none">
+                </div>
+
+                <!-- Mandatory Phone Input & Verification -->
+                <div class="form-group mb-3 text-start">
+                    <label class="form-label" for="phone-field" style="font-size: 0.82rem; font-weight: 600;">Mandatory Phone Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: var(--clr-border);">
+                            <i class="fa-solid fa-phone"></i>
+                        </span>
+                        <input type="tel" id="phone-field" name="phone" class="form-control border-start-0 border-end-0" placeholder="e.g. +91 9876543210" value="{{ profile.phone }}" style="border-color: var(--clr-border); font-size: 0.88rem;" required>
+                        <button type="button" id="verify-btn" class="btn btn-outline-success" style="margin: 0; padding: 0 14px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.82rem; border-color: var(--clr-border); border-left: none;">
+                            Verify
+                        </button>
+                    </div>
+                    <div class="form-text text-muted" id="verification-status" style="font-size: 0.72rem; margin-top: 4px;">
+                        <i class="fa-solid fa-circle-info text-warning me-1"></i> Phone verification is required to unlock your account.
+                    </div>
+                </div>
+
+                <!-- Password Setup Fields (2-column layout) -->
+                <div class="row text-start mb-3 g-2">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="new_password" style="font-size: 0.82rem; font-weight: 600;">Set Password</label>
+                        <input type="password" id="new_password" name="new_password" class="form-control" placeholder="New Password" style="font-size: 0.85rem; border-color: var(--clr-border);">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="confirm_password" style="font-size: 0.82rem; font-weight: 600;">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm Password" style="font-size: 0.85rem; border-color: var(--clr-border);">
+                    </div>
+                </div>
+
+                <!-- Department and Class information (2-column layout) -->
+                <div class="row text-start mb-3 g-2">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 600;">Department</label>
+                        <input type="text" class="form-control" value="{{ profile.department|default:'N/A' }}" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem; border-color: var(--clr-border);">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 600;">Semester / Class</label>
+                        <input type="text" class="form-control" value="{% if profile.semester %}{{ profile.semester }}th Sem / {% endif %}{{ profile.class_batch|default:'N/A' }}" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem; border-color: var(--clr-border);">
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary w-100 py-2 mt-2 font-weight-bold" style="background-color: var(--clr-primary) !important; border-color: var(--clr-primary) !important; font-size: 0.9rem;" disabled>
+                    <i class="fa-solid fa-circle-check me-2"></i> Complete Profile Setup
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-    <!-- UI interactivity scripts for verification mock -->
+    <!-- UI Interactivity Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const phoneField = document.getElementById('phone-field');
@@ -141,7 +302,7 @@
             const picInput = document.getElementById('id_profile_picture');
             const picPreview = document.getElementById('pic-preview');
 
-            // Handle picture preview
+            // Handle photo upload preview
             if (picInput && picPreview) {
                 picInput.addEventListener('change', function() {
                     const file = this.files[0];
@@ -155,30 +316,39 @@
                 });
             }
 
-            // Mock verification flow
-            if (verifyBtn && phoneField && statusDiv && submitBtn) {
-                verifyBtn.addEventListener('click', function() {
-                    const phoneVal = phoneField.value.trim();
-                    if (phoneVal.length < 10) {
-                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-xmark text-danger me-1"></i> Enter a valid phone number.`;
-                        return;
-                    }
-
-                    verifyBtn.disabled = true;
-                    verifyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-info text-info me-1"></i> Sending verification code...`;
-
-                    setTimeout(function() {
-                        // Mock verified success
-                        verifyBtn.innerHTML = `Verified ✓`;
-                        verifyBtn.classList.remove('btn-outline-success');
-                        verifyBtn.classList.add('btn-success');
-                        phoneField.readOnly = true;
-                        
-                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Phone number successfully verified!`;
+            // Verification & submit enablement
+            if (phoneField && submitBtn) {
+                if (phoneField.value.trim().length >= 10) {
+                    submitBtn.disabled = false;
+                }
+                phoneField.addEventListener('input', function() {
+                    if (this.value.trim().length >= 10) {
                         submitBtn.disabled = false;
-                    }, 1500);
+                    }
                 });
+
+                if (verifyBtn && statusDiv) {
+                    verifyBtn.addEventListener('click', function() {
+                        const phoneVal = phoneField.value.trim();
+                        if (phoneVal.length < 10) {
+                            statusDiv.innerHTML = `<i class="fa-solid fa-circle-xmark text-danger me-1"></i> Enter a valid 10-digit phone number.`;
+                            return;
+                        }
+
+                        verifyBtn.disabled = true;
+                        verifyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-info text-info me-1"></i> Sending verification code...`;
+
+                        setTimeout(function() {
+                            verifyBtn.innerHTML = `Verified ✓`;
+                            verifyBtn.classList.remove('btn-outline-success');
+                            verifyBtn.classList.add('btn-success');
+                            
+                            statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Phone number successfully verified!`;
+                            submitBtn.disabled = false;
+                        }, 1200);
+                    });
+                }
             }
         });
     </script>

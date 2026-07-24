@@ -26,43 +26,76 @@
                     <span><i class="fa-solid fa-sliders text-success me-2"></i> Select Committee Preferences</span>
                 </h4>
 
-                <div class="alert alert-success border-0 p-3 mb-4" style="background-color: var(--clr-primary-light); color: var(--clr-primary); font-size: 0.85rem; border-radius: var(--radius-md);">
-                    <i class="fa-solid fa-circle-info me-2"></i>
-                    Please select three <strong>different</strong> committees. You will be matched based on these preferences and committee capacity.
-                </div>
+                {% if event.committees|length == 1 %}
+                    <div class="alert alert-info border-0 p-3 mb-4" style="background-color: #e0f2fe; color: #0369a1; font-size: 0.88rem; border-radius: var(--radius-md);">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        This event has 1 designated committee: <strong>{{ event.committees.0.name }}</strong>. You will be registered for this committee.
+                    </div>
+                    <input type="hidden" name="pref1" value="{{ event.committees.0.id }}">
+                {% elif event.committees|length == 2 %}
+                    <div class="alert alert-success border-0 p-3 mb-4" style="background-color: var(--clr-primary-light); color: var(--clr-primary); font-size: 0.85rem; border-radius: var(--radius-md);">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        Please rank your 2 committee preferences in order of priority.
+                    </div>
+                    <!-- Preference 1 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="pref1" style="font-weight: 600; font-size: 0.9rem;">1st Preference <span class="text-danger">*</span></label>
+                        <select class="form-control pref-select" id="pref1" name="pref1" required style="border-color: var(--clr-border); cursor: pointer;">
+                            <option value="">-- Choose 1st Preference --</option>
+                            {% for committee in event.committees %}
+                            <option value="{{ committee.id }}">{{ committee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- Preference 1 -->
-                <div class="mb-3">
-                    <label class="form-label" for="pref1" style="font-weight: 600; font-size: 0.9rem;">1st Preference <span class="text-danger">*</span></label>
-                    <select class="form-control pref-select" id="pref1" name="pref1" required style="border-color: var(--clr-border); cursor: pointer;">
-                        <option value="">-- Choose 1st Preference --</option>
-                        {% for committee in event.committees %}
-                        <option value="{{ committee.id }}">{{ committee.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Preference 2 -->
+                    <div class="mb-4">
+                        <label class="form-label" for="pref2" style="font-weight: 600; font-size: 0.9rem;">2nd Preference <span class="text-danger">*</span></label>
+                        <select class="form-control pref-select" id="pref2" name="pref2" required style="border-color: var(--clr-border); cursor: pointer;">
+                            <option value="">-- Choose 2nd Preference --</option>
+                            {% for committee in event.committees %}
+                            <option value="{{ committee.id }}">{{ committee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success border-0 p-3 mb-4" style="background-color: var(--clr-primary-light); color: var(--clr-primary); font-size: 0.85rem; border-radius: var(--radius-md);">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        Please select three <strong>different</strong> committees in order of priority.
+                    </div>
+                    <!-- Preference 1 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="pref1" style="font-weight: 600; font-size: 0.9rem;">1st Preference <span class="text-danger">*</span></label>
+                        <select class="form-control pref-select" id="pref1" name="pref1" required style="border-color: var(--clr-border); cursor: pointer;">
+                            <option value="">-- Choose 1st Preference --</option>
+                            {% for committee in event.committees %}
+                            <option value="{{ committee.id }}">{{ committee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- Preference 2 -->
-                <div class="mb-3">
-                    <label class="form-label" for="pref2" style="font-weight: 600; font-size: 0.9rem;">2nd Preference <span class="text-danger">*</span></label>
-                    <select class="form-control pref-select" id="pref2" name="pref2" required style="border-color: var(--clr-border); cursor: pointer;">
-                        <option value="">-- Choose 2nd Preference --</option>
-                        {% for committee in event.committees %}
-                        <option value="{{ committee.id }}">{{ committee.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Preference 2 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="pref2" style="font-weight: 600; font-size: 0.9rem;">2nd Preference <span class="text-danger">*</span></label>
+                        <select class="form-control pref-select" id="pref2" name="pref2" required style="border-color: var(--clr-border); cursor: pointer;">
+                            <option value="">-- Choose 2nd Preference --</option>
+                            {% for committee in event.committees %}
+                            <option value="{{ committee.id }}">{{ committee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- Preference 3 -->
-                <div class="mb-4">
-                    <label class="form-label" for="pref3" style="font-weight: 600; font-size: 0.9rem;">3rd Preference <span class="text-danger">*</span></label>
-                    <select class="form-control pref-select" id="pref3" name="pref3" required style="border-color: var(--clr-border); cursor: pointer;">
-                        <option value="">-- Choose 3rd Preference --</option>
-                        {% for committee in event.committees %}
-                        <option value="{{ committee.id }}">{{ committee.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Preference 3 -->
+                    <div class="mb-4">
+                        <label class="form-label" for="pref3" style="font-weight: 600; font-size: 0.9rem;">3rd Preference <span class="text-danger">*</span></label>
+                        <select class="form-control pref-select" id="pref3" name="pref3" required style="border-color: var(--clr-border); cursor: pointer;">
+                            <option value="">-- Choose 3rd Preference --</option>
+                            {% for committee in event.committees %}
+                            <option value="{{ committee.id }}">{{ committee.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
 
                 <hr class="my-4" style="border-top-color: var(--clr-border);">
 
@@ -161,16 +194,6 @@
                     });
                 });
             });
-        });
-
-        // Mock success submission alert
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                alert('Mock Success: Your volunteer application has been submitted successfully. You can track your allocation status in the My Applications page!');
-                window.location.href = '/student/applications/';
-            });
-        }
     });
 </script>
 {% endblock %}

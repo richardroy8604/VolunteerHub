@@ -71,12 +71,19 @@
         <strong>Sheet Locked (Approved):</strong> This hours sheet has been approved by the Dean. The hours have been credited and cannot be modified.
     </div>
 </div>
-{% elif sheet_status == 'Pending' %}
-<div class="alert alert-info border-0 p-3 mb-4 d-flex align-items-center gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
-    <i class="fa-solid fa-hourglass-half" style="font-size: 1.1rem;"></i>
-    <div>
-        <strong>Sheet Locked (Pending Review):</strong> This hours sheet has been submitted to the Dean and is currently awaiting verification. Editing is disabled.
+{% elif raw_status == 'pending' %}
+<div class="alert alert-info border-0 p-3 mb-4 d-flex align-items-center justify-content-between gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
+    <div class="d-flex align-items-center gap-2">
+        <i class="fa-solid fa-hourglass-half" style="font-size: 1.1rem;"></i>
+        <div>
+            <strong>Pending Dean Approval:</strong> This hours sheet is submitted and awaiting Dean review. You can edit and update the shift hours before final approval.
+        </div>
     </div>
+    {% if not is_editing %}
+    <a href="?date={{ selected_date }}&mode=edit" class="btn btn-sm btn-primary text-nowrap py-1.5 px-3">
+        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Sheet
+    </a>
+    {% endif %}
 </div>
 {% elif sheet_status == 'Sent Back' %}
 <div class="alert alert-danger border-0 p-3 mb-4 d-flex align-items-start gap-2" style="border-radius: var(--radius-md); font-size: 0.88rem;">
@@ -107,7 +114,7 @@
             
             <div class="col-md-4 mb-3 mb-md-0">
                 <label class="form-label" for="shift-hours" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px;">Shift Operation Hours (Periods)</label>
-                <input type="number" id="shift-hours" name="shift_hours" class="form-control text-center" value="{{ num_hours }}" min="1" max="12" style="border-color: var(--clr-border); font-weight: 700; color: var(--clr-primary); width: 120px;" {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}disabled{% endif %}>
+                <input type="number" id="shift-hours" name="shift_hours" class="form-control text-center" value="{{ num_hours }}" min="1" max="12" style="border-color: var(--clr-border); font-weight: 700; color: var(--clr-primary); width: 120px;" {% if not is_editing %}disabled{% endif %}>
             </div>
             
             <div class="col-md-4 text-md-end text-muted" style="font-size: 0.82rem;">
@@ -159,10 +166,10 @@
                         {% for is_present in volunteer.hours %}
                         <td class="hour-toggle-cell" data-hour-index="{{ forloop.counter0 }}">
                             <!-- Hidden checkbox to capture POST data -->
-                            <input type="checkbox" class="d-none hour-checkbox" id="check_{{ volunteer.id }}_{{ forloop.counter0 }}" name="hours_{{ volunteer.id }}[]" value="{{ forloop.counter0 }}" {% if is_present %}checked{% endif %} {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}disabled{% endif %}>
+                            <input type="checkbox" class="d-none hour-checkbox" id="check_{{ volunteer.id }}_{{ forloop.counter }}" name="hour_{{ volunteer.id }}_{{ forloop.counter }}" {% if is_present %}checked{% endif %} {% if not is_editing %}disabled{% endif %}>
                             
                             <!-- Toggle badge styled label -->
-                            <label for="check_{{ volunteer.id }}_{{ forloop.counter0 }}" class="hour-toggle-badge {% if is_present %}present{% else %}absent{% endif %}">
+                            <label for="check_{{ volunteer.id }}_{{ forloop.counter }}" class="hour-toggle-badge {% if is_present %}present{% else %}absent{% endif %}" {% if not is_editing %}style="pointer-events: none; opacity: 0.85;"{% endif %}>
                                 <span class="badge-text">
                                     {% if is_present %}
                                     <i class="fa-solid fa-circle-check me-1"></i> Present
@@ -184,9 +191,9 @@
                         
                         <!-- Absent All row toggle button -->
                         <td>
-                            {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}
+                            {% if not is_editing %}
                             <button type="button" class="btn btn-outline-secondary btn-sm w-100" disabled style="font-size: 0.78rem; font-weight: 600;">
-                                Locked
+                                Read Only
                             </button>
                             {% else %}
                             <button type="button" class="btn btn-outline-danger btn-sm w-100 absent-all-btn" style="font-size: 0.78rem; font-weight: 600; transition: all 0.2s;">
@@ -200,20 +207,32 @@
             </table>
         </div>
 
-        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
-            <a href="/committee/dashboard/" class="btn btn-secondary py-2 px-4" style="border-color: var(--clr-border);">
-                {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}Back{% else %}Cancel{% endif %}
+        <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
+            <a href="/committee/dashboard/" class="btn btn-secondary py-2 px-3" style="border-color: var(--clr-border);">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
             </a>
             
-            {% if sheet_status == 'Approved' or sheet_status == 'Pending' %}
-            <button type="button" class="btn btn-secondary py-2 px-4" disabled style="font-weight: 600;">
-                <i class="fa-solid fa-lock me-1"></i> Submitted
-            </button>
-            {% else %}
-            <button type="submit" class="btn btn-primary py-2 px-4" style="font-weight: 600;">
-                <i class="fa-solid fa-paper-plane me-1"></i> Submit Hours Sheet
-            </button>
-            {% endif %}
+            <div class="d-flex align-items-center gap-2">
+                {% if is_locked %}
+                <button type="button" class="btn btn-secondary py-2 px-4" disabled style="font-weight: 600;">
+                    <i class="fa-solid fa-lock me-1"></i> Locked ({{ sheet_status }})
+                </button>
+                {% elif is_editing %}
+                <a href="?date={{ selected_date }}&mode=view" class="btn btn-outline-secondary py-2 px-3 me-1">
+                    Cancel
+                </a>
+                <button type="submit" name="action" value="save" class="btn btn-secondary py-2 px-3 fw-bold">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Draft
+                </button>
+                <button type="submit" name="action" value="submit" class="btn btn-primary py-2 px-4 fw-bold">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Submit Hours Sheet
+                </button>
+                {% else %}
+                <a href="?date={{ selected_date }}&mode=edit" class="btn btn-primary py-2 px-4 fw-bold">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Attendance Sheet
+                </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </form>
@@ -376,14 +395,6 @@
             });
         }
 
-        // Handle form submission
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                alert('Mock Success: Attendance and hours sheet submitted successfully. Sent to the Dean for final verification.');
-                window.location.href = '/committee/dashboard/';
-            });
-        }
     });
 </script>
 {% endblock %}

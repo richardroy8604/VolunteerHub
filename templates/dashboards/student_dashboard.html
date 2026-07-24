@@ -23,9 +23,15 @@
         <div class="metric-content">
             <span class="metric-value">{{ stats.total_hours }} hrs</span>
             <span class="metric-label">Completed Hours</span>
+            {% if stats.total_hours >= stats.target_hours %}
             <span class="text-success mt-1 d-block" style="font-size: 0.7rem; font-weight: 500;">
-                <i class="fa-solid fa-circle-check"></i> Exceeded semester target (30 hrs)
+                <i class="fa-solid fa-circle-check"></i> Target reached ({{ stats.target_hours }}+ hrs)
             </span>
+            {% else %}
+            <span class="text-muted mt-1 d-block" style="font-size: 0.7rem;">
+                <i class="fa-regular fa-clock me-1"></i> Target: {{ stats.target_hours }} hrs / semester
+            </span>
+            {% endif %}
         </div>
         <div class="metric-icon"><i class="fa-solid fa-award"></i></div>
     </div>
@@ -45,9 +51,15 @@
         <div class="metric-content">
             <span class="metric-value">{{ stats.total_applications }}</span>
             <span class="metric-label">Submitted Applications</span>
+            {% if stats.pending_applications > 0 %}
             <span class="text-warning mt-1 d-block" style="font-size: 0.7rem; font-weight: 500;">
-                <i class="fa-solid fa-clock-rotate-left"></i> 1 pending review
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> {{ stats.pending_applications }} pending review
             </span>
+            {% else %}
+            <span class="text-muted mt-1 d-block" style="font-size: 0.7rem;">
+                <i class="fa-solid fa-circle-check text-success me-1"></i> All applications processed
+            </span>
+            {% endif %}
         </div>
         <div class="metric-icon"><i class="fa-solid fa-file-signature"></i></div>
     </div>
@@ -55,10 +67,10 @@
     <!-- Target Progress Card -->
     <div class="metric-card">
         <div class="metric-content w-100">
-            <span class="metric-value">158%</span>
+            <span class="metric-value">{{ stats.target_percentage }}%</span>
             <span class="metric-label">Target Progress</span>
             <div class="progress mt-2" style="height: 6px; border-radius: 5px;">
-                <div class="progress-bar bg-success" role="progressbar" style="width: 100%; background-color: var(--clr-primary) !important;"></div>
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.target_percentage }}%; background-color: var(--clr-primary) !important;"></div>
             </div>
         </div>
         <div class="metric-icon"><i class="fa-solid fa-chart-line"></i></div>

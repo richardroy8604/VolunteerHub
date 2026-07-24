@@ -830,16 +830,33 @@ def reports_view(request):
 @student_required
 def browse_events_view(request):
     """Browse available events (student-facing, filters open/upcoming)."""
+    raw_search_query = request.GET.get('search', '')
+    search_query = raw_search_query.strip()
+    status_filter = request.GET.get('status', '').strip()
+
     events_qs = Event.objects.filter(
         status__in=['open', 'upcoming']
     ).prefetch_related(
         'committees__faculty_head__user',
         'committees__student_coordinator__user',
     )
+
+    if search_query:
+        events_qs = events_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(venue__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    if status_filter:
+        events_qs = events_qs.filter(status=status_filter)
+
     events = [_event_to_dict(e) for e in events_qs]
 
     context = {
         'events': events,
+        'search_query': raw_search_query,
+        'status_filter': status_filter,
     }
     return render(request, 'events/event_list.html', context)
 
@@ -896,6 +913,23 @@ def committee_dashboard_view(request):
             'volunteers': [],
         }
         return render(request, 'dashboards/committee_dashboard.html', context)
+
+    # Handle POST action: Assign / Change Student Lead
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'assign_lead':
+            student_lead_id = request.POST.get('student_lead_id')
+            if student_lead_id:
+                student_profile = UserProfile.objects.filter(id=student_lead_id).first()
+                if student_profile:
+                    committee_obj.student_coordinator = student_profile
+                    committee_obj.save()
+                    messages.success(request, f"Assigned {student_profile.user.get_full_name()} as Student Coordinator for {committee_obj.name}.")
+            else:
+                committee_obj.student_coordinator = None
+                committee_obj.save()
+                messages.info(request, f"Removed Student Coordinator for {committee_obj.name}.")
+            return redirect('events_committee:committee_dashboard')
 
     # Build committee dict matching template expectations
     # Calculate attendance percentage from approved sheets
@@ -1010,9 +1044,13 @@ def committee_dashboard_view(request):
 def committee_volunteers_view(request, pk):
     """View all volunteers assigned to a specific committee."""
     committee = get_object_or_404(
-        Committee.objects.select_related('event'),
+        Committee.objects.select_related('event', 'faculty_head'),
         pk=pk
     )
+    profile = request.user.profile
+    if profile.role != 'dean' and not request.user.is_staff and committee.faculty_head != profile:
+        messages.error(request, f"Access Denied: You are not assigned as the Faculty Head of the '{committee.name}' committee.")
+        return redirect('events_committee:committee_dashboard')
 
     assigned_apps = VolunteerApplication.objects.filter(
         assigned_committee=committee,
@@ -1046,9 +1084,14 @@ def committee_volunteers_view(request, pk):
 def committee_attendance_view(request, pk):
     """Mark/view attendance for volunteers on a specific date."""
     committee = get_object_or_404(
-        Committee.objects.select_related('event'),
+        Committee.objects.select_related('event', 'faculty_head'),
         pk=pk
     )
+    profile = request.user.profile
+    if profile.role != 'dean' and not request.user.is_staff and committee.faculty_head != profile:
+        messages.error(request, f"Access Denied: You are not assigned as the Faculty Head of the '{committee.name}' committee.")
+        return redirect('events_committee:committee_dashboard')
+
     event = committee.event
 
     # Build event dates list
@@ -1075,9 +1118,7 @@ def committee_attendance_view(request, pk):
             defaults={'num_hours': num_hours_post}
         )
 
-        if not created:
-            sheet.num_hours = num_hours_post
-            sheet.save()
+        sheet.num_hours = num_hours_post
 
         # Update attendance records for each volunteer
         assigned_apps = VolunteerApplication.objects.filter(
@@ -1086,14 +1127,19 @@ def committee_attendance_view(request, pk):
 
         for app in assigned_apps:
             hours_list = []
-            for h in range(1, num_hours_post + 1):
-                key = f'hour_{app.student.id}_{h}'
-                hours_list.append(request.POST.get(key) == 'on')
+            key_array = f'hours_{app.student.id}[]'
+            val_array = request.POST.getlist(key_array)
 
-            record, _ = AttendanceRecord.objects.update_or_create(
+            for h in range(1, num_hours_post + 1):
+                key_single = f'hour_{app.student.id}_{h}'
+                is_present = (request.POST.get(key_single) == 'on') or (str(h - 1) in val_array) or (str(h) in val_array)
+                hours_list.append(is_present)
+
+            tot = sum(1 for x in hours_list if x)
+            AttendanceRecord.objects.update_or_create(
                 sheet=sheet,
                 student=app.student,
-                defaults={'hours': hours_list}
+                defaults={'hours': hours_list, 'total_hours': tot}
             )
 
         if action == 'submit':
@@ -1101,25 +1147,35 @@ def committee_attendance_view(request, pk):
             sheet.submitted_by = request.user.profile
             sheet.submitted_at = timezone.now()
             sheet.save()
-            messages.success(request, 'Attendance sheet submitted for review.')
+            messages.success(request, f'Attendance sheet for {selected_date} submitted/updated for Dean approval.')
         else:
-            messages.success(request, 'Attendance saved as draft.')
+            if sheet.status != 'pending':
+                sheet.status = 'not_submitted'
+            sheet.save()
+            messages.success(request, f'Attendance draft saved successfully.')
 
-        return redirect(f"{request.path}?date={selected_date}")
+        return redirect(f"{request.path}?date={selected_date}&mode=view")
 
     # GET: load existing sheet data
+    mode = request.GET.get('mode', 'view')
     try:
         sheet = AttendanceSheet.objects.get(
             committee=committee, date=selected_date_obj
         )
         sheet_status = sheet.get_status_display()
+        raw_status = sheet.status
         feedback = sheet.feedback
         num_hours = sheet.num_hours
     except AttendanceSheet.DoesNotExist:
         sheet = None
         sheet_status = 'Not Submitted'
+        raw_status = 'not_submitted'
         feedback = ''
         num_hours = 3
+
+    # Only approved sheets are permanently locked. Pending/draft/sent_back sheets can be edited by faculty.
+    is_locked = (raw_status == 'approved')
+    is_editing = (mode == 'edit') and not is_locked
 
     # Get volunteers with their attendance records
     assigned_apps = VolunteerApplication.objects.filter(
@@ -1151,12 +1207,17 @@ def committee_attendance_view(request, pk):
 
     context = {
         'committee': {
+            'id': committee.id,
             'name': committee.name,
             'event': event.name,
         },
         'event_dates': event_dates_list,
         'selected_date': selected_date,
         'sheet_status': sheet_status,
+        'raw_status': raw_status,
+        'is_locked': is_locked,
+        'is_editing': is_editing,
+        'mode': mode,
         'feedback': feedback,
         'num_hours': num_hours,
         'hours_range': range(1, num_hours + 1),
@@ -1172,8 +1233,12 @@ def committee_coordinators_view(request, pk):
         Committee.objects.select_related('event', 'faculty_head__user'),
         pk=pk
     )
-    event = committee.event
     profile = request.user.profile
+    if profile.role != 'dean' and not request.user.is_staff and committee.faculty_head != profile:
+        messages.error(request, f"Access Denied: You are not assigned as the Faculty Head of the '{committee.name}' committee.")
+        return redirect('events_committee:committee_dashboard')
+
+    event = committee.event
 
     # All committees in this event with their faculty heads
     all_committees = Committee.objects.filter(
@@ -1260,6 +1325,7 @@ def dean_approvals_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         sheet_id = request.POST.get('sheet_id')
+        selected_date = request.GET.get('date', '')
 
         if sheet_id:
             try:
@@ -1270,18 +1336,21 @@ def dean_approvals_view(request):
                     sheet.reviewed_at = timezone.now()
                     sheet.feedback = ''
                     sheet.save()
-                    messages.success(request, f'Attendance sheet for {sheet.committee.name} approved.')
+                    messages.success(request, f'Attendance sheet for {sheet.committee.name} ({_format_date(sheet.date)}) approved successfully. Hours credited!')
                 elif action == 'send_back':
                     sheet.status = 'sent_back'
                     sheet.reviewed_by = request.user.profile
                     sheet.reviewed_at = timezone.now()
                     sheet.feedback = request.POST.get('feedback', '')
                     sheet.save()
-                    messages.warning(request, f'Attendance sheet for {sheet.committee.name} sent back.')
+                    messages.warning(request, f'Attendance sheet for {sheet.committee.name} ({_format_date(sheet.date)}) sent back with feedback.')
             except AttendanceSheet.DoesNotExist:
                 messages.error(request, 'Sheet not found.')
 
-        return redirect(f"{request.path}?event_id={selected_event_id}")
+        redirect_url = f"{request.path}?event_id={selected_event_id}"
+        if selected_date:
+            redirect_url += f"&date={selected_date}"
+        return redirect(redirect_url)
 
     # GET: build pending approvals
     pending_sheets = AttendanceSheet.objects.filter(
@@ -1306,45 +1375,69 @@ def dean_approvals_view(request):
         events_map[ev.id]['total_hours'] += sheet.total_hours_logged
         events_map[ev.id]['student_count'] += sheet.student_count
 
-    # Filter by selected event
+    # Filter by selected event & date
     filtered_submissions = []
     selected_event_name = ''
+    event_dates = []
+    selected_date = ''
+
     if selected_event_id:
-        for sheet in pending_sheets.filter(committee__event_id=selected_event_id):
-            records = AttendanceRecord.objects.filter(
-                sheet=sheet
-            ).select_related('student__user')
+        selected_event = Event.objects.filter(id=selected_event_id).first()
+        if selected_event:
+            selected_event_name = selected_event.name
+            event_dates = selected_event.event_dates
+            selected_date = request.GET.get('date', event_dates[0] if event_dates else '')
 
-            students = []
-            for r in records:
-                present_hours = sum(1 for h in r.hours if h)
-                students.append({
-                    'name': r.student.user.get_full_name(),
-                    'class': r.student.class_batch,
-                    'status': 'Present' if present_hours > 0 else 'Absent',
-                    'hours': present_hours,
+            from datetime import datetime
+            try:
+                selected_date_obj = datetime.strptime(selected_date, '%B %d, %Y').date()
+            except (ValueError, TypeError):
+                selected_date_obj = selected_event.start_date
+                selected_date = _format_date(selected_event.start_date)
+
+            event_sheets = pending_sheets.filter(
+                committee__event_id=selected_event_id
+            )
+            if selected_date_obj:
+                event_sheets = event_sheets.filter(date=selected_date_obj)
+
+            for sheet in event_sheets:
+                records = AttendanceRecord.objects.filter(
+                    sheet=sheet
+                ).select_related('student__user')
+
+                students = []
+                for r in records:
+                    present_hours = sum(1 for h in r.hours if h)
+                    students.append({
+                        'name': r.student.user.get_full_name(),
+                        'class': r.student.class_batch,
+                        'status': 'Present' if present_hours > 0 else 'Absent',
+                        'hours': present_hours,
+                    })
+
+                filtered_submissions.append({
+                    'id': sheet.id,
+                    'event_id': sheet.committee.event.id,
+                    'event_name': sheet.committee.event.name,
+                    'committee_name': sheet.committee.name,
+                    'duty_date': _format_date(sheet.date),
+                    'coordinator': (
+                        sheet.submitted_by.user.get_full_name()
+                        if sheet.submitted_by else 'Unknown'
+                    ),
+                    'submitted_date': _format_date_short(sheet.submitted_at),
+                    'student_count': sheet.student_count,
+                    'total_hours': sheet.total_hours_logged,
+                    'students': students,
                 })
-
-            filtered_submissions.append({
-                'id': sheet.id,
-                'event_id': sheet.committee.event.id,
-                'event_name': sheet.committee.event.name,
-                'committee_name': sheet.committee.name,
-                'coordinator': (
-                    sheet.submitted_by.user.get_full_name()
-                    if sheet.submitted_by else 'Unknown'
-                ),
-                'submitted_date': _format_date_short(sheet.submitted_at),
-                'student_count': sheet.student_count,
-                'total_hours': sheet.total_hours_logged,
-                'students': students,
-            })
-            selected_event_name = sheet.committee.event.name
 
     context = {
         'events': list(events_map.values()),
         'selected_event_id': selected_event_id,
         'selected_event_name': selected_event_name,
+        'event_dates': event_dates,
+        'selected_date': selected_date,
         'pending_approvals': filtered_submissions,
     }
     return render(request, 'events/dean_approvals.html', context)

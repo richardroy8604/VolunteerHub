@@ -8,12 +8,25 @@ from volunteers.models import VolunteerApplication, AttendanceRecord
 
 def login_view(request):
     """Render the login page and handle authentication."""
+    if request.user.is_authenticated:
+        try:
+            if request.user.profile.is_first_login:
+                return redirect('accounts:first_login')
+        except Exception:
+            pass
+        return redirect('dashboard')
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            try:
+                if user.profile.is_first_login:
+                    return redirect('accounts:first_login')
+            except Exception:
+                pass
             return redirect('dashboard')
         else:
             messages.error(request, "Invalid username or password.")
@@ -27,17 +40,38 @@ def logout_view(request):
 
 @login_required
 def first_login_view(request):
-    """Render the first-login setup page (phone verification, etc.)."""
+    """Render the first-login setup page (password setup, phone verification, profile pic)."""
+    profile = request.user.profile
+    
     if request.method == 'POST':
         phone = request.POST.get('phone')
-        profile = request.user.profile
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if new_password:
+            if new_password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+                return render(request, 'accounts/first_login.html', {'profile': profile})
+            request.user.set_password(new_password)
+            request.user.save()
+            login(request, request.user)
+
         if phone:
-            profile.phone = phone
+            profile.phone = phone.strip()
+            
+        if 'profile_picture' in request.FILES:
+            profile.profile_pic = request.FILES['profile_picture']
+
         profile.is_first_login = False
         profile.save()
+        messages.success(request, "Account setup completed successfully! Welcome to VolunteerHub.")
         return redirect('dashboard')
         
-    return render(request, 'accounts/first_login.html')
+    context = {
+        'profile': profile,
+        'user_obj': request.user,
+    }
+    return render(request, 'accounts/first_login.html', context)
 
 @login_required
 def profile_view(request):
@@ -59,8 +93,8 @@ def profile_view(request):
             event__status='completed'
         ).count()
         
-        semester = profile.semester
-        student_class = profile.class_batch
+        semester = f"{profile.semester}th Sem" if profile.semester else 'N/A'
+        student_class = profile.class_batch or 'N/A'
     else:
         total_hours = 'N/A'
         events_participated = 'N/A'
@@ -75,11 +109,11 @@ def profile_view(request):
             'department': str(profile.department) if profile.department else 'N/A',
             'semester': semester,
             'student_class': student_class,
-            'phone': profile.phone,
-            'phone_verified': True,
+            'phone': profile.phone if (profile.phone and profile.phone.strip()) else 'Not provided',
+            'phone_verified': bool(profile.phone and profile.phone.strip()),
             'total_hours': total_hours,
             'events_participated': events_participated,
-            'profile_pic': profile.profile_pic,
+            'profile_pic': profile.profile_pic.url if profile.profile_pic else None,
         }
     }
     return render(request, 'accounts/profile.html', context)
@@ -92,10 +126,12 @@ def profile_edit_view(request):
     if request.method == 'POST':
         phone = request.POST.get('phone')
         if phone:
-            profile.phone = phone
-            profile.save()
-            messages.success(request, "Profile updated successfully.")
-            return redirect('accounts:profile')
+            profile.phone = phone.strip()
+        if 'profile_picture' in request.FILES:
+            profile.profile_pic = request.FILES['profile_picture']
+        profile.save()
+        messages.success(request, "Profile updated successfully.")
+        return redirect('accounts:profile')
             
     if profile.role == 'student':
         semester = profile.semester

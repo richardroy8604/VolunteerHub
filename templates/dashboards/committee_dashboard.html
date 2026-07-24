@@ -3,6 +3,7 @@
 {% block title %}Committee Head Dashboard — VolunteerHub{% endblock %}
 
 {% block content %}
+{% if committee %}
 <!-- Page Header -->
 <div class="row align-items-center mb-4">
     <div class="col-md-8">
@@ -160,8 +161,8 @@
                         <span class="text-muted d-block" style="font-size: 0.75rem;">Student Lead Coordinator</span>
                     </div>
                 </div>
-                <button type="button" class="btn btn-secondary py-1 px-2.5" id="change-lead-btn" style="font-size: 0.72rem; border-color: var(--clr-border);">
-                    Change Lead
+                <button type="button" class="btn btn-secondary py-1 px-2.5" id="change-lead-btn" onclick="document.getElementById('assign-student-lead-form').classList.toggle('d-none');" style="font-size: 0.72rem; border-color: var(--clr-border);">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Change Lead
                 </button>
             </div>
             {% else %}
@@ -171,19 +172,20 @@
             {% endif %}
 
             <!-- Selection Form (toggles on click or displays when unassigned) -->
-            <form action="." method="post" id="assign-student-lead-form" class="{% if committee.student_coordinator %}d-none{% endif %} mt-3 pt-3 border-top" style="border-top-color: var(--clr-border) !important;">
+            <form action="" method="post" id="assign-student-lead-form" class="{% if committee.student_coordinator %}d-none{% endif %} mt-3 pt-3 border-top" style="border-top-color: var(--clr-border) !important;">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="assign_lead">
                 <div class="d-flex align-items-center gap-2">
                     <div style="flex-grow: 1;">
-                        <select id="id_student_lead" class="form-select" style="border-color: var(--clr-border); font-size: 0.88rem; cursor: pointer; padding: 6px 12px;">
-                            <option value="">-- Select Member --</option>
+                        <select name="student_lead_id" id="id_student_lead" class="form-select" style="border-color: var(--clr-border); font-size: 0.88rem; cursor: pointer; padding: 6px 12px;">
+                            <option value="">-- No Student Lead / Remove --</option>
                             {% for volunteer in volunteers %}
-                            <option value="{{ volunteer.name }}" {% if committee.student_coordinator == volunteer.name %}selected{% endif %}>{{ volunteer.name }} ({{ volunteer.class }})</option>
+                            <option value="{{ volunteer.id }}" {% if committee.student_coordinator == volunteer.name %}selected{% endif %}>{{ volunteer.name }} ({{ volunteer.class }})</option>
                             {% endfor %}
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary px-3" style="font-size: 0.88rem; font-weight: 600; padding: 6px 16px;">
-                        Assign
+                        Save Lead
                     </button>
                 </div>
             </form>
@@ -221,6 +223,37 @@
         </div>
     </div>
 </div>
+{% else %}
+<!-- Empty State when Faculty is not assigned as Head to any committee -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Faculty Portal Dashboard</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Welcome back, <strong>{{ user_name }}</strong></p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-secondary py-2 px-3" style="font-size: 0.85rem; border-radius: 50px;">
+            <i class="fa-solid fa-user-tie me-1"></i> Faculty Member Access
+        </span>
+    </div>
+</div>
+
+<div class="content-card text-center py-5 my-4" style="border-radius: var(--radius-lg);">
+    <div class="py-4">
+        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; color: var(--clr-primary);">
+            <i class="fa-solid fa-user-gear" style="font-size: 2.5rem;"></i>
+        </div>
+        <h4 class="h5 font-weight-bold text-dark mb-2">No Active Committee Assignment Found</h4>
+        <p class="text-muted mx-auto" style="max-width: 560px; font-size: 0.9rem; line-height: 1.6;">
+            You are currently not designated as the Faculty Head for any active campus event committees. Once the Dean assigns you to head a committee, your volunteer management controls, attendance sheets, and student lead tools will automatically appear here.
+        </p>
+        <div class="mt-4">
+            <a href="/accounts/profile/" class="btn btn-primary px-4 py-2">
+                <i class="fa-solid fa-user-circle me-1"></i> View My Profile
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -246,29 +279,6 @@
             });
         });
 
-        // Toggle Student Lead Selector Form
-        const changeLeadBtn = document.getElementById('change-lead-btn');
-        const assignLeadForm = document.getElementById('assign-student-lead-form');
-        if (changeLeadBtn && assignLeadForm) {
-            changeLeadBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                assignLeadForm.classList.toggle('d-none');
-                this.textContent = assignLeadForm.classList.contains('d-none') ? "Change Lead" : "Cancel";
-            });
-        }
-
-        // Mock submit logic
-        assignLeadForm?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const select = document.getElementById('id_student_lead');
-            const selectedName = select.options[select.selectedIndex].value;
-            if (selectedName) {
-                alert(`Mock Success: Assigned "${selectedName}" as the Committee Student Coordinator.`);
-            } else {
-                alert(`Mock Success: Removed Student Coordinator for this committee.`);
-            }
-            window.location.reload();
-        });
     });
 </script>
 {% endblock %}

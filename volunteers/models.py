@@ -29,7 +29,19 @@ class VolunteerApplication(models.Model):
         ('assigned', 'Assigned'),
         ('rejected', 'Rejected'),
         ('waitlisted', 'Waitlisted'),
+        ('cancelled', 'Cancelled'),
     ]
+
+    cancellation_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Reason provided by student for cancelling registration"
+    )
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when registration was cancelled"
+    )
 
     student = models.ForeignKey(
         'accounts.UserProfile',

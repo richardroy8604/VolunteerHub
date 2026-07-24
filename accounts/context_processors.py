@@ -27,11 +27,30 @@ def user_context(request):
         'user_designation': '',
         'user_profile': None,
         'is_student_coordinator': False,
+        'pending_approvals_count': 0,
     }
 
     if request.user.is_authenticated:
         try:
             profile = request.user.profile
+            
+            pending_approvals = 0
+            user_committee_id = None
+
+            if profile.role == 'dean' or request.user.is_staff:
+                from volunteers.models import AttendanceSheet
+                pending_approvals = AttendanceSheet.objects.filter(status='pending').count()
+            elif profile.role == 'faculty':
+                from events.models import Committee
+                user_comm = Committee.objects.filter(
+                    faculty_head=profile,
+                    event__status__in=['open', 'upcoming', 'ongoing']
+                ).first()
+                if not user_comm:
+                    user_comm = Committee.objects.filter(faculty_head=profile).first()
+                if user_comm:
+                    user_committee_id = user_comm.id
+
             context.update({
                 'user_role': profile.role,
                 'user_name': request.user.get_full_name() or request.user.username,
@@ -39,6 +58,8 @@ def user_context(request):
                 'user_designation': profile.display_role,
                 'user_profile': profile,
                 'is_student_coordinator': profile.is_student_coordinator,
+                'pending_approvals_count': pending_approvals,
+                'user_committee_id': user_committee_id,
             })
         except Exception:
             # Profile may not exist yet (e.g. during superuser creation)

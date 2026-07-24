@@ -53,6 +53,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.NoCacheMiddleware',
+    'accounts.middleware.FirstLoginEnforcementMiddleware',
+    'accounts.middleware.SessionIdleTimeoutMiddleware',
 ]
 
 ROOT_URLCONF = 'volunteerhub.urls'

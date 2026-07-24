@@ -296,3 +296,22 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     else:
         # Ensure profile exists for existing users
         UserProfile.objects.get_or_create(user=instance)
+
+
+class Notification(models.Model):
+    """
+    In-system notification sent to users (Faculty/Deans/Students).
+    """
+    recipient = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self):
+        return f"To {self.recipient}: {self.title}"

@@ -36,7 +36,7 @@
 <!-- Applications Listing -->
 <div class="d-flex flex-column gap-4">
     {% for app in applications %}
-    <div class="content-card p-4 clickable-card" style="border-radius: var(--radius-lg); {% if app.status == 'Assigned' %}border-left: 4px solid var(--clr-primary);{% else %}border-left: 4px solid var(--clr-warning);{% endif %}" onclick="{% if app.status == 'Assigned' %}window.location.href='/student/committees/{{ app.committee_id }}/';{% else %}window.location.href='/events/{{ app.event_id }}/';{% endif %}">
+    <div class="content-card p-4 clickable-card" style="border-radius: var(--radius-lg); {% if app.raw_status == 'assigned' %}border-left: 4px solid var(--clr-primary);{% elif app.raw_status == 'cancelled' %}border-left: 4px solid #6c757d;{% else %}border-left: 4px solid var(--clr-warning);{% endif %}" onclick="{% if app.raw_status == 'assigned' %}window.location.href='/student/committees/{{ app.committee_id }}/';{% else %}window.location.href='/events/{{ app.event_id }}/';{% endif %}">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 border-bottom pb-3 mb-3">
             <div>
                 <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
@@ -48,13 +48,17 @@
             </div>
             
             <div class="d-flex align-items-center gap-2">
-                {% if app.status == 'Assigned' %}
+                {% if app.raw_status == 'assigned' %}
                 <span class="badge bg-success-light text-success rounded px-3 py-1.5" style="font-size: 0.78rem; background-color: rgba(25, 135, 84, 0.1); font-weight: 600;">
                     <i class="fa-solid fa-circle-check me-1"></i> Allocated: {{ app.assigned_committee }}
                 </span>
-                {% elif app.status == 'Pending' %}
+                {% elif app.raw_status == 'pending' %}
                 <span class="badge bg-warning-light text-warning rounded px-3 py-1.5" style="font-size: 0.78rem; background-color: rgba(255, 193, 7, 0.1); font-weight: 600;">
                     <i class="fa-solid fa-clock me-1"></i> Allocation Pending
+                </span>
+                {% elif app.raw_status == 'cancelled' %}
+                <span class="badge bg-secondary text-white rounded px-3 py-1.5" style="font-size: 0.78rem; font-weight: 600;">
+                    <i class="fa-solid fa-ban me-1"></i> Registration Cancelled
                 </span>
                 {% else %}
                 <span class="badge bg-danger-light text-danger rounded px-3 py-1.5" style="font-size: 0.78rem; background-color: rgba(220, 53, 69, 0.1); font-weight: 600;">
@@ -116,7 +120,7 @@
                         <span class="text-muted">Application Submitted Successfully</span>
                     </div>
 
-                    {% if app.status == 'Assigned' %}
+                    {% if app.raw_status == 'assigned' %}
                     <div class="d-flex align-items-start gap-2 position-relative" style="z-index: 2;">
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mt-0.5" style="width: 20px; height: 20px; font-size: 0.65rem; background-color: var(--clr-primary) !important; flex-shrink: 0;">
                             <i class="fa-solid fa-check"></i>
@@ -134,12 +138,26 @@
                             {% endif %}
                         </div>
                     </div>
-                    {% elif app.status == 'Pending' %}
+                    {% elif app.raw_status == 'pending' %}
                     <div class="d-flex align-items-center gap-2 position-relative" style="z-index: 2;">
                         <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center animate-pulse" style="width: 20px; height: 20px; font-size: 0.65rem;">
                             <i class="fa-solid fa-circle-notch fa-spin"></i>
                         </div>
                         <span class="text-muted">Greedy stable matching allocation pending...</span>
+                    </div>
+                    {% elif app.raw_status == 'cancelled' %}
+                    <div class="d-flex align-items-start gap-2 position-relative" style="z-index: 2;">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mt-0.5" style="width: 20px; height: 20px; font-size: 0.65rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-ban"></i>
+                        </div>
+                        <div>
+                            <span class="text-secondary fw-bold d-block">Registration Cancelled</span>
+                            {% if app.cancellation_reason %}
+                            <span class="text-muted d-block mt-1" style="font-size: 0.78rem;">
+                                <strong>Reason:</strong> {{ app.cancellation_reason }}
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% else %}
                     <div class="d-flex align-items-center gap-2 position-relative" style="z-index: 2;">
@@ -153,10 +171,15 @@
             </div>
         </div>
 
-        {% if app.status == 'Pending' %}
-        <div class="d-flex justify-content-end mt-3 pt-3 border-top" style="border-top-color: var(--clr-border);">
-            <button type="button" class="btn btn-secondary py-1 px-3 text-danger" style="font-size: 0.8rem; border-color: var(--clr-border);" onclick="event.stopPropagation(); cancelApplication('{{ app.event }}');">
-                <i class="fa-solid fa-circle-xmark"></i> Cancel Registration
+        {% if app.raw_status == 'pending' or app.raw_status == 'assigned' %}
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-top-color: var(--clr-border);">
+            <span class="text-muted small">
+                <i class="fa-regular fa-calendar-xmark me-1 text-muted"></i>
+                Cancellation Cutoff: <strong>{{ app.cutoff_date }}</strong> (2 days before reg. deadline)
+            </span>
+            <button type="button" class="btn btn-outline-danger py-1.5 px-3" style="font-size: 0.8rem; border-radius: var(--radius-sm);"
+                    onclick="event.stopPropagation(); openCancelRegistrationModal('{{ app.id }}', '{{ app.event|escapejs }}', '{{ app.registration_deadline }}', '{{ app.cutoff_date }}', {{ app.can_cancel|yesno:'true,false' }})">
+                <i class="fa-solid fa-circle-xmark me-1"></i> Cancel Registration
             </button>
         </div>
         {% endif %}
@@ -169,15 +192,101 @@
     {% endfor %}
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL: CANCEL REGISTRATION MODAL (Fix 1) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="cancelRegistrationModal" tabindex="-1" aria-labelledby="cancelRegistrationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-danger text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="modal-title" id="cancelRegistrationModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-circle-xmark me-2"></i> Cancel Volunteer Registration
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="cancelRegistrationForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="cancel_application">
+                <input type="hidden" name="application_id" id="cancel_application_id">
+                
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-3 text-dark">
+                        Are you sure you want to cancel your registration for <strong id="cancel_event_name_display" class="text-danger"></strong>?
+                    </p>
+
+                    <!-- Case 1: Cancellation is Allowed (Within 2 days window) -->
+                    <div id="cancelAllowedSection">
+                        <div class="alert alert-warning py-2.5 px-3 mb-3" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
+                            <i class="fa-solid fa-circle-info me-1"></i>
+                            <strong>Policy Note:</strong> Cancellations are permitted up to <strong>2 days prior to the registration deadline</strong> (<span id="cancel_reg_deadline_display"></span>).
+                            Submitting this form will send your reason directly to the faculty in-charge.
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="form-label font-weight-bold" for="cancel_reason_input" style="font-size: 0.88rem; color: var(--clr-text-main);">
+                                Reason for Cancellation <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="cancel_reason_input" name="reason" class="form-control" rows="3" placeholder="Please explain why you need to cancel your registration..." style="border-color: var(--clr-border);" required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Case 2: Cancellation is Closed (Past 2-day cutoff) -->
+                    <div id="cancelClosedSection" class="d-none">
+                        <div class="alert alert-danger py-3 px-3 mb-0" style="font-size: 0.85rem; border-radius: var(--radius-sm);">
+                            <h6 class="fw-bold mb-1"><i class="fa-solid fa-lock me-1"></i> Cancellation Closed</h6>
+                            <p class="mb-0">
+                                Registration cancellations are closed for this event. As per policy, registrations can only be cancelled at least <strong>2 days before the deadline</strong>.
+                            </p>
+                            <div class="mt-2 pt-2 border-top border-danger-subtle small">
+                                • Registration Deadline: <strong id="closed_reg_deadline"></strong><br>
+                                • Cancellation Cutoff was: <strong id="closed_cutoff_date"></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" id="cancelSubmitBtn" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function cancelApplication(eventName) {
-        if (confirm(`Are you sure you want to cancel your application for "${eventName}"?`)) {
-            alert('Mock Success: Registration cancelled successfully.');
-            window.location.reload();
+    function openCancelRegistrationModal(appId, eventName, regDeadline, cutoffDate, canCancel) {
+        document.getElementById('cancel_application_id').value = appId;
+        document.getElementById('cancel_event_name_display').textContent = eventName;
+        document.getElementById('cancel_reg_deadline_display').textContent = regDeadline;
+
+        const allowedSec = document.getElementById('cancelAllowedSection');
+        const closedSec = document.getElementById('cancelClosedSection');
+        const submitBtn = document.getElementById('cancelSubmitBtn');
+        const reasonInput = document.getElementById('cancel_reason_input');
+
+        if (canCancel) {
+            allowedSec.classList.remove('d-none');
+            closedSec.classList.add('d-none');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('d-none');
+            reasonInput.required = true;
+            reasonInput.value = '';
+        } else {
+            allowedSec.classList.add('d-none');
+            closedSec.classList.remove('d-none');
+            document.getElementById('closed_reg_deadline').textContent = regDeadline;
+            document.getElementById('closed_cutoff_date').textContent = cutoffDate;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('d-none');
+            reasonInput.required = false;
         }
+
+        const modal = new bootstrap.Modal(document.getElementById('cancelRegistrationModal'));
+        modal.show();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -190,7 +299,6 @@
                 
                 navigator.clipboard.writeText(phone).then(() => {
                     const icon = this.querySelector('i');
-                    // Success visual flash feedback
                     icon.className = 'fa-solid fa-check text-success';
                     setTimeout(() => {
                         icon.className = 'fa-regular fa-copy';

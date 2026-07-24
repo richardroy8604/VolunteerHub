@@ -34,7 +34,9 @@
                     <a href="/dean/approvals/" class="sidebar-link {% if '/dean/approvals/' in request.path or 'approvals' in request.path and user_role == 'dean' %}active{% endif %}" data-title="Approvals">
                         <i class="fa-solid fa-stamp"></i>
                         <span>Approvals</span>
-                        <span class="badge bg-danger ms-auto rounded-pill" style="font-size: 0.65rem; padding: 3px 6px;">2</span>
+                        {% if pending_approvals_count > 0 %}
+                        <span class="badge bg-danger ms-auto rounded-pill" style="font-size: 0.65rem; padding: 3px 6px;">{{ pending_approvals_count }}</span>
+                        {% endif %}
                     </a>
                 </li>
                 <li class="nav-item">
@@ -64,24 +66,45 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+                {% if user_committee_id %}
                 <li class="nav-item">
-                    <a href="/committee/1/volunteers/" class="sidebar-link {% if '/committee/1/volunteers/' in request.path or '/committee/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
+                    <a href="/committee/{{ user_committee_id }}/volunteers/" class="sidebar-link {% if '/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
                         <i class="fa-solid fa-users"></i>
                         <span>My Volunteers</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/committee/1/attendance/" class="sidebar-link {% if '/committee/1/attendance/' in request.path or '/committee/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
+                    <a href="/committee/{{ user_committee_id }}/attendance/" class="sidebar-link {% if '/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
                         <i class="fa-solid fa-clipboard-user"></i>
                         <span>Mark Attendance</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/committee/1/coordinators/" class="sidebar-link {% if '/committee/1/coordinators/' in request.path or '/committee/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators">
+                    <a href="/committee/{{ user_committee_id }}/coordinators/" class="sidebar-link {% if '/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators">
                         <i class="fa-solid fa-people-arrows"></i>
                         <span>Coordinators</span>
                     </a>
                 </li>
+                {% else %}
+                <li class="nav-item">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if '/volunteers/' in request.path %}active{% endif %}" data-title="Volunteers">
+                        <i class="fa-solid fa-users"></i>
+                        <span>My Volunteers</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if '/attendance/' in request.path %}active{% endif %}" data-title="Attendance">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                        <span>Mark Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/committee/dashboard/" class="sidebar-link {% if '/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <span>Coordinators</span>
+                    </a>
+                </li>
+                {% endif %}
 
             <!-- ================= STUDENT NAVIGATION ================= -->
             {% else %}

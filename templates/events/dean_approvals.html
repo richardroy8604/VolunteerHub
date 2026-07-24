@@ -66,15 +66,41 @@
 </div>
 
 {% else %}
-<!-- COMMITTEE LEVEL SELECTION (Table of Pending Committees for Selected Event) -->
+<!-- Date Selection & Filter Card -->
+<div class="content-card mb-4" style="padding: 16px 24px; border-left: 4px solid var(--clr-primary);">
+    <form action="" method="get" id="date-filter-form" class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <input type="hidden" name="event_id" value="{{ selected_event_id }}">
+        
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-calendar-day text-success" style="font-size: 1.25rem;"></i>
+            <div>
+                <strong class="d-block" style="font-size: 0.95rem; color: var(--clr-text-main);">Filter Submissions by Event Duty Date</strong>
+                <span class="text-muted" style="font-size: 0.78rem;">Choose an event day to view coordinating committee sheets submitted for that date</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <select name="date" id="date-select" class="form-select fw-bold" style="min-width: 250px; border-color: var(--clr-primary); font-size: 0.88rem; cursor: pointer;" onchange="document.getElementById('date-filter-form').submit();">
+                {% for d in event_dates %}
+                <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+            <a href="/dean/approvals/" class="btn btn-secondary py-1.5 px-3 text-nowrap ms-2" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
+                <i class="fa-solid fa-arrow-left me-1"></i> Change Event
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- COMMITTEE LEVEL SELECTION (Table of Pending Committees for Selected Event Date) -->
 <div class="content-card">
     <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
         <h4 class="content-card-title mb-0">
-            <span><i class="fa-solid fa-cubes text-success me-2"></i> Pending Committee Sheets</span>
+            <span><i class="fa-solid fa-cubes text-success me-2"></i> Pending Committee Sheets for {{ selected_date }}</span>
         </h4>
-        <a href="/dean/approvals/" class="btn btn-secondary py-1 px-3 d-flex align-items-center gap-1" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
-            <i class="fa-solid fa-arrow-left"></i> Change Event
-        </a>
+        <span class="badge bg-success py-1.5 px-3" style="font-size: 0.8rem; border-radius: 50px; background-color: var(--clr-primary) !important;">
+            {{ pending_approvals|length }} Pending for {{ selected_date }}
+        </span>
     </div>
 
     <div class="table-responsive">
@@ -83,7 +109,7 @@
                 <tr>
                     <th>Committee Name</th>
                     <th>Submitted By (Coordinator)</th>
-                    <th>Date Submitted</th>
+                    <th>Submitted On</th>
                     <th style="text-align: center;">Volunteers Count</th>
                     <th style="text-align: center;">Total Hours</th>
                     <th style="text-align: center; width: 150px;">Actions</th>
@@ -105,6 +131,12 @@
                         </button>
                     </td>
                 </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="fa-solid fa-circle-check text-success me-1"></i> No pending committee attendance sheets for <strong>{{ selected_date }}</strong>.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -119,7 +151,7 @@
             <!-- Modal Header -->
             <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
                 <h5 class="modal-title" id="reviewModalLabel_{{ sheet.id }}" style="font-weight: 600;">
-                    <i class="fa-solid fa-stamp me-2"></i> Review Hours: {{ sheet.committee_name }}
+                    <i class="fa-solid fa-stamp me-2"></i> Review Hours: {{ sheet.committee_name }} ({{ sheet.duty_date }})
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -127,11 +159,15 @@
             <!-- Modal Body -->
             <div class="modal-body p-4 text-start">
                 <div class="row g-3 mb-4 p-3 bg-light rounded" style="border-radius: var(--radius-md); border-left: 4px solid var(--clr-primary);">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <span class="text-muted d-block" style="font-size: 0.75rem;">EVENT</span>
                         <strong style="font-size: 0.9rem;">{{ sheet.event_name }}</strong>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <span class="text-muted d-block" style="font-size: 0.75rem;">DUTY DATE</span>
+                        <strong style="font-size: 0.9rem; color: var(--clr-primary);">{{ sheet.duty_date }}</strong>
+                    </div>
+                    <div class="col-md-4">
                         <span class="text-muted d-block" style="font-size: 0.75rem;">SUBMITTED BY</span>
                         <strong style="font-size: 0.9rem;">{{ sheet.coordinator }}</strong>
                     </div>
@@ -170,18 +206,52 @@
                 </div>
             </div>
 
+            <!-- Modal Body Additional: In-Modal Send Back Section -->
+            <div id="sendBackSection_{{ sheet.id }}" class="d-none px-4 pb-4">
+                <div class="p-3 bg-light rounded border border-danger-subtle text-start">
+                    <h6 class="text-danger font-weight-bold mb-2" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Send Back Sheet with Feedback
+                    </h6>
+                    <form action="?event_id={{ selected_event_id }}&date={{ selected_date }}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="sheet_id" value="{{ sheet.id }}">
+                        <input type="hidden" name="action" value="send_back">
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted" style="font-size: 0.78rem;">Reason for Rejection / Feedback for Faculty Head <span class="text-danger">*</span></label>
+                            <textarea name="feedback" class="form-control" rows="2" placeholder="Provide feedback to the faculty head (e.g. Please verify student attendance for hour 3 and resubmit)." required style="font-size: 0.85rem; border-color: var(--clr-border);"></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary py-1 px-3" style="font-size: 0.8rem;" onclick="document.getElementById('sendBackSection_{{ sheet.id }}').classList.add('d-none');">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-danger py-1 px-3 font-weight-bold" style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-paper-plane me-1"></i> Confirm & Send Back
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Modal Footer -->
             <div class="modal-footer p-3 border-top-0 d-flex justify-content-between">
                 <div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.9rem;">Close</button>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-danger" onclick="rejectHours('{{ sheet.committee_name }}')" style="font-size: 0.9rem;">
+                    <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('sendBackSection_{{ sheet.id }}').classList.toggle('d-none');" style="font-size: 0.9rem;">
                         <i class="fa-solid fa-triangle-exclamation me-1"></i> Send Back / Reject
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="approveHours('{{ sheet.committee_name }}')" style="font-size: 0.9rem;">
-                        <i class="fa-solid fa-circle-check me-1"></i> Approve & Credit Hours
-                    </button>
+                    
+                    <form action="?event_id={{ selected_event_id }}&date={{ selected_date }}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="sheet_id" value="{{ sheet.id }}">
+                        <input type="hidden" name="action" value="approve">
+                        <button type="submit" class="btn btn-primary font-weight-bold" style="font-size: 0.9rem;">
+                            <i class="fa-solid fa-circle-check me-1"></i> Approve & Credit Hours
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -189,22 +259,4 @@
 </div>
 {% endfor %}
 {% endif %}
-
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    function approveHours(committeeName) {
-        alert(`Mock Success: Volunteering hours for "${committeeName}" approved successfully. Hours have been credited to student profiles.`);
-        window.location.reload();
-    }
-
-    function rejectHours(committeeName) {
-        const reason = prompt(`Enter reason for sending back the hours sheet for "${committeeName}":`);
-        if (reason) {
-            alert(`Mock Success: Attendance sheet sent back to coordinator with feedback: "${reason}".`);
-            window.location.reload();
-        }
-    }
-</script>
 {% endblock %}

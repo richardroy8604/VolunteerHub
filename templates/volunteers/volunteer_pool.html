@@ -4,41 +4,45 @@
 
 {% block extra_css %}
 <style>
+    /* Table container overflow fix for dropdown menus */
+    .table-container-card {
+        min-height: 420px;
+        position: relative;
+    }
+    .table-custom-responsive {
+        overflow-x: auto;
+        overflow-y: visible !important;
+        min-height: 350px;
+        padding-bottom: 80px;
+    }
+    
     /* Row active assignment highlight styles */
     .applicant-row {
         transition: background-color var(--transition-speed) var(--transition-smooth),
-                    outline var(--transition-speed) var(--transition-smooth),
-                    transform var(--transition-speed) var(--transition-smooth);
+                    outline var(--transition-speed) var(--transition-smooth);
     }
-    .applicant-row.row-active-highlight {
-        background-color: #e8f5e9 !important; /* Premium Mint Green */
-        outline: 2px solid var(--clr-primary);
-        transform: scale(1.008);
-        z-index: 10;
-        position: relative;
-        box-shadow: var(--shadow-md);
-    }
-    .applicant-row.row-change-success {
-        background-color: #c8e6c9 !important; /* Soft success green */
-        outline: 2px solid var(--clr-success);
+    .applicant-row.row-modified {
+        background-color: #fff9c4 !important; /* Soft yellow highlight for unsaved changes */
+        outline: 1px solid #fbc02d;
     }
 
-    /* Style the custom select element to look premium and rounded, hiding native OS arrow */
+    /* Style custom select element */
     .row-assign-select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background: #fafafa url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231b4d3e'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>") no-repeat right 10px center;
-        background-size: 11px;
-        padding-right: 28px !important;
         border: 1px solid var(--clr-border) !important;
         border-radius: var(--radius-sm) !important;
         transition: all var(--transition-speed) var(--transition-smooth) !important;
+        font-weight: 500;
     }
     
+    .row-assign-select.is-changed {
+        border-color: #f59e0b !important;
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        font-weight: 700;
+    }
+
     .row-assign-select:focus {
         border-color: var(--clr-primary) !important;
-        background-color: #ffffff !important;
         box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.15) !important;
         outline: none !important;
     }
@@ -46,21 +50,32 @@
 {% endblock %}
 
 {% block content %}
+<!-- Hidden form for Real POST actions (Bulk / Single) -->
+<form id="actionForm" method="post" action="">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="post_action" value="assign_single">
+    <input type="hidden" name="application_id" id="post_application_id" value="">
+    <input type="hidden" name="committee_id" id="post_committee_id" value="">
+    <div id="bulk_application_ids_container"></div>
+</form>
+
 <!-- Page Header / Breadcrumbs -->
-<div class="row align-items-center mb-4">
-    <div class="col-md-8">
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+    <div>
         <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Volunteer Pool: {{ event.name }}</h2>
-        <p class="text-muted mb-0" style="font-size: 0.9rem;">Review and assign incoming volunteer registrations</p>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Review, modify preferences, and save committee allocations</p>
     </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <div class="d-flex justify-content-md-end gap-2">
-            <a href="/dean/events/{{ event.id }}/" class="btn btn-secondary py-2">
-                <i class="fa-solid fa-arrow-left"></i> Back to Event
-            </a>
-            <button type="button" class="btn btn-primary py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Allocate
-            </button>
-        </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="/dean/events/{{ event.id }}/" class="btn btn-secondary py-2 px-3">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Event
+        </a>
+        <button type="button" class="btn btn-secondary py-2 px-3" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
+            <i class="fa-solid fa-wand-magic-sparkles text-success me-1"></i> Auto-Allocate
+        </button>
+        <button type="submit" form="allocationsForm" class="btn btn-primary py-2 px-3 fw-bold" id="save-allocations-btn">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Allocations
+            <span class="badge bg-warning text-dark d-none" id="unsaved-badge" style="font-size: 0.68rem; margin-left: 4px;">Unsaved</span>
+        </button>
     </div>
 </div>
 
@@ -68,29 +83,29 @@
 <div class="grid-dashboard mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
     <div class="metric-card" style="padding: 16px 20px;">
         <div class="metric-content">
-            <span class="metric-value" style="font-size: 1.5rem;">7</span>
+            <span class="metric-value" style="font-size: 1.5rem;">{{ pool_stats.total }}</span>
             <span class="metric-label" style="font-size: 0.75rem;">Total Applications</span>
         </div>
         <div class="metric-icon" style="font-size: 1.5rem;"><i class="fa-solid fa-file-invoice"></i></div>
     </div>
     <div class="metric-card success" style="padding: 16px 20px;">
         <div class="metric-content">
-            <span class="metric-value" style="font-size: 1.5rem;">3</span>
+            <span class="metric-value" style="font-size: 1.5rem;">{{ pool_stats.assigned }}</span>
             <span class="metric-label" style="font-size: 0.75rem;">Assigned</span>
         </div>
         <div class="metric-icon" style="font-size: 1.5rem;"><i class="fa-solid fa-user-check"></i></div>
     </div>
     <div class="metric-card warning" style="padding: 16px 20px;">
         <div class="metric-content">
-            <span class="metric-value" style="font-size: 1.5rem;">3</span>
+            <span class="metric-value" style="font-size: 1.5rem;">{{ pool_stats.pending }}</span>
             <span class="metric-label" style="font-size: 0.75rem;">Pending Allocation</span>
         </div>
         <div class="metric-icon" style="font-size: 1.5rem;"><i class="fa-solid fa-user-clock"></i></div>
     </div>
     <div class="metric-card danger" style="padding: 16px 20px;">
         <div class="metric-content">
-            <span class="metric-value" style="font-size: 1.5rem;">1</span>
-            <span class="metric-label" style="font-size: 0.75rem;">Rejected</span>
+            <span class="metric-value" style="font-size: 1.5rem;">{{ pool_stats.rejected }}</span>
+            <span class="metric-label" style="font-size: 0.75rem;">Rejected / Waitlisted</span>
         </div>
         <div class="metric-icon" style="font-size: 1.5rem;"><i class="fa-solid fa-user-xmark"></i></div>
     </div>
@@ -116,106 +131,104 @@
     </div>
 </div>
 
-<!-- Volunteer Pool List -->
-<div class="content-card">
-    <div class="table-responsive">
-        <table class="table-custom">
-            <thead>
-                <tr>
-                    <th style="width: 40px; text-align: center;">
-                        <input type="checkbox" class="form-check-input" id="select-all-checkbox">
-                    </th>
-                    <th>Student Name</th>
-                    <th>Class / Semester</th>
-                    <th>Preference 1</th>
-                    <th>Preference 2</th>
-                    <th>Preference 3</th>
-                    <th>Assigned Committee</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in applications %}
-                <tr class="applicant-row">
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="form-check-input select-applicant-checkbox" data-id="{{ app.id }}">
-                    </td>
-                    <td style="font-weight: 600;">{{ app.student }}</td>
-                    <td class="text-muted" style="font-size: 0.9rem;">{{ app.class }} / {{ app.dept }}</td>
-                    <td style="font-size: 0.85rem; {% if app.assigned == app.pref1 %}font-weight:600; color:var(--clr-primary);{% endif %}">
-                        1. {{ app.pref1 }}
-                    </td>
-                    <td style="font-size: 0.85rem; {% if app.assigned == app.pref2 %}font-weight:600; color:var(--clr-primary);{% endif %}">
-                        2. {{ app.pref2 }}
-                    </td>
-                    <td style="font-size: 0.85rem; {% if app.assigned == app.pref3 %}font-weight:600; color:var(--clr-primary);{% endif %}">
-                        3. {{ app.pref3 }}
-                    </td>
-                    <td style="font-weight: 600; font-size: 0.9rem;">
-                        {% if app.assigned %}
-                            <i class="fa-solid fa-house-laptop text-success me-1"></i> {{ app.assigned }}
-                        {% else %}
-                            <span class="text-muted font-italic">Unassigned</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if app.status == 'Assigned' %}
-                            <span class="badge-custom badge-assigned">Assigned</span>
-                        {% elif app.status == 'Pending' %}
-                            <span class="badge-custom badge-pending">Pending</span>
-                        {% else %}
-                            <span class="badge-custom badge-rejected">Rejected</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <!-- Premium Bootstrap Dropdown instead of native boxy select -->
-                            <div class="dropdown assign-dropdown">
-                                <button class="btn btn-secondary py-1 px-2 dropdown-toggle row-assign-toggle d-flex align-items-center justify-content-between" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem; border-radius: var(--radius-sm); border-color: var(--clr-border); width: 160px; height: 31px; background-color: #fafafa; color: var(--clr-text-main); font-weight: 500;" data-id="{{ app.id }}">
-                                    <span class="text-truncate me-1" style="max-width: 125px;">
-                                        {% if app.assigned %}
-                                            {{ app.assigned }}
-                                        {% else %}
-                                            -- Unassigned --
-                                        {% endif %}
-                                    </span>
-                                </button>
-                                <ul class="dropdown-menu shadow-sm border-0 py-1" style="border-radius: var(--radius-md); font-size: 0.78rem; min-width: 160px; border: 1px solid var(--clr-border) !important;">
-                                    <li>
-                                        <button type="button" class="dropdown-item py-2 dropdown-assign-option {% if not app.assigned %}active bg-success text-white{% endif %}" data-value="" style="font-weight: 500;">
-                                            -- Unassigned --
-                                        </button>
-                                    </li>
+<!-- Main Form for Batch Saving Allocations -->
+<form action="" method="post" id="allocationsForm">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_allocations">
+
+    <!-- Volunteer Pool List -->
+    <div class="content-card table-container-card">
+        <div class="table-custom-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">
+                            <input type="checkbox" class="form-check-input" id="select-all-checkbox">
+                        </th>
+                        <th>Student Name</th>
+                        <th>Class / Semester</th>
+                        <th>Preference 1</th>
+                        <th>Preference 2</th>
+                        <th>Preference 3</th>
+                        <th>Assigned Committee</th>
+                        <th>Status</th>
+                        <th style="min-width: 210px;">Select Allocation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr class="applicant-row">
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="form-check-input select-applicant-checkbox" data-id="{{ app.id }}">
+                        </td>
+                        <td style="font-weight: 600;">{{ app.student }}</td>
+                        <td class="text-muted" style="font-size: 0.9rem;">{{ app.class }} / {{ app.dept }}</td>
+                        <td style="font-size: 0.85rem; {% if app.assigned == app.pref1 %}font-weight:600; color:var(--clr-primary);{% endif %}">
+                            1. {{ app.pref1 }}
+                        </td>
+                        <td style="font-size: 0.85rem; {% if app.assigned == app.pref2 %}font-weight:600; color:var(--clr-primary);{% endif %}">
+                            2. {{ app.pref2 }}
+                        </td>
+                        <td style="font-size: 0.85rem; {% if app.assigned == app.pref3 %}font-weight:600; color:var(--clr-primary);{% endif %}">
+                            3. {{ app.pref3 }}
+                        </td>
+                        <td style="font-weight: 600; font-size: 0.9rem;">
+                            {% if app.assigned %}
+                                <i class="fa-solid fa-house-laptop text-success me-1"></i> {{ app.assigned }}
+                            {% else %}
+                                <span class="text-muted font-italic">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.raw_status == 'assigned' %}
+                                <span class="badge-custom badge-assigned">Assigned</span>
+                            {% elif app.raw_status == 'pending' %}
+                                <span class="badge-custom badge-pending">Pending</span>
+                            {% else %}
+                                <span class="badge-custom badge-rejected">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <select name="assign_{{ app.id }}" class="form-select form-select-sm row-assign-select" data-original="{% if app.raw_status == 'rejected' %}rejected{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}{% endif %}" style="font-size: 0.82rem; border-color: var(--clr-border); cursor: pointer; width: 175px;">
+                                    <option value="" {% if not app.assigned_id and app.raw_status != 'rejected' %}selected{% endif %}>-- Unassigned --</option>
                                     {% for committee in event.committees %}
-                                    <li>
-                                        <button type="button" class="dropdown-item py-2 dropdown-assign-option {% if app.assigned == committee.name %}active bg-success text-white{% endif %}" data-value="{{ committee.id }}" style="font-weight: 500;">
-                                            {{ committee.name }}
-                                        </button>
-                                    </li>
+                                    <option value="{{ committee.id }}" {% if app.assigned_id == committee.id %}selected{% endif %}>
+                                        {{ committee.name }}
+                                    </option>
                                     {% endfor %}
-                                    <li><hr class="dropdown-divider my-1" style="border-color: var(--clr-border);"></li>
-                                    <li>
-                                        <button type="button" class="dropdown-item py-2 text-danger dropdown-assign-option {% if app.status == 'Rejected' %}active bg-danger text-white{% endif %}" data-value="rejected" style="font-weight: 500;">
-                                            [Reject / Waitlist]
-                                        </button>
-                                    </li>
-                                </ul>
+                                    <option value="rejected" {% if app.raw_status == 'rejected' %}selected{% endif %} class="text-danger">
+                                        [Reject / Waitlist]
+                                    </option>
+                                </select>
                             </div>
-                            
-                            <button type="button" class="btn btn-secondary py-1 px-2 text-danger single-reject-btn" style="font-size: 0.75rem; border-radius: var(--radius-sm); height: 31px; display: flex; align-items: center;" title="Reject registration" data-id="{{ app.id }}">
-                                <i class="fa-solid fa-user-xmark"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fa-regular fa-folder-open mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                            No volunteer applications submitted for this event yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+</form>
+
+<!-- Bottom Save Bar Floating Indicator -->
+<div class="d-flex justify-content-between align-items-center mt-3 p-3 content-card border-top" style="border-top-color: var(--clr-border);">
+    <span class="text-muted small">
+        <i class="fa-solid fa-circle-info text-success me-1"></i> Adjust committee selections above and click <strong>Save Allocations</strong> to apply changes.
+    </span>
+    <button type="submit" form="allocationsForm" class="btn btn-success py-2 px-4 font-weight-bold" style="background-color: var(--clr-primary) !important; border-color: var(--clr-primary) !important;">
+        <i class="fa-solid fa-floppy-disk me-1"></i> Save Allocations
+    </button>
 </div>
 
-<!-- Auto-Allocation Settings Bootstrap Modal (Repeated here for context matching) -->
+<!-- Auto-Allocation Settings Bootstrap Modal -->
 <div class="modal fade" id="autoAllocateModal" tabindex="-1" aria-labelledby="autoAllocateModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
@@ -223,7 +236,7 @@
                 <h5 class="modal-title" id="autoAllocateModalLabel" style="font-weight: 600;"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Auto-Allocation Settings</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="." method="post">
+            <form action="/dean/events/{{ event.id }}/auto_allocate/" method="post">
                 {% csrf_token %}
                 <div class="modal-body p-4 text-start">
                     <p class="text-muted" style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
@@ -281,7 +294,6 @@
                 </div>
                 <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <!-- Form submit triggers mock loading -->
                     <button type="submit" class="btn btn-primary" id="run-algo-btn">Run Algorithm</button>
                 </div>
             </form>
@@ -291,7 +303,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Selection & modal interaction script -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const selectAllCheckbox = document.getElementById('select-all-checkbox');
@@ -300,6 +311,7 @@
         const countLabel = document.getElementById('selected-count-label');
         const balanceCheck = document.getElementById('balance_class');
         const limitsRow = document.getElementById('class-balance-limits');
+        const unsavedBadge = document.getElementById('unsaved-badge');
 
         // Toggle balance options inside modal
         if (balanceCheck && limitsRow) {
@@ -351,90 +363,84 @@
             }
         }
 
-        // Mock action alerts
+        // Detect Unsaved Dropdown Changes
+        const rowSelects = document.querySelectorAll('.row-assign-select');
+        rowSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                const orig = this.getAttribute('data-original');
+                const current = this.value;
+                const row = this.closest('tr');
+
+                if (current !== orig) {
+                    this.classList.add('is-changed');
+                    row.classList.add('row-modified');
+                } else {
+                    this.classList.remove('is-changed');
+                    row.classList.remove('row-modified');
+                }
+
+                // Check if any row has changed
+                const anyChanged = Array.from(rowSelects).some(s => s.value !== s.getAttribute('data-original'));
+                if (anyChanged) {
+                    if (unsavedBadge) unsavedBadge.classList.remove('d-none');
+                } else {
+                    if (unsavedBadge) unsavedBadge.classList.add('d-none');
+                }
+            });
+        });
+
+        // Real Bulk Assignment Form Submit
         const bulkAssignBtn = document.getElementById('bulk-assign-btn');
         const bulkAssignSelect = document.getElementById('bulk-assign-select');
         const bulkRejectBtn = document.getElementById('bulk-reject-btn');
 
         if (bulkAssignBtn && bulkAssignSelect) {
             bulkAssignBtn.addEventListener('click', function() {
-                const committeeText = bulkAssignSelect.options[bulkAssignSelect.selectedIndex].text;
-                if (!bulkAssignSelect.value) {
+                const commId = bulkAssignSelect.value;
+                if (!commId) {
                     alert('Please select a committee to assign.');
                     return;
                 }
-                alert(`Mock: Assigned selected volunteers to ${committeeText}`);
-                window.location.reload();
+                const checkedCbs = document.querySelectorAll('.select-applicant-checkbox:checked');
+                if (checkedCbs.length === 0) return;
+
+                const container = document.getElementById('bulk_application_ids_container');
+                container.innerHTML = '';
+                checkedCbs.forEach(cb => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'application_ids[]';
+                    input.value = cb.getAttribute('data-id');
+                    container.appendChild(input);
+                });
+
+                document.getElementById('post_action').value = 'bulk_assign';
+                document.getElementById('post_committee_id').value = commId;
+                document.getElementById('actionForm').submit();
             });
         }
 
         if (bulkRejectBtn) {
             bulkRejectBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to reject/waitlist the selected volunteers?')) {
-                    alert('Mock: Rejected selected registrations');
-                    window.location.reload();
+                const checkedCbs = document.querySelectorAll('.select-applicant-checkbox:checked');
+                if (checkedCbs.length === 0) return;
+
+                if (confirm(`Are you sure you want to reject/waitlist the ${checkedCbs.length} selected volunteer(s)?`)) {
+                    const container = document.getElementById('bulk_application_ids_container');
+                    container.innerHTML = '';
+                    checkedCbs.forEach(cb => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'application_ids[]';
+                        input.value = cb.getAttribute('data-id');
+                        container.appendChild(input);
+                    });
+
+                    document.getElementById('post_action').value = 'bulk_reject';
+                    document.getElementById('actionForm').submit();
                 }
             });
         }
-
-        // Mock individual actions via row Bootstrap dropdown
-        const assignDropdowns = document.querySelectorAll('.assign-dropdown');
-        assignDropdowns.forEach(dropdownEl => {
-            const row = dropdownEl.closest('tr');
-            const toggleBtn = dropdownEl.querySelector('.row-assign-toggle');
-            const options = dropdownEl.querySelectorAll('.dropdown-assign-option');
-            
-            // Highlight row when dropdown is shown
-            dropdownEl.addEventListener('show.bs.dropdown', function() {
-                row.classList.add('row-active-highlight');
-                toggleBtn.style.borderColor = 'var(--clr-primary)';
-                toggleBtn.style.boxShadow = '0 0 0 3px rgba(27, 77, 62, 0.15)';
-                toggleBtn.style.backgroundColor = '#ffffff';
-            });
-            
-            // Remove highlight when dropdown is hidden
-            dropdownEl.addEventListener('hide.bs.dropdown', function() {
-                row.classList.remove('row-active-highlight');
-                toggleBtn.style.borderColor = 'var(--clr-border)';
-                toggleBtn.style.boxShadow = 'none';
-                toggleBtn.style.backgroundColor = '#fafafa';
-            });
-            
-            // Handle option selection
-            options.forEach(option => {
-                option.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    row.classList.add('row-change-success');
-                    
-                    const selectedVal = this.getAttribute('data-value');
-                    const selectedText = this.innerText.trim();
-                    
-                    setTimeout(() => {
-                        row.classList.remove('row-active-highlight');
-                        row.classList.remove('row-change-success');
-                        
-                        if (selectedVal === 'rejected') {
-                            alert(`Mock: Waitlisted/Rejected volunteer registration.`);
-                        } else if (selectedVal) {
-                            alert(`Mock: Assigned student to "${selectedText}".`);
-                        } else {
-                            alert(`Mock: Unassigned student.`);
-                        }
-                        window.location.reload();
-                    }, 400); // Delay for transition duration
-                });
-            });
-        });
-
-        document.querySelectorAll('.single-reject-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const studentName = this.closest('tr').querySelector('td:nth-child(2)').innerText;
-                if (confirm(`Are you sure you want to reject/waitlist ${studentName}?`)) {
-                    alert(`Mock: ${studentName} waitlisted.`);
-                    window.location.reload();
-                }
-            });
-        });
     });
 </script>
 {% endblock %}
