@@ -48,6 +48,23 @@
         <div class="content-card">
             <h4 class="content-card-title border-bottom pb-2 mb-3">Committees Structure</h4>
             
+{% if event.has_overmanned and user_role == 'dean' or event.has_overmanned and user.profile.role == 'dean' %}
+<div class="alert alert-warning border-0 shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between gap-3" style="border-radius: var(--radius-md); background-color: #fffbe6; color: #856404; border-left: 4px solid #f59e0b !important;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #fef3c7; color: #d97706; font-size: 1.1rem;">
+            <i class="fa-solid fa-users-slash"></i>
+        </div>
+        <div>
+            <h6 class="mb-0 fw-bold" style="font-size: 0.92rem; color: #78350f;">Action Required: Overmanned Committees Detected</h6>
+            <span style="font-size: 0.84rem; opacity: 0.95;">One or more committees exceed their required volunteer quota. Please review and adjust volunteer allocations.</span>
+        </div>
+    </div>
+    <a href="/dean/events/{{ event.id }}/volunteer_pool/" class="btn btn-warning text-dark fw-bold py-1.5 px-3 text-nowrap" style="font-size: 0.82rem; border-radius: var(--radius-sm);">
+        Manage Allocations <i class="fa-solid fa-arrow-right ms-1"></i>
+    </a>
+</div>
+{% endif %}
+
             <div class="table-responsive">
                 <table class="table-custom">
                     <thead>
@@ -58,11 +75,12 @@
                             <th>Required Slots</th>
                             <th>Filled Slots</th>
                             <th>Capacity Indicator</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for committee in event.committees %}
-                        <tr>
+                        <tr class="clickable-committee-row" style="cursor: pointer;" onclick="window.location.href='/dean/committees/{{ committee.id }}/';">
                             <td style="font-weight: 600;">{{ committee.name }}</td>
                             <td style="font-size: 0.85rem;">{{ committee.head }}</td>
                             <td style="font-size: 0.85rem; font-weight: 600;">
@@ -74,20 +92,35 @@
                             </td>
                             <td style="font-weight: 600;">{{ committee.required }}</td>
                             <td>
-                                <span class="badge bg-success" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">{{ committee.assigned }}</span>
+                                {% if committee.is_overmanned and user_role == 'dean' or committee.is_overmanned and user.profile.role == 'dean' %}
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">
+                                        <i class="fa-solid fa-users-slash me-1"></i> {{ committee.assigned }} (Overmanned)
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">{{ committee.assigned }}</span>
+                                {% endif %}
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="progress" style="width: 80px; height: 8px; border-radius: 5px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required 100 %}%"></div>
+                                        {% if committee.is_overmanned and user_role == 'dean' or committee.is_overmanned and user.profile.role == 'dean' %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 100%"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required|default:1 100 %}%"></div>
+                                        {% endif %}
                                     </div>
-                                    <span style="font-size: 0.75rem; font-weight: 500;" class="text-muted">{% widthratio committee.assigned committee.required 100 %}%</span>
+                                    <span style="font-size: 0.75rem; font-weight: 500;" class="text-muted">{% if committee.is_overmanned and user.profile.role == 'dean' %}>100%{% else %}{% widthratio committee.assigned committee.required|default:1 100 %}%{% endif %}</span>
                                 </div>
+                            </td>
+                            <td>
+                                <a href="/dean/committees/{{ committee.id }}/" class="btn btn-sm btn-outline-primary py-1 px-2.5" style="font-size: 0.78rem;" onclick="event.stopPropagation();">
+                                    View Committee <i class="fa-solid fa-arrow-right ms-1"></i>
+                                </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">No committees configured for this event.</td>
+                            <td colspan="7" class="text-center py-4 text-muted">No committees configured for this event.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -279,12 +312,15 @@
                     <input type="text" id="confirm_delete_input" class="form-control" placeholder="Type DELETE" autocomplete="off" style="border-color: var(--clr-border);">
                 </div>
             </div>
-            <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirm_delete_btn" disabled onclick="alert('Mock: Event deleted successfully.'); window.location.href='/dean/events/';">
-                    Delete Event
-                </button>
-            </div>
+            <form action="/dean/events/{{ event.id }}/delete/" method="post">
+                {% csrf_token %}
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirm_delete_btn" disabled>
+                        Delete Event
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -70,9 +70,9 @@
                             <div style="flex-grow: 1;">
                                 <label class="form-label mb-1.5" for="id_student_coordinator" style="font-size: 0.82rem; font-weight: 600;">Assign Committee Student Coordinator</label>
                                 <select id="id_student_coordinator" name="student_coordinator" class="form-select" style="border-color: var(--clr-border); cursor: pointer; font-size: 0.88rem; padding: 7px 12px;">
-                                    <option value="">-- Leave Unassigned / Select Member --</option>
+                                    <option value="">-- Leave Unassigned / Remove --</option>
                                     {% for volunteer in volunteers %}
-                                    <option value="{{ volunteer.name }}" {% if committee.student_head == volunteer.name %}selected{% endif %}>{{ volunteer.name }} ({{ volunteer.class }})</option>
+                                    <option value="{{ volunteer.id }}" {% if committee.student_head == volunteer.name %}selected{% endif %}>{{ volunteer.name }} ({{ volunteer.class }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -164,20 +164,4 @@
         </table>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.getElementById('assign-coordinator-form')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const select = document.getElementById('id_student_coordinator');
-        const selectedName = select.options[select.selectedIndex].value;
-        if (selectedName) {
-            alert(`Mock Success: Assigned "${selectedName}" as the Committee Student Coordinator.`);
-        } else {
-            alert(`Mock Success: Removed Student Coordinator for this committee.`);
-        }
-        window.location.reload();
-    });
-</script>
 {% endblock %}

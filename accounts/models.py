@@ -186,7 +186,8 @@ class UserProfile(models.Model):
         if self.role != 'student' or not self.admission_year:
             return None
 
-        today = date.today()
+        from django.utils import timezone
+        today = timezone.localtime(timezone.now()).date()
         start_year = 2000 + self.admission_year
         years_diff = today.year - start_year
 

@@ -12,6 +12,18 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class Venue(models.Model):
+    """Saved location / venue registry for quick dropdown selection."""
+    name = models.CharField(max_length=200, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Event(models.Model):
     """
     A campus event that requires volunteer management.
@@ -33,6 +45,7 @@ class Event(models.Model):
     ]
 
     ALLOCATION_CHOICES = [
+        ('pool', 'General Pool with Preferences'),
         ('manual', 'Manual'),
         ('auto', 'Auto'),
     ]
@@ -57,7 +70,7 @@ class Event(models.Model):
     allocation_mode = models.CharField(
         max_length=10,
         choices=ALLOCATION_CHOICES,
-        default='manual'
+        default='pool'
     )
 
     # Main Student Coordinator for the entire event
@@ -87,6 +100,42 @@ class Event(models.Model):
         return f"{self.name} ({self.get_status_display()})"
 
     # ---- Computed Properties ----
+
+    @property
+    def dynamic_status(self):
+        """
+        Dynamically computes the event status based on today's date vs start_date, end_date,
+        and registration_deadline.
+        """
+        from django.utils import timezone
+        today = timezone.localtime(timezone.now()).date()
+
+        if self.status in ['cancelled', 'draft']:
+            return self.status
+
+        if today > self.end_date:
+            return 'completed'
+        elif self.start_date <= today <= self.end_date:
+            return 'ongoing'
+        elif today < self.start_date:
+            if today <= self.registration_deadline:
+                return 'open'
+            else:
+                return 'upcoming'
+        return self.status
+
+    @property
+    def dynamic_status_display(self):
+        """User-facing status display text based on dynamic status."""
+        status_map = {
+            'draft': 'Draft',
+            'open': 'Open for Registration',
+            'upcoming': 'Registration Closed',
+            'ongoing': 'Ongoing',
+            'completed': 'Completed',
+            'cancelled': 'Cancelled',
+        }
+        return status_map.get(self.dynamic_status, self.get_status_display())
 
     @property
     def total_applications(self):

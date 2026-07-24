@@ -79,6 +79,34 @@
     </div>
 </div>
 
+{% if is_registration_open %}
+<div class="alert alert-info border-0 shadow-sm p-3 mb-4 d-flex align-items-center gap-3" style="border-radius: var(--radius-md); background-color: #e0f2fe; color: #0369a1;">
+    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #0284c7; color: white; font-size: 1.1rem;">
+        <i class="fa-solid fa-circle-info"></i>
+    </div>
+    <div>
+        <h6 class="mb-0 fw-bold" style="font-size: 0.92rem; color: #0c4a6e;">Informational Draft Mode</h6>
+        <span style="font-size: 0.84rem; opacity: 0.95;">
+            Student registrations are still open for this event (Deadline: <strong>{{ registration_deadline }}</strong>). Any allocations performed now will remain in <strong>draft mode</strong> until you save and finalize them.
+        </span>
+    </div>
+</div>
+{% endif %}
+
+{% if has_overmanned %}
+<div class="alert alert-warning border-0 shadow-sm p-3 mb-4 d-flex align-items-center gap-3" style="border-radius: var(--radius-md); background-color: #fffbe6; color: #856404; border-left: 4px solid #f59e0b !important;">
+    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #fef3c7; color: #d97706; font-size: 1.1rem;">
+        <i class="fa-solid fa-users-slash"></i>
+    </div>
+    <div>
+        <h6 class="mb-0 fw-bold" style="font-size: 0.92rem; color: #78350f;">Overmanned Committee Quotas Detected</h6>
+        <span style="font-size: 0.84rem; opacity: 0.95;">
+            One or more committees currently have assigned volunteers exceeding their required quota. You can select excess volunteers in the table below to unassign, reallocate, or mark as waitlisted/rejected.
+        </span>
+    </div>
+</div>
+{% endif %}
+
 <!-- Event Stats Summary -->
 <div class="grid-dashboard mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
     <div class="metric-card" style="padding: 16px 20px;">
@@ -439,6 +467,17 @@
                     document.getElementById('post_action').value = 'bulk_reject';
                     document.getElementById('actionForm').submit();
                 }
+            });
+        }
+        const allocationsForm = document.getElementById('allocationsForm');
+        if (allocationsForm) {
+            allocationsForm.addEventListener('submit', function(e) {
+                {% if has_overmanned %}
+                const confirmSave = confirm("Notice: One or more committees are currently overmanned (assigned volunteers exceed required quota). Are you sure you want to save these allocations?");
+                if (!confirmSave) {
+                    e.preventDefault();
+                }
+                {% endif %}
             });
         }
     });

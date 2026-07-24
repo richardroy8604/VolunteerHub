@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accounts.middleware.NoCacheMiddleware',
+    'accounts.middleware.GlobalLoginRequiredMiddleware',
     'accounts.middleware.FirstLoginEnforcementMiddleware',
     'accounts.middleware.SessionIdleTimeoutMiddleware',
 ]

@@ -94,17 +94,25 @@
                                     <span style="font-weight: 600; font-size: 0.85rem;">{{ event.assigned_volunteers }}/{{ event.max_volunteers }}</span>
                                     <!-- Progress bar indicator -->
                                     <div class="progress" style="width: 70px; height: 6px; border-radius: 5px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio event.assigned_volunteers event.max_volunteers 100 %}%"></div>
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio event.assigned_volunteers event.max_volunteers|default:100 100 %}%"></div>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                {% if event.status == 'Open' %}
-                                    <span class="badge-custom badge-assigned">Open</span>
-                                {% elif event.status == 'Upcoming' %}
-                                    <span class="badge bg-light text-dark border" style="border-radius: 50px; font-size: 0.7rem; padding: 4px 10px;">Upcoming</span>
+                                {% if event.has_overmanned %}
+                                    <span class="badge bg-warning text-dark px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700; border-radius: 50px;">
+                                        <i class="fa-solid fa-users-slash me-1"></i> OVERMANNED
+                                    </span>
+                                {% elif event.raw_status == 'open' or 'Open' in event.status %}
+                                    <span class="badge bg-success-light text-success border border-success-subtle px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700; border-radius: 50px; background-color: rgba(25, 135, 84, 0.1);">OPEN</span>
+                                {% elif event.raw_status == 'ongoing' or 'Ongoing' in event.status %}
+                                    <span class="badge bg-primary-light text-primary border border-primary-subtle px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700; border-radius: 50px; background-color: rgba(13, 110, 253, 0.1);">ONGOING</span>
+                                {% elif event.raw_status == 'upcoming' or 'Upcoming' in event.status %}
+                                    <span class="badge bg-warning-light text-warning border border-warning-subtle px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700; border-radius: 50px; background-color: rgba(255, 193, 7, 0.1);">UPCOMING</span>
+                                {% elif event.raw_status == 'completed' or 'Completed' in event.status %}
+                                    <span class="badge bg-secondary-light text-secondary border px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700; border-radius: 50px;">COMPLETED</span>
                                 {% else %}
-                                    <span class="badge-custom badge-rejected">Closed</span>
+                                    <span class="badge-custom badge-rejected">CLOSED</span>
                                 {% endif %}
                             </td>
                             <td>

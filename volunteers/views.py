@@ -209,6 +209,9 @@ def my_applications_view(request):
             'coordinator': coordinator_name,
             'coordinator_phone': coordinator_phone,
             'date': app.applied_at.strftime('%b %d, %Y') if app.applied_at else '',
+            'start_date': app.event.start_date.strftime('%b %d, %Y'),
+            'end_date': app.event.end_date.strftime('%b %d, %Y'),
+            'event_dates': f"{app.event.start_date.strftime('%b %d, %Y')} – {app.event.end_date.strftime('%b %d, %Y')}",
             'registration_deadline': app.event.registration_deadline.strftime('%b %d, %Y'),
             'can_cancel': can_cancel,
             'cutoff_date': cutoff_date.strftime('%b %d, %Y'),
@@ -239,8 +242,8 @@ def my_volunteering_view(request):
         status='assigned'
     ).select_related('event', 'assigned_committee')
     
-    total_events = history_qs.count()
-    
+    completed_events = sum(1 for app in history_qs if app.event.dynamic_status == 'completed')
+
     history = []
     for app in history_qs:
         # Calculate approved hours for this specific committee
@@ -272,13 +275,13 @@ def my_volunteering_view(request):
             'dates': app.event.event_dates,
             'hours': app_hours,
             'attendance': attendance_percent,
-            'status': app.event.get_status_display(),
-            'event_status': app.event.status,
+            'status': app.event.dynamic_status_display,
+            'event_status': app.event.dynamic_status,
         })
         
     context = {
         'total_hours': total_hours,
-        'total_events': total_events,
+        'total_events': completed_events,
         'history': history,
     }
     return render(request, 'volunteers/my_volunteering.html', context)
@@ -336,7 +339,7 @@ def student_coordinators_collaboration_view(request):
     # Find an active event where this student is coordinator
     event = Event.objects.filter(
         Q(status__in=['open', 'upcoming', 'ongoing']) & 
-        (Q(main_student_coordinator=profile) | Q(committee__student_coordinator=profile))
+        (Q(main_student_coordinator=profile) | Q(committees__student_coordinator=profile))
     ).distinct().first()
     
     if not event:
@@ -386,14 +389,24 @@ def student_coordinators_collaboration_view(request):
 
 @student_required
 def apply_view(request, event_id):
-    """Volunteer application form with committee preference selection."""
+    """Volunteer application form with committee preference selection and timeline validation."""
     event = get_object_or_404(Event, id=event_id)
     profile = request.user.profile
+    today = timezone.now().date()
 
-    # Check if already applied (excluding cancelled applications)
-    existing_app = VolunteerApplication.objects.filter(student=profile, event=event).exclude(status='cancelled').first()
+    # Timeline validation check: Registration window boundary
+    if today > event.registration_deadline or today >= event.start_date or event.dynamic_status != 'open':
+        formatted_deadline = event.registration_deadline.strftime('%b %d, %Y')
+        messages.error(
+            request,
+            f"Registration for '{event.name}' closed on {formatted_deadline}. Applications are no longer accepted."
+        )
+        return redirect('volunteers_student:available_events')
+
+    # Check if already applied (excluding cancelled or rejected applications)
+    existing_app = VolunteerApplication.objects.filter(student=profile, event=event).exclude(status__in=['cancelled', 'rejected']).first()
     if existing_app:
-        messages.info(request, f"You have already applied for {event.name}.")
+        messages.info(request, f"You have an active application for {event.name}.")
         return redirect('volunteers_student:my_applications')
 
     if request.method == 'POST':
@@ -411,19 +424,19 @@ def apply_view(request, event_id):
         if not pref1 and len(event_committees) > 0:
             pref1 = event_committees[0]
 
-        # Re-activate cancelled application or create new one
-        cancelled_app = VolunteerApplication.objects.filter(student=profile, event=event, status='cancelled').first()
-        if cancelled_app:
-            cancelled_app.preference_1 = pref1
-            cancelled_app.preference_2 = pref2
-            cancelled_app.preference_3 = pref3
-            cancelled_app.experience = request.POST.get('experience', '')
-            cancelled_app.skills = request.POST.get('skills', '')
-            cancelled_app.status = 'pending'
-            cancelled_app.cancellation_reason = None
-            cancelled_app.cancelled_at = None
-            cancelled_app.assigned_committee = None
-            cancelled_app.save()
+        # Re-activate cancelled or rejected application or create new one
+        reopenable_app = VolunteerApplication.objects.filter(student=profile, event=event, status__in=['cancelled', 'rejected']).first()
+        if reopenable_app:
+            reopenable_app.preference_1 = pref1
+            reopenable_app.preference_2 = pref2
+            reopenable_app.preference_3 = pref3
+            reopenable_app.experience = request.POST.get('experience', '')
+            reopenable_app.skills = request.POST.get('skills', '')
+            reopenable_app.status = 'pending'
+            reopenable_app.cancellation_reason = None
+            reopenable_app.cancelled_at = None
+            reopenable_app.assigned_committee = None
+            reopenable_app.save()
         else:
             VolunteerApplication.objects.create(
                 student=profile,
@@ -551,12 +564,18 @@ def volunteer_pool_view(request, event_id):
         return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
         
     committees_data = []
+    has_overmanned = False
     for c in event_obj.committees.all():
+        is_overmanned = (c.assigned_count > c.required_volunteers)
+        if is_overmanned:
+            has_overmanned = True
         committees_data.append({
             'id': c.id,
             'name': c.name,
             'required': c.required_volunteers,
             'assigned': c.assigned_count,
+            'is_overmanned': is_overmanned,
+            'surplus': c.assigned_count - c.required_volunteers if is_overmanned else 0,
         })
         
     event_dict = {
@@ -597,10 +616,16 @@ def volunteer_pool_view(request, event_id):
             'assigned_id': app.assigned_committee.id if app.assigned_committee else None,
         })
         
+    is_registration_open = (timezone.now().date() <= event_obj.registration_deadline)
+    registration_deadline_str = event_obj.registration_deadline.strftime('%b %d, %Y')
+
     context = {
         'event': event_dict,
         'applications': applications,
         'pool_stats': pool_stats,
+        'is_registration_open': is_registration_open,
+        'registration_deadline': registration_deadline_str,
+        'has_overmanned': has_overmanned,
     }
     return render(request, 'volunteers/volunteer_pool.html', context)
 

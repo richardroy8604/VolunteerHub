@@ -39,9 +39,15 @@
     <div class="content-card p-4 clickable-card" style="border-radius: var(--radius-lg); {% if app.raw_status == 'assigned' %}border-left: 4px solid var(--clr-primary);{% elif app.raw_status == 'cancelled' %}border-left: 4px solid #6c757d;{% else %}border-left: 4px solid var(--clr-warning);{% endif %}" onclick="{% if app.raw_status == 'assigned' %}window.location.href='/student/committees/{{ app.committee_id }}/';{% else %}window.location.href='/events/{{ app.event_id }}/';{% endif %}">
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 border-bottom pb-3 mb-3">
             <div>
-                <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
-                    REGISTRATION DATE: {{ app.date }}
-                </span>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="text-muted d-block" style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase;">
+                        <i class="fa-regular fa-calendar-days text-success me-1"></i> Event Duration: <strong style="color: var(--clr-primary);">{{ app.event_dates }}</strong>
+                    </span>
+                    <span class="text-muted d-block" style="font-size: 0.75rem;">•</span>
+                    <span class="text-muted d-block" style="font-size: 0.78rem; font-weight: 500;">
+                        Applied: {{ app.date }}
+                    </span>
+                </div>
                 <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--clr-text-main); margin-bottom: 0;">
                     {{ app.event }}
                 </h4>

@@ -174,10 +174,12 @@
                     <td style="font-weight: 600;">{{ event.name }}</td>
                     <td class="text-muted" style="font-size: 0.88rem;">{{ event.date }}</td>
                     <td>
-                        {% if event.status == 'Open' %}
+                        {% if event.raw_status == 'open' or 'Open' in event.status %}
                         <span class="badge bg-success-light text-success rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(25, 135, 84, 0.1); font-weight: 600;">Registration Open</span>
+                        {% elif event.raw_status == 'ongoing' or 'Ongoing' in event.status %}
+                        <span class="badge bg-primary-light text-primary rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(13, 110, 253, 0.1); font-weight: 600;">Ongoing</span>
                         {% else %}
-                        <span class="badge bg-secondary-light text-muted rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(108, 117, 125, 0.1); font-weight: 600;">Upcoming</span>
+                        <span class="badge bg-secondary-light text-muted rounded-pill px-3 py-1" style="font-size: 0.75rem; background-color: rgba(108, 117, 125, 0.1); font-weight: 600;">{{ event.status }}</span>
                         {% endif %}
                     </td>
                     <td style="text-align: center;">

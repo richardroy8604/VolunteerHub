@@ -33,6 +33,40 @@ class NoCacheMiddleware:
         return response
 
 
+class GlobalLoginRequiredMiddleware:
+    """
+    Global authentication enforcement middleware.
+    Ensures NO page, route, or link across the application can be accessed without
+    an active logged-in session.
+
+    Exempt paths:
+    - Login page (/accounts/login/)
+    - Logout page (/accounts/logout/)
+    - Google OAuth callback (/accounts/google/...)
+    - Static assets (/static/...) & Media files (/media/...)
+    """
+    EXEMPT_PREFIXES = (
+        '/accounts/login/',
+        '/accounts/logout/',
+        '/accounts/google/',
+        '/static/',
+        '/media/',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+        if not request.user.is_authenticated:
+            if not any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
+                from django.contrib import messages
+                messages.error(request, 'Please log in to access this page.')
+                return redirect('/accounts/login/')
+
+        return self.get_response(request)
+
+
 class FirstLoginEnforcementMiddleware:
     """
     Enforces mandatory profile setup (phone number and password) for all signed-in users.
