@@ -605,12 +605,13 @@ def user_management_view(request):
     search_query = raw_search_query.strip()
     selected_role = request.GET.get('role', '').strip()
 
-    # Departments: get unique departments from UserProfile
-    departments = list(
-        UserProfile.objects.exclude(department='').values_list('department', flat=True).distinct()
-    )
-    if not departments:
-        departments = ['Computer Science', 'Business Administration', 'Commerce', 'Psychology', 'Social Work']
+    # Departments: get unique deduplicated departments from CourseConfig, UserProfile & defaults
+    raw_depts = set()
+    raw_depts.update(CourseConfig.objects.values_list('department', flat=True))
+    raw_depts.update(UserProfile.objects.exclude(department='').values_list('department', flat=True))
+    raw_depts.update(['Computer Science', 'Business Administration', 'Commerce', 'Psychology', 'Social Work'])
+
+    departments = sorted(list({d.strip() for d in raw_depts if d and d.strip()}))
 
     designations = ['Assistant Professor', 'Associate Professor', 'Professor', 'Teaching Associate']
 

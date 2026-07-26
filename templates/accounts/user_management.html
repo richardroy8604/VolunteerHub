@@ -50,6 +50,10 @@
 
 <!-- Users List Table -->
 <div class="content-card">
+    <!-- Top Scrollbar Sync for Table -->
+    <div class="top-scrollbar-wrapper overflow-x-auto mb-1 px-1" id="topUsersScrollWrapper" style="overflow-x: auto; overflow-y: hidden; height: 14px;">
+        <div id="topUsersScrollContent" style="height: 1px;"></div>
+    </div>
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table-custom text-nowrap" id="usersTable" style="font-size: 0.85rem; width: 100%;">
             <thead>
@@ -524,6 +528,40 @@ document.addEventListener('DOMContentLoaded', function() {
         radio.addEventListener('change', toggleUserFields);
     });
     toggleUserFields();
+
+    // Dual Horizontal Scrollbar Sync for Users Table
+    const topScroll = document.getElementById('topUsersScrollWrapper');
+    const topContent = document.getElementById('topUsersScrollContent');
+    const mainTableContainer = document.querySelector('.table-responsive');
+    const usersTable = document.getElementById('usersTable');
+
+    if (topScroll && topContent && mainTableContainer && usersTable) {
+        function syncUsersTableWidth() {
+            topContent.style.width = usersTable.scrollWidth + 'px';
+        }
+
+        syncUsersTableWidth();
+        window.addEventListener('resize', syncUsersTableWidth);
+
+        let isSyncingTop = false;
+        let isSyncingBottom = false;
+
+        topScroll.addEventListener('scroll', function() {
+            if (!isSyncingTop) {
+                isSyncingBottom = true;
+                mainTableContainer.scrollLeft = topScroll.scrollLeft;
+            }
+            isSyncingTop = false;
+        });
+
+        mainTableContainer.addEventListener('scroll', function() {
+            if (!isSyncingBottom) {
+                isSyncingTop = true;
+                topScroll.scrollLeft = mainTableContainer.scrollLeft;
+            }
+            isSyncingBottom = false;
+        });
+    }
 });
 
 // Modal prefill functions (Fix 3)
