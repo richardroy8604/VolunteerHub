@@ -10,5 +10,7 @@ from . import views
 
 urlpatterns = [
     path('<int:event_id>/volunteer_pool/', views.volunteer_pool_view, name='volunteer_pool'),
+    path('<int:event_id>/volunteer-pool/', views.volunteer_pool_view),
     path('<int:event_id>/auto_allocate/', views.auto_allocate_view, name='auto_allocate'),
+    path('<int:event_id>/auto-allocate/', views.auto_allocate_view),
 ]

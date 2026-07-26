@@ -86,7 +86,7 @@
                     </thead>
                     <tbody>
                         {% for event in recent_events %}
-                        <tr>
+                        <tr class="clickable-row" onclick="window.location.href='/dean/events/{{ event.id }}/';" style="cursor: pointer;">
                             <td style="font-weight: 600;">{{ event.name }}</td>
                             <td class="text-muted" style="font-size: 0.85rem;">{{ event.start_date }} - {{ event.end_date }}</td>
                             <td>

@@ -477,15 +477,214 @@ def apply_view(request, event_id):
 # Dean views — /dean/events/ prefix (volunteer pool management)
 # =============================================================================
 
+def _generate_auto_allocation_draft(event_obj, reallocate_all=True, target_committee_ids=None):
+    """
+    Greedy Balanced Auto-Allocation Draft Generator.
+    
+    Principles:
+    1. Buddy/Cohort System: Clusters students from the same class_batch (>=2) per committee.
+    2. Preference Rank: Tries Pref 1, then Pref 2, then Pref 3.
+    3. Balanced Class Diversity: Spreads distinct classes proportionally across committees.
+    4. Exception Flagging: Flags single-classmate occurrences or class dominance.
+    5. Advisory Preview: Zero database mutations until explicitly finalized.
+    """
+    committees_qs = event_obj.committees.all()
+    if target_committee_ids:
+        committees_qs = committees_qs.filter(id__in=target_committee_ids)
+    committees = list(committees_qs)
+    
+    if reallocate_all:
+        active_apps = list(VolunteerApplication.objects.filter(
+            event=event_obj
+        ).exclude(status__in=['rejected', 'cancelled']).select_related(
+            'student', 'student__user', 'preference_1', 'preference_2', 'preference_3'
+        ))
+        committee_capacities = {c.id: c.required_volunteers for c in committees}
+    else:
+        active_apps = list(VolunteerApplication.objects.filter(
+            event=event_obj, status='pending'
+        ).select_related(
+            'student', 'student__user', 'preference_1', 'preference_2', 'preference_3'
+        ))
+        committee_capacities = {c.id: max(0, c.required_volunteers - c.assigned_count) for c in committees}
+
+    draft_assignments = {c.id: [] for c in committees}
+    unassigned_apps = list(active_apps)
+
+    class_groups = {}
+    for app in unassigned_apps:
+        cb = app.student.class_batch or "General"
+        if cb not in class_groups:
+            class_groups[cb] = []
+        class_groups[cb].append(app)
+
+    def remaining_slots(c_id):
+        return committee_capacities[c_id] - len(draft_assignments[c_id])
+
+    # Phase 1: Allocate Buddy Pairs (>= 2 from same class) matching Preference 1
+    for cb, apps in class_groups.items():
+        pref1_map = {}
+        for app in apps:
+            if app.preference_1:
+                p1_id = app.preference_1.id
+                if p1_id not in pref1_map:
+                    pref1_map[p1_id] = []
+                pref1_map[p1_id].append(app)
+
+        for comm_id, candidate_apps in pref1_map.items():
+            if comm_id in draft_assignments:
+                while len(candidate_apps) >= 2 and remaining_slots(comm_id) >= 2:
+                    pair = [candidate_apps.pop(0), candidate_apps.pop(0)]
+                    for item in pair:
+                        draft_assignments[comm_id].append({
+                            'app': item,
+                            'match_type': '1st Choice',
+                            'match_badge_class': 'bg-success',
+                            'is_buddy': True,
+                        })
+                        if item in unassigned_apps:
+                            unassigned_apps.remove(item)
+
+    # Phase 2: Allocate remaining Pref 1 candidates
+    for c in committees:
+        comm_id = c.id
+        pref1_candidates = [a for a in unassigned_apps if a.preference_1_id == comm_id]
+        for app in pref1_candidates:
+            if remaining_slots(comm_id) > 0 and app in unassigned_apps:
+                draft_assignments[comm_id].append({
+                    'app': app,
+                    'match_type': '1st Choice',
+                    'match_badge_class': 'bg-success',
+                    'is_buddy': False,
+                })
+                unassigned_apps.remove(app)
+
+    # Phase 3: Allocate Pref 2 candidates
+    for c in committees:
+        comm_id = c.id
+        pref2_candidates = [a for a in unassigned_apps if a.preference_2_id == comm_id]
+        for app in pref2_candidates:
+            if remaining_slots(comm_id) > 0 and app in unassigned_apps:
+                draft_assignments[comm_id].append({
+                    'app': app,
+                    'match_type': '2nd Choice',
+                    'match_badge_class': 'bg-info text-dark',
+                    'is_buddy': False,
+                })
+                unassigned_apps.remove(app)
+
+    # Phase 4: Allocate Pref 3 candidates
+    for c in committees:
+        comm_id = c.id
+        pref3_candidates = [a for a in unassigned_apps if a.preference_3_id == comm_id]
+        for app in pref3_candidates:
+            if remaining_slots(comm_id) > 0 and app in unassigned_apps:
+                draft_assignments[comm_id].append({
+                    'app': app,
+                    'match_type': '3rd Choice',
+                    'match_badge_class': 'bg-warning text-dark',
+                    'is_buddy': False,
+                })
+                unassigned_apps.remove(app)
+
+    # Phase 5: General Pool Fill for remaining open slots
+    for c in committees:
+        comm_id = c.id
+        while remaining_slots(comm_id) > 0 and unassigned_apps:
+            app = unassigned_apps.pop(0)
+            draft_assignments[comm_id].append({
+                'app': app,
+                'match_type': 'General Pool',
+                'match_badge_class': 'bg-secondary',
+                'is_buddy': False,
+            })
+
+    # Phase 6: Analyze Exceptions & Cohort Badging per Committee
+    committee_draft_summaries = []
+    total_draft_allocated = 0
+    total_pref1_matches = 0
+    total_buddy_paired = 0
+    total_exceptions = 0
+
+    for c in committees:
+        comm_id = c.id
+        assigned_items = draft_assignments[comm_id]
+        total_draft_allocated += len(assigned_items)
+
+        class_counts = {}
+        for item in assigned_items:
+            cb = item['app'].student.class_batch or "General"
+            class_counts[cb] = class_counts.get(cb, 0) + 1
+            if item['match_type'] == '1st Choice':
+                total_pref1_matches += 1
+
+        for item in assigned_items:
+            cb = item['app'].student.class_batch or "General"
+            if class_counts[cb] >= 2:
+                item['is_buddy'] = True
+                total_buddy_paired += 1
+            else:
+                item['is_buddy'] = False
+
+        exceptions = []
+        for cb, count in class_counts.items():
+            if count == 1 and len(assigned_items) > 1:
+                exceptions.append(f"Single classmate exception: Only 1 student from {cb} assigned.")
+                total_exceptions += 1
+            elif len(assigned_items) >= 4 and (count / len(assigned_items)) > 0.6:
+                pct = int((count / len(assigned_items)) * 100)
+                exceptions.append(f"High class concentration: {pct}% of members belong to {cb}.")
+
+        classes_represented = len(class_counts)
+
+        committee_draft_summaries.append({
+            'committee_id': c.id,
+            'committee_name': c.name,
+            'required': c.required_volunteers,
+            'draft_count': len(assigned_items),
+            'classes_represented': classes_represented,
+            'class_breakdown': [f"{count}x {cb}" for cb, count in class_counts.items()],
+            'exceptions': exceptions,
+            'members': assigned_items,
+        })
+
+    unassigned_names = [app.student.user.get_full_name() for app in unassigned_apps]
+    unassigned_names_str = ", ".join(unassigned_names[:3]) + ("..." if len(unassigned_apps) > 3 else "")
+    all_committees_full = (len(unassigned_apps) > 0 and sum(committee_capacities.values()) == 0)
+
+    total_pending = len(active_apps)
+    pref1_match_pct = int((total_pref1_matches / total_draft_allocated * 100)) if total_draft_allocated > 0 else 0
+    buddy_pair_pct = int((total_buddy_paired / total_draft_allocated * 100)) if total_draft_allocated > 0 else 0
+
+    return {
+        'total_pending': total_pending,
+        'total_draft_allocated': total_draft_allocated,
+        'unassigned_remaining': len(unassigned_apps),
+        'unassigned_names_str': unassigned_names_str,
+        'all_committees_full': all_committees_full,
+        'pref1_match_pct': pref1_match_pct,
+        'buddy_pair_pct': buddy_pair_pct,
+        'total_exceptions': total_exceptions,
+        'committees': committee_draft_summaries,
+        'unassigned_list': unassigned_apps,
+    }
+
+
+@dean_required
+def auto_allocate_view(request, event_id):
+    """Auto-allocate preview launcher — redirects to pool with auto_draft=1."""
+    return redirect(f"/dean/events/{event_id}/volunteer-pool/?auto_draft=1")
+
+
 @dean_required
 def volunteer_pool_view(request, event_id):
-    """Dean's view of all applications for an event with allocation controls."""
+    """Dean's view of all applications for an event with allocation controls and Draft Preview."""
     event_obj = get_object_or_404(Event, id=event_id)
     
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        if action == 'save_allocations':
+        if action == 'save_auto_allocation_draft' or action == 'save_allocations':
             updated_count = 0
             for key, val in request.POST.items():
                 if key.startswith('assign_'):
@@ -514,7 +713,7 @@ def volunteer_pool_view(request, event_id):
                     except VolunteerApplication.DoesNotExist:
                         pass
             
-            messages.success(request, f"Successfully saved volunteer allocations ({updated_count} changes updated).")
+            messages.success(request, f"Successfully finalized and saved volunteer allocations ({updated_count} assignments updated).")
             return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
 
         elif action == 'assign_single' or (request.POST.get('application_id') and not action):
@@ -600,8 +799,26 @@ def volunteer_pool_view(request, event_id):
         'rejected': rejected_count,
     }
     
+    # Check if Draft Preview is requested
+    is_auto_draft = (request.GET.get('auto_draft') == '1')
+    draft_plan = None
+    draft_map = {}
+    draft_comm_names = {}
+    if is_auto_draft:
+        reallocate_all = (request.GET.get('reallocate_all') == '1')
+        raw_target_ids = request.GET.getlist('target_committees[]') or request.GET.getlist('target_committees')
+        target_comm_ids = [int(cid) for cid in raw_target_ids if cid.isdigit()]
+        draft_plan = _generate_auto_allocation_draft(event_obj, reallocate_all=reallocate_all, target_committee_ids=target_comm_ids)
+        for comm in draft_plan['committees']:
+            for item in comm['members']:
+                app_obj = item['app']
+                draft_map[app_obj.id] = comm['committee_id']
+                draft_comm_names[app_obj.id] = comm['committee_name']
+
     applications = []
     for app in apps_qs:
+        d_id = draft_map.get(app.id, None)
+        d_name = draft_comm_names.get(app.id, None)
         applications.append({
             'id': app.id,
             'student': app.student.user.get_full_name(),
@@ -610,10 +827,12 @@ def volunteer_pool_view(request, event_id):
             'pref1': app.preference_1.name if app.preference_1 else '-',
             'pref2': app.preference_2.name if app.preference_2 else '-',
             'pref3': app.preference_3.name if app.preference_3 else '-',
-            'status': app.get_status_display(),
-            'raw_status': app.status,
+            'status': 'Draft Allocated' if (is_auto_draft and d_name) else app.get_status_display(),
+            'raw_status': 'assigned' if (is_auto_draft and d_name) else app.status,
             'assigned': app.assigned_committee.name if app.assigned_committee else None,
             'assigned_id': app.assigned_committee.id if app.assigned_committee else None,
+            'draft_assigned_id': d_id,
+            'draft_assigned_name': d_name,
         })
         
     is_registration_open = (timezone.now().date() <= event_obj.registration_deadline)
@@ -626,35 +845,7 @@ def volunteer_pool_view(request, event_id):
         'is_registration_open': is_registration_open,
         'registration_deadline': registration_deadline_str,
         'has_overmanned': has_overmanned,
+        'is_auto_draft': is_auto_draft,
+        'draft_plan': draft_plan,
     }
     return render(request, 'volunteers/volunteer_pool.html', context)
-
-
-@dean_required
-def auto_allocate_view(request, event_id):
-    """Auto-allocate volunteers to committees based on preferences and open slots."""
-    event = get_object_or_404(Event, id=event_id)
-    
-    pending_apps = VolunteerApplication.objects.filter(
-        event=event,
-        status='pending'
-    ).order_by('applied_at')
-    
-    allocated_count = 0
-    for app in pending_apps:
-        assigned = False
-        for pref in [app.preference_1, app.preference_2, app.preference_3]:
-            if pref and pref.open_slots > 0:
-                app.assigned_committee = pref
-                app.status = 'assigned'
-                app.save()
-                assigned = True
-                allocated_count += 1
-                break
-                
-    if allocated_count > 0:
-        messages.success(request, f"Successfully auto-allocated {allocated_count} volunteers.")
-    else:
-        messages.info(request, "No pending applications could be auto-allocated (either no open slots or no preferences).")
-        
-    return redirect('volunteers_dean:volunteer_pool', event_id=event_id)

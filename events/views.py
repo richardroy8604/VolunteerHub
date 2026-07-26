@@ -49,17 +49,19 @@ def _format_date_short(d):
 
 def _safe_parse_date(date_str, fallback_date):
     """
-    Safely parse a date string in format '%B %d, %Y' (e.g. 'July 20, 2026').
+    Safely parse a date string in ISO '%Y-%m-%d' or verbose '%B %d, %Y' format.
     If invalid or malformed, returns (fallback_date, fallback_date.strftime('%B %d, %Y')).
     """
     if not date_str or not isinstance(date_str, str):
         return fallback_date, fallback_date.strftime('%B %d, %Y')
     from datetime import datetime
-    try:
-        parsed_obj = datetime.strptime(date_str.strip(), '%B %d, %Y').date()
-        return parsed_obj, parsed_obj.strftime('%B %d, %Y')
-    except (ValueError, TypeError):
-        return fallback_date, fallback_date.strftime('%B %d, %Y')
+    for fmt in ('%B %d, %Y', '%b %d, %Y', '%Y-%m-%d'):
+        try:
+            parsed_obj = datetime.strptime(date_str.strip(), fmt).date()
+            return parsed_obj, parsed_obj.strftime('%B %d, %Y')
+        except (ValueError, TypeError):
+            pass
+    return fallback_date, fallback_date.strftime('%B %d, %Y')
 
 
 def _event_to_dict(event):
@@ -88,6 +90,9 @@ def _event_to_dict(event):
             'student_coordinator_id': c.student_coordinator_id,
         })
 
+    total_required = sum(c['required'] for c in committees)
+    max_vol = total_required if total_required > 0 else (event.max_volunteers if event.max_volunteers else 100)
+
     return {
         'id': event.id,
         'name': event.name,
@@ -99,7 +104,7 @@ def _event_to_dict(event):
         'raw_start_date': event.start_date.strftime('%Y-%m-%d') if event.start_date else '',
         'raw_end_date': event.end_date.strftime('%Y-%m-%d') if event.end_date else '',
         'raw_registration_deadline': event.registration_deadline.strftime('%Y-%m-%d') if event.registration_deadline else '',
-        'max_volunteers': max(1, event.max_volunteers) if event.max_volunteers else 100,
+        'max_volunteers': max_vol,
         'total_applications': event.total_applications,
         'assigned_volunteers': event.assigned_volunteers,
         'status': event.dynamic_status_display,
@@ -205,13 +210,61 @@ def event_list_view(request):
     return render(request, 'events/event_list.html', context)
 
 
+def _validate_committee_assignments(request, committee_heads, committee_student_coords, current_event=None):
+    """
+    Validates that no duplicate faculty heads or student coordinators are assigned in the same event.
+    """
+    valid_heads = [h for h in committee_heads if h]
+    if len(valid_heads) != len(set(valid_heads)):
+        seen = set()
+        dup_ids = set()
+        for h in valid_heads:
+            if h in seen:
+                dup_ids.add(h)
+            seen.add(h)
+        dup_names = [p.user.get_full_name() for p in UserProfile.objects.filter(id__in=dup_ids)]
+        names_str = ", ".join(dup_names)
+        messages.error(request, f'Validation Error: Faculty member "{names_str}" cannot be assigned as head of multiple committees in the same event. Please select distinct faculty heads.')
+        return False
+
+    valid_coords = [c for c in committee_student_coords if c]
+    if len(valid_coords) != len(set(valid_coords)):
+        seen = set()
+        dup_ids = set()
+        for c in valid_coords:
+            if c in seen:
+                dup_ids.add(c)
+            seen.add(c)
+        dup_names = [p.user.get_full_name() for p in UserProfile.objects.filter(id__in=dup_ids)]
+        names_str = ", ".join(dup_names)
+        messages.error(request, f'Validation Error: Student coordinator "{names_str}" cannot be assigned to multiple committees in the same event. Please select distinct student coordinators.')
+        return False
+
+    return True
+
+
 @dean_required
 def event_create_view(request):
-    """Event creation form with committee setup and date timeline validations."""
-    errors = {}
+    """
+    Dean view to create a new event along with its committees.
+    """
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
+            committee_names = request.POST.getlist('committee_name[]')
+            committee_required = request.POST.getlist('committee_required[]')
+            committee_heads = request.POST.getlist('committee_head[]')
+            committee_student_coords = request.POST.getlist('committee_student_coordinator[]')
+
+            if not _validate_committee_assignments(request, committee_heads, committee_student_coords):
+                # Re-render form with error
+                faculties = UserProfile.objects.filter(role='faculty').select_related('user').order_by('user__first_name')
+                students = UserProfile.objects.filter(role='student').select_related('user').order_by('user__first_name')
+                venues = Venue.objects.all()
+                return render(request, 'events/event_form.html', {
+                    'form': form, 'faculties': faculties, 'students': students, 'venues': venues, 'is_edit': False
+                })
+
             event = form.save(commit=False)
             event.status = 'open'
             event.created_by = request.user
@@ -224,11 +277,6 @@ def event_create_view(request):
                     event.save()
                 except UserProfile.DoesNotExist:
                     pass
-
-            committee_names = request.POST.getlist('committee_name[]')
-            committee_required = request.POST.getlist('committee_required[]')
-            committee_heads = request.POST.getlist('committee_head[]')
-            committee_student_coords = request.POST.getlist('committee_student_coordinator[]')
 
             for i, name in enumerate(committee_names):
                 if not name.strip():
@@ -322,6 +370,24 @@ def event_edit_view(request, pk):
             committee_required = request.POST.getlist('committee_count[]') or request.POST.getlist('committee_required[]')
             committee_heads = request.POST.getlist('committee_head[]')
             committee_student_coords = request.POST.getlist('committee_student_coordinator[]')
+
+            if not _validate_committee_assignments(request, committee_heads, committee_student_coords, current_event=event):
+                event_with_committees = Event.objects.prefetch_related(
+                    'committees__faculty_head__user',
+                    'committees__student_coordinator__user',
+                ).get(pk=pk)
+                faculty_profiles = UserProfile.objects.filter(role__in=['faculty', 'dean']).select_related('user').order_by('user__first_name')
+                committee_heads_list = [{'id': p.id, 'name': p.user.get_full_name()} for p in faculty_profiles]
+                student_profiles = UserProfile.objects.filter(role='student').select_related('user').order_by('user__first_name')
+                students_pool_list = [{'id': p.id, 'name': p.user.get_full_name()} for p in student_profiles]
+                return render(request, 'events/event_form.html', {
+                    'is_edit': True,
+                    'event': _event_to_dict(event_with_committees),
+                    'committee_heads': committee_heads_list,
+                    'students_pool': students_pool_list,
+                    'saved_venues': Venue.objects.all().order_by('name'),
+                    'form': form,
+                })
 
             existing_committees = list(event.committees.all())
             for i, name in enumerate(committee_names):
@@ -1193,6 +1259,19 @@ def committee_attendance_view(request, pk):
             )
             return redirect(f"{request.path}?date={selected_date}")
 
+        # Issue 8 Protection: Check if the attendance sheet is already approved by the Dean
+        existing_sheet = AttendanceSheet.objects.filter(
+            committee=committee,
+            date=selected_date_obj
+        ).first()
+
+        if existing_sheet and existing_sheet.status == 'approved':
+            messages.error(
+                request,
+                f"Attendance for shift date {selected_date_obj.strftime('%b %d, %Y')} has already been approved by the Dean and is locked from further edits."
+            )
+            return redirect(f"{request.path}?date={selected_date}&mode=view")
+
         action = request.POST.get('action', 'save')
         num_hours_post = int(request.POST.get('num_hours', 3))
 
@@ -1498,7 +1577,6 @@ def dean_approvals_view(request):
         events_map[ev.id]['total_hours'] += sheet.total_hours_logged
         events_map[ev.id]['student_count'] += sheet.student_count
 
-    # Filter by selected event & date
     filtered_submissions = []
     selected_event_name = ''
     event_dates = []
@@ -1508,16 +1586,38 @@ def dean_approvals_view(request):
         selected_event = Event.objects.filter(id=selected_event_id).first()
         if selected_event:
             selected_event_name = selected_event.name
-            event_dates = selected_event.event_dates
-            raw_date = request.GET.get('date', event_dates[0] if event_dates else '')
+            
+            # Combine standard event dates with any actual sheet dates for this event
+            std_dates = selected_event.event_dates
+            sheet_dates = list(AttendanceSheet.objects.filter(
+                committee__event_id=selected_event_id
+            ).values_list('date', flat=True).distinct())
+            
+            all_dates_set = set(std_dates)
+            for sd in sheet_dates:
+                if sd:
+                    all_dates_set.add(sd.strftime('%Y-%m-%d'))
+            
+            event_dates = sorted(list(all_dates_set))
+            
+            event_sheets = pending_sheets.filter(committee__event_id=selected_event_id)
+            first_pending_sheet = event_sheets.first()
+
+            if 'date' in request.GET:
+                raw_date = request.GET['date']
+            elif first_pending_sheet:
+                raw_date = first_pending_sheet.date.strftime('%Y-%m-%d')
+            elif event_dates:
+                raw_date = event_dates[0]
+            else:
+                raw_date = ''
+
             selected_date_obj, selected_date = _safe_parse_date(raw_date, selected_event.start_date)
 
-            event_sheets = pending_sheets.filter(
-                committee__event_id=selected_event_id
-            )
             if selected_date_obj:
                 event_sheets = event_sheets.filter(date=selected_date_obj)
 
+            today = timezone.localtime(timezone.now()).date()
             for sheet in event_sheets:
                 records = AttendanceRecord.objects.filter(
                     sheet=sheet
@@ -1533,6 +1633,13 @@ def dean_approvals_view(request):
                         'hours': present_hours,
                     })
 
+                is_same_day = (sheet.date == today)
+                recommendation = (
+                    "Same-Day Shift (Faculty Editing Window Open)"
+                    if is_same_day
+                    else "Past Shift (Ready for Final Approval)"
+                )
+
                 filtered_submissions.append({
                     'id': sheet.id,
                     'event_id': sheet.committee.event.id,
@@ -1547,6 +1654,8 @@ def dean_approvals_view(request):
                     'student_count': sheet.student_count,
                     'total_hours': sheet.total_hours_logged,
                     'students': students,
+                    'is_same_day': is_same_day,
+                    'recommendation': recommendation,
                 })
 
     context = {

@@ -182,7 +182,7 @@
                         </thead>
                         <tbody id="committee-rows-container">
                             {% if is_edit %}
-                                {% for committee in event.committees %}
+                                {% for committee in event.committees.all|default:event.committees %}
                                 <tr class="committee-row">
                                     <td>
                                         <input type="text" name="committee_name[]" class="form-control" value="{{ committee.name }}" required>

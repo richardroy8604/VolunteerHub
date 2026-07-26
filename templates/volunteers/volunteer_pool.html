@@ -59,6 +59,166 @@
     <div id="bulk_application_ids_container"></div>
 </form>
 
+{% if is_auto_draft and draft_plan %}
+<!-- Draft Allocation Active Banner & Controls -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius-lg); background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: white;">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3 border-bottom border-light pb-3 mb-3" style="border-color: rgba(255,255,255,0.2) !important;">
+            <div>
+                <span class="badge bg-warning text-dark px-3 py-1.5 fw-bold mb-2" style="font-size: 0.8rem; border-radius: 50px;">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> DRAFT ALLOCATION PREVIEW MODE
+                </span>
+                <h3 class="h4 fw-bold mb-1 text-white">Auto-Allocation Advisory Plan for {{ event.name }}</h3>
+                <p class="mb-0 text-white-50" style="font-size: 0.88rem;">
+                    Review cohort buddy pairings, preference matches, and diversity metrics below. <strong>No database changes have been saved yet.</strong>
+                </p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="/dean/events/{{ event.id }}/volunteer-pool/" class="btn btn-light text-dark py-2 px-3 fw-semibold" style="font-size: 0.88rem;">
+                    <i class="fa-solid fa-xmark me-1 text-danger"></i> Discard Draft
+                </a>
+                <form method="post" action="" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_auto_allocation_draft">
+                    {% for comm in draft_plan.committees %}
+                        {% for item in comm.members %}
+                            <input type="hidden" name="assign_{{ item.app.id }}" value="{{ comm.committee_id }}">
+                        {% endfor %}
+                    {% endfor %}
+                    <button type="submit" class="btn btn-warning text-dark py-2 px-4 fw-bold shadow-sm" style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-circle-check me-1"></i> Save & Finalize Allocations
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded text-center" style="background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);">
+                    <span class="d-block text-white-50 uppercase" style="font-size: 0.72rem; font-weight: 600;">TOTAL ALLOCATED</span>
+                    <strong class="h4 text-white fw-bold mb-0 d-block mt-1">{{ draft_plan.total_draft_allocated }} / {{ draft_plan.total_pending }}</strong>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded text-center" style="background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);">
+                    <span class="d-block text-white-50 uppercase" style="font-size: 0.72rem; font-weight: 600;">1ST PREF MATCH RATE</span>
+                    <strong class="h4 text-warning fw-bold mb-0 d-block mt-1">{{ draft_plan.pref1_match_pct }}%</strong>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded text-center" style="background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);">
+                    <span class="d-block text-white-50 uppercase" style="font-size: 0.72rem; font-weight: 600;">COHORT BUDDY PAIRING</span>
+                    <strong class="h4 text-info fw-bold mb-0 d-block mt-1">{{ draft_plan.buddy_pair_pct }}%</strong>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded text-center" style="background: rgba(255,255,255,0.12); backdrop-filter: blur(4px);">
+                    <span class="d-block text-white-50 uppercase" style="font-size: 0.72rem; font-weight: 600;">EXCEPTION ALERTS</span>
+                    <strong class="h4 {% if draft_plan.total_exceptions > 0 %}text-warning{% else %}text-white{% endif %} fw-bold mb-0 d-block mt-1">{{ draft_plan.total_exceptions }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_auto_draft and draft_plan.all_committees_full %}
+<div class="alert alert-warning border-0 shadow-sm p-3 mb-4 d-flex align-items-center gap-3" style="border-radius: var(--radius-md); background-color: #fffbe6; color: #856404; border-left: 4px solid #f59e0b !important;">
+    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #fef3c7; color: #d97706; font-size: 1.1rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div>
+        <h6 class="mb-0 fw-bold" style="font-size: 0.92rem; color: #78350f;">All Selected Committees Are Completely Filled</h6>
+        <span style="font-size: 0.84rem; opacity: 0.95;">
+            {% if draft_plan.unassigned_remaining == 1 %}
+                <strong>1</strong> pending volunteer could not be allocated because all committee quotas are 100% full. To allocate them, edit committee quotas to increase slots or run auto-allocation with <strong>Full Pool Re-Allocation</strong> checked.
+            {% else %}
+                <strong>{{ draft_plan.unassigned_remaining }}</strong> pending volunteers could not be allocated because all committee quotas are 100% full. To allocate them, edit committee quotas to increase slots or run auto-allocation with <strong>Full Pool Re-Allocation</strong> checked.
+            {% endif %}
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Draft Allocations Detailed Committees View -->
+<div class="row g-4 mb-4">
+    {% for comm in draft_plan.committees %}
+    <div class="col-lg-6">
+        <div class="content-card h-100 p-4" style="border-top: 4px solid var(--clr-primary);">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <h4 class="h5 fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-users-gear text-success me-2"></i> {{ comm.committee_name }}
+                </h4>
+                <span class="badge bg-success-light text-success fw-bold px-3 py-1.5" style="font-size: 0.8rem; background-color: rgba(25, 135, 84, 0.1);">
+                    {{ comm.draft_count }} / {{ comm.required }} Filled
+                </span>
+            </div>
+
+            <!-- Class Breakdown Badges -->
+            <div class="d-flex align-items-center gap-1.5 flex-wrap mb-3">
+                <span class="text-muted" style="font-size: 0.75rem; font-weight: 600;">CLASSES:</span>
+                {% for cb_str in comm.class_breakdown %}
+                <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.75rem;">{{ cb_str }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Exception Alerts for this Committee -->
+            {% if comm.exceptions %}
+            <div class="alert alert-warning p-2.5 mb-3" style="font-size: 0.8rem; border-radius: var(--radius-sm);">
+                {% for exc in comm.exceptions %}
+                <div class="d-flex align-items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                    <span>{{ exc }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Roster Table -->
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr class="table-light">
+                            <th>Student</th>
+                            <th>Class</th>
+                            <th>Preference</th>
+                            <th>Cohort Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in comm.members %}
+                        <tr>
+                            <td class="fw-semibold">{{ item.app.student.user.get_full_name }}</td>
+                            <td class="text-muted" style="font-size: 0.8rem;">{{ item.app.student.class_batch }}</td>
+                            <td>
+                                <span class="badge {{ item.match_badge_class }} px-2 py-1" style="font-size: 0.72rem;">
+                                    {{ item.match_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.is_buddy %}
+                                <span class="badge bg-info-light text-primary px-2 py-1" style="font-size: 0.72rem; background-color: rgba(13, 202, 240, 0.15);">
+                                    <i class="fa-solid fa-user-group me-1"></i> Classmate Pair
+                                </span>
+                                {% else %}
+                                <span class="text-muted" style="font-size: 0.75rem;">Single</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No draft assignments for this committee.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <!-- Page Header / Breadcrumbs -->
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
     <div>
@@ -69,8 +229,8 @@
         <a href="/dean/events/{{ event.id }}/" class="btn btn-secondary py-2 px-3">
             <i class="fa-solid fa-arrow-left me-1"></i> Back to Event
         </a>
-        <button type="button" class="btn btn-secondary py-2 px-3" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
-            <i class="fa-solid fa-wand-magic-sparkles text-success me-1"></i> Auto-Allocate
+        <button type="button" class="btn btn-success py-2 px-3 fw-bold" style="background-color: #047857; border-color: #047857;" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
+            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Run Auto-Allocation
         </button>
         <button type="submit" form="allocationsForm" class="btn btn-primary py-2 px-3 fw-bold" id="save-allocations-btn">
             <i class="fa-solid fa-floppy-disk me-1"></i> Save Allocations
@@ -159,6 +319,47 @@
     </div>
 </div>
 
+<!-- Search & Filter Bar for General Pool -->
+<div class="content-card mb-3 p-3" style="border-radius: var(--radius-md);">
+    <div class="row g-2 align-items-center">
+        <!-- Search Input -->
+        <div class="col-12 col-md-5">
+            <div class="position-relative">
+                <i class="fa-solid fa-magnifying-glass position-absolute text-muted" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; pointer-events: none; z-index: 10;"></i>
+                <input type="text" id="pool-search-input" class="form-control ps-5" placeholder="Search student name, class, department..." style="border-color: var(--clr-border); font-size: 0.9rem; height: 42px; border-radius: var(--radius-sm); font-weight: 500; color: #1e293b;">
+            </div>
+        </div>
+
+        <!-- Committee Filter -->
+        <div class="col-6 col-md-3">
+            <select id="committee-filter-select" class="form-select" style="border-color: var(--clr-border); font-size: 0.88rem; height: 42px; cursor: pointer; font-weight: 500;">
+                <option value="all">All Committees</option>
+                <option value="unassigned">-- Unassigned --</option>
+                {% for committee in event.committees %}
+                <option value="{{ committee.id }}">{{ committee.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-md-3">
+            <select id="status-filter-select" class="form-select" style="border-color: var(--clr-border); font-size: 0.88rem; height: 42px; cursor: pointer; font-weight: 500;">
+                <option value="all">All Statuses</option>
+                <option value="assigned">Assigned / Draft Allocated</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected / Waitlisted</option>
+            </select>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="col-12 col-md-1 text-end">
+            <button type="button" id="reset-filters-btn" class="btn btn-outline-secondary btn-sm w-100 fw-semibold" title="Reset Filters" style="font-size: 0.85rem; height: 42px;">
+                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Main Form for Batch Saving Allocations -->
 <form action="" method="post" id="allocationsForm">
     {% csrf_token %}
@@ -184,8 +385,20 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr id="no-filter-results-row" style="display: none;">
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-magnifying-glass text-muted mb-2 d-block" style="font-size: 1.8rem;"></i>
+                            <span class="d-block font-weight-bold" style="font-size: 0.95rem;">No volunteers match your search and filter criteria.</span>
+                            <button type="button" class="btn btn-sm btn-link text-success mt-1" onclick="document.getElementById('reset-filters-btn').click();">Reset Filters</button>
+                        </td>
+                    </tr>
                     {% for app in applications %}
-                    <tr class="applicant-row">
+                    <tr class="applicant-row" 
+                        data-student="{{ app.student|lower }}" 
+                        data-class="{{ app.class|lower }}" 
+                        data-dept="{{ app.dept|lower }}" 
+                        data-assigned-id="{% if is_auto_draft and app.draft_assigned_id %}{{ app.draft_assigned_id }}{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}unassigned{% endif %}" 
+                        data-status="{% if is_auto_draft and app.draft_assigned_id %}assigned{% else %}{{ app.raw_status }}{% endif %}">
                         <td style="text-align: center;">
                             <input type="checkbox" class="form-check-input select-applicant-checkbox" data-id="{{ app.id }}">
                         </td>
@@ -201,14 +414,18 @@
                             3. {{ app.pref3 }}
                         </td>
                         <td style="font-weight: 600; font-size: 0.9rem;">
-                            {% if app.assigned %}
+                            {% if is_auto_draft and app.draft_assigned_name %}
+                                <span class="text-warning fw-bold"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> {{ app.draft_assigned_name }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.68rem;">Draft</span></span>
+                            {% elif app.assigned %}
                                 <i class="fa-solid fa-house-laptop text-success me-1"></i> {{ app.assigned }}
                             {% else %}
                                 <span class="text-muted font-italic">Unassigned</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if app.raw_status == 'assigned' %}
+                            {% if is_auto_draft and app.draft_assigned_name %}
+                                <span class="badge bg-warning text-dark px-2.5 py-1" style="font-size: 0.75rem; font-weight: 700;">Draft Allocated</span>
+                            {% elif app.raw_status == 'assigned' %}
                                 <span class="badge-custom badge-assigned">Assigned</span>
                             {% elif app.raw_status == 'pending' %}
                                 <span class="badge-custom badge-pending">Pending</span>
@@ -218,10 +435,10 @@
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <select name="assign_{{ app.id }}" class="form-select form-select-sm row-assign-select" data-original="{% if app.raw_status == 'rejected' %}rejected{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}{% endif %}" style="font-size: 0.82rem; border-color: var(--clr-border); cursor: pointer; width: 175px;">
-                                    <option value="" {% if not app.assigned_id and app.raw_status != 'rejected' %}selected{% endif %}>-- Unassigned --</option>
+                                <select name="assign_{{ app.id }}" class="form-select form-select-sm row-assign-select {% if is_auto_draft and app.draft_assigned_id %}is-changed{% endif %}" data-original="{% if app.raw_status == 'rejected' %}rejected{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}{% endif %}" style="font-size: 0.82rem; border-color: var(--clr-border); cursor: pointer; width: 175px;">
+                                    <option value="" {% if not app.assigned_id and not app.draft_assigned_id and app.raw_status != 'rejected' %}selected{% endif %}>-- Unassigned --</option>
                                     {% for committee in event.committees %}
-                                    <option value="{{ committee.id }}" {% if app.assigned_id == committee.id %}selected{% endif %}>
+                                    <option value="{{ committee.id }}" {% if is_auto_draft and app.draft_assigned_id == committee.id %}selected{% elif not is_auto_draft and app.assigned_id == committee.id %}selected{% endif %}>
                                         {{ committee.name }}
                                     </option>
                                     {% endfor %}
@@ -264,12 +481,20 @@
                 <h5 class="modal-title" id="autoAllocateModalLabel" style="font-weight: 600;"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Auto-Allocation Settings</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="/dean/events/{{ event.id }}/auto_allocate/" method="post">
-                {% csrf_token %}
+            <form action="" method="get">
+                <input type="hidden" name="auto_draft" value="1">
                 <div class="modal-body p-4 text-start">
                     <p class="text-muted" style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
                         Configure algorithm constraints. The system will match students to their preferred committees using a greedy matching optimization.
                     </p>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="reallocate_all" name="reallocate_all" value="1" checked>
+                        <label class="form-check-label" for="reallocate_all" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
+                            Full Pool Re-Allocation (Include already assigned volunteers)
+                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">When checked, re-allocates all active students. Uncheck to only allocate newly registered / pending students.</span>
+                        </label>
+                    </div>
 
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="prioritize_pref" name="prioritize_pref" checked>
@@ -469,6 +694,103 @@
                 }
             });
         }
+        {% if is_auto_draft %}
+        // Auto-collapse sidebar navigation for maximum screen canvas during Draft Preview Mode
+        const sidebar = document.getElementById('sidebar');
+        const appContent = document.getElementById('appContent');
+        if (sidebar && appContent) {
+            sidebar.classList.add('collapsed');
+            appContent.classList.add('sidebar-collapsed');
+        }
+        {% endif %}
+
+        // General Pool Search & Filter Logic
+        const searchInput = document.getElementById('pool-search-input');
+        const commFilter = document.getElementById('committee-filter-select');
+        const statusFilter = document.getElementById('status-filter-select');
+        const resetBtn = document.getElementById('reset-filters-btn');
+
+        function filterPoolTable() {
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const commVal = commFilter ? commFilter.value : 'all';
+            const statusVal = statusFilter ? statusFilter.value : 'all';
+
+            const rows = document.querySelectorAll('.applicant-row');
+            let matchCount = 0;
+
+            rows.forEach(row => {
+                const student = row.getAttribute('data-student') || '';
+                const sClass = row.getAttribute('data-class') || '';
+                const dept = row.getAttribute('data-dept') || '';
+                const assignedId = row.getAttribute('data-assigned-id') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                const matchesQuery = !query || student.includes(query) || sClass.includes(query) || dept.includes(query);
+
+                let matchesComm = true;
+                if (commVal === 'unassigned') {
+                    matchesComm = (assignedId === 'unassigned' || !assignedId);
+                } else if (commVal !== 'all') {
+                    matchesComm = (assignedId === commVal);
+                }
+
+                let matchesStatus = true;
+                if (statusVal !== 'all') {
+                    matchesStatus = (status === statusVal);
+                }
+
+                if (matchesQuery && matchesComm && matchesStatus) {
+                    row.style.display = '';
+                    matchCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const noResultsRow = document.getElementById('no-filter-results-row');
+            if (noResultsRow) {
+                noResultsRow.style.display = (matchCount === 0) ? '' : 'none';
+            }
+        }
+
+        if (searchInput) searchInput.addEventListener('input', filterPoolTable);
+        if (commFilter) {
+            commFilter.addEventListener('change', function() {
+                const val = this.value;
+                if (statusFilter) {
+                    if (val === 'unassigned') {
+                        statusFilter.value = 'pending';
+                    } else if (val !== 'all') {
+                        statusFilter.value = 'all';
+                    }
+                }
+                filterPoolTable();
+            });
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                const val = this.value;
+                if (commFilter) {
+                    if (val === 'pending') {
+                        commFilter.value = 'unassigned';
+                    } else if (val === 'assigned' || val === 'rejected') {
+                        if (commFilter.value === 'unassigned') {
+                            commFilter.value = 'all';
+                        }
+                    }
+                }
+                filterPoolTable();
+            });
+        }
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                if (searchInput) searchInput.value = '';
+                if (commFilter) commFilter.value = 'all';
+                if (statusFilter) statusFilter.value = 'all';
+                filterPoolTable();
+            });
+        }
+
         const allocationsForm = document.getElementById('allocationsForm');
         if (allocationsForm) {
             allocationsForm.addEventListener('submit', function(e) {

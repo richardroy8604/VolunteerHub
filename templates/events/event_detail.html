@@ -200,90 +200,13 @@
         {% if user.is_staff or user_role == 'dean' %}
         <div class="content-card">
             <h4 class="content-card-title border-bottom pb-2 mb-3">Allocation Actions</h4>
-            <p class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">Distribute the registered student list automatically based on priority preferences and class layouts.</p>
+            <p class="text-muted" style="font-size: 0.8rem; line-height: 1.5;">Distribute the registered student list automatically based on priority preferences and class layouts in the Central Pool Panel.</p>
             
-            <a href="/dean/events/{{ event.id }}/volunteer_pool/" class="btn btn-secondary w-100 py-2 mb-2 d-flex align-items-center justify-content-center gap-2">
-                <i class="fa-solid fa-clipboard-list"></i> Central Pool Panel
+            <a href="/dean/events/{{ event.id }}/volunteer_pool/" class="btn btn-primary w-100 py-2.5 d-flex align-items-center justify-content-center gap-2 fw-bold" style="background-color: var(--clr-primary);">
+                <i class="fa-solid fa-clipboard-list me-1"></i> Open Volunteer Pool & Allocations
             </a>
-            
-            <button type="button" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#autoAllocateModal">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Run Auto-Allocation
-            </button>
         </div>
         {% endif %}
-    </div>
-</div>
-
-{% if user.is_staff or user_role == 'dean' %}
-<!-- Auto-Allocation Settings Bootstrap Modal (R11 coverage) -->
-<div class="modal fade" id="autoAllocateModal" tabindex="-1" aria-labelledby="autoAllocateModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
-            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
-                <h5 class="modal-title" id="autoAllocateModalLabel" style="font-weight: 600;"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Auto-Allocation Settings</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="/dean/events/{{ event.id }}/volunteer_pool/" method="get">
-                <div class="modal-body p-4">
-                    <p class="text-muted" style="font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
-                        Configure algorithm constraints. The system will match students to their preferred committees using a greedy matching optimization.
-                    </p>
-
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="prioritize_pref" name="prioritize_pref" checked>
-                        <label class="form-check-label" for="prioritize_pref" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
-                            Prioritize student preferences
-                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">Try to match Preference 1, then Preference 2, then Preference 3.</span>
-                        </label>
-                    </div>
-
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="balance_class" name="balance_class">
-                        <label class="form-check-label" for="balance_class" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
-                            Balance distribution by Class / Semester
-                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">Ensure that a single class or department does not dominate a committee.</span>
-                        </label>
-                    </div>
-
-                    <div class="row g-3" id="class-balance-limits" style="display:none;">
-                        <div class="col-6">
-                            <label class="form-label" style="font-size: 0.8rem;">Min per Class</label>
-                            <input type="number" class="form-control" name="min_per_class" placeholder="e.g. 2">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label" style="font-size: 0.8rem;">Max per Class</label>
-                            <input type="number" class="form-control" name="max_per_class" placeholder="e.g. 6">
-                        </div>
-                    </div>
-
-                    <hr class="my-3" style="border-top: 1px solid var(--clr-border);">
-
-                    <div class="form-group mb-0">
-                        <label class="form-label mb-2" style="font-size: 0.9rem; font-weight: 600;">Target Committees for Auto-Allocation</label>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="select_all_comm" checked>
-                            <label class="form-check-label text-success" for="select_all_comm" style="cursor:pointer; font-weight: 600; font-size: 0.85rem;">
-                                Select All Committees
-                            </label>
-                        </div>
-                        <div class="ps-3 border-start" style="border-left: 2px solid var(--clr-primary-light) !important;">
-                            {% for committee in event.committees %}
-                            <div class="form-check mb-1">
-                                <input class="form-check-input committee-select-checkbox" type="checkbox" id="comm_{{ committee.id }}" name="target_committees[]" value="{{ committee.id }}" checked>
-                                <label class="form-check-label" for="comm_{{ committee.id }}" style="cursor:pointer; font-size: 0.85rem;">
-                                    {{ committee.name }} <span class="text-muted">({{ committee.assigned }}/{{ committee.required }})</span>
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Run Algorithm</button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -324,7 +247,6 @@
         </div>
     </div>
 </div>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}

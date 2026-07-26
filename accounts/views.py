@@ -17,9 +17,24 @@ def login_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        user_input = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        # Try direct authentication first
+        user = authenticate(request, username=user_input, password=password)
+
+        # If user_input is an email, resolve to username via User model
+        if user is None and '@' in user_input:
+            from django.contrib.auth.models import User
+            matching_user = User.objects.filter(email__iexact=user_input).first()
+            if matching_user:
+                user = authenticate(request, username=matching_user.username, password=password)
+
+        # Fallback: check prefix if user typed full email
+        if user is None and '@' in user_input:
+            prefix = user_input.split('@')[0]
+            user = authenticate(request, username=prefix, password=password)
+
         if user is not None:
             login(request, user)
             try:
@@ -29,8 +44,20 @@ def login_view(request):
                 pass
             return redirect('dashboard')
         else:
-            messages.error(request, "Invalid username or password.")
-            
+            from django.contrib.auth.models import User
+            user_exists = User.objects.filter(username__iexact=user_input).exists() or \
+                          User.objects.filter(email__iexact=user_input).exists() or \
+                          ('@' in user_input and User.objects.filter(username__iexact=user_input.split('@')[0]).exists())
+
+            if not user_exists:
+                target_name = f" for '{user_input}'" if user_input else ""
+                messages.warning(
+                    request,
+                    f"No account found{target_name}. If it's your first time, use 'Sign in with Google' below."
+                )
+            else:
+                messages.error(request, "Invalid password. Please check your credentials and try again.")
+
     return render(request, 'accounts/login.html')
 
 def logout_view(request):
