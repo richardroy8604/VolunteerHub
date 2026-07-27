@@ -255,7 +255,7 @@ def event_create_view(request):
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             committee_names = request.POST.getlist('committee_name[]')
-            committee_required = request.POST.getlist('committee_required[]')
+            committee_required = request.POST.getlist('committee_count[]') or request.POST.getlist('committee_required[]')
             committee_heads = request.POST.getlist('committee_head[]')
             committee_student_coords = request.POST.getlist('committee_student_coordinator[]')
 
@@ -275,10 +275,9 @@ def event_create_view(request):
                 })
 
             event = form.save(commit=False)
-            if not event.max_volunteers:
-                event.max_volunteers = 100
             event.status = 'open'
             event.created_by = request.user
+            event.max_volunteers = 100 # Initial fallback
             event.save()
 
             msc_id = request.POST.get('main_student_coordinator')
@@ -292,10 +291,11 @@ def event_create_view(request):
             for i, name in enumerate(committee_names):
                 if not name.strip():
                     continue
+                req_val = int(committee_required[i]) if i < len(committee_required) and committee_required[i] and str(committee_required[i]).isdigit() else 10
                 committee = Committee.objects.create(
                     event=event,
                     name=name.strip(),
-                    required_volunteers=int(committee_required[i]) if i < len(committee_required) and committee_required[i] else 10,
+                    required_volunteers=req_val,
                 )
                 if i < len(committee_heads) and committee_heads[i]:
                     try:
@@ -309,6 +309,11 @@ def event_create_view(request):
                         committee.save()
                     except UserProfile.DoesNotExist:
                         pass
+
+            # Auto-calculate event max_volunteers from sum of all committee requirements
+            total_req = sum(c.required_volunteers for c in event.committees.all())
+            event.max_volunteers = total_req if total_req > 0 else 100
+            event.save(update_fields=['max_volunteers'])
 
             messages.success(request, f'Event "{event.name}" created successfully!')
             return redirect('events_dean:event_detail', pk=event.id)
@@ -428,6 +433,11 @@ def event_edit_view(request, pk):
                         faculty_head=faculty_head,
                         student_coordinator=student_coord
                     )
+
+            # Auto-calculate event max_volunteers from sum of all committee requirements
+            total_req = sum(c.required_volunteers for c in event.committees.all())
+            event.max_volunteers = total_req if total_req > 0 else 100
+            event.save(update_fields=['max_volunteers'])
 
             messages.success(request, f'Event "{event.name}" updated successfully!')
             return redirect('events_dean:event_detail', pk=event.id)
