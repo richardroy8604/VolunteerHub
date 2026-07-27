@@ -10,6 +10,7 @@ injects user_role, user_name, user_department, user_designation, and
 is_student_coordinator into every template context.
 """
 
+import re
 from datetime import timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -725,6 +726,152 @@ def user_management_view(request):
         'total_user_count': len(users),
     }
     return render(request, 'accounts/user_management.html', context)
+
+
+@dean_required
+def user_detail_view(request, user_id):
+    """View detailed profile of any selected user (Dean/Admin view)."""
+    profile = UserProfile.objects.filter(id=user_id).select_related('user').first()
+    if not profile:
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+
+    target_user = profile.user
+    
+    if profile.role == 'student':
+        hours_agg = AttendanceRecord.objects.filter(
+            student=profile, 
+            sheet__status='approved'
+        ).aggregate(total=Sum('total_hours'))
+        total_hours = hours_agg['total'] or 0.0
+        
+        events_participated = VolunteerApplication.objects.filter(
+            student=profile,
+            status='assigned',
+            event__status='completed'
+        ).count()
+        
+        semester = f"{profile.semester}th Sem" if profile.semester else 'N/A'
+        student_class = profile.class_batch or 'N/A'
+    else:
+        total_hours = 'N/A'
+        events_participated = 'N/A'
+        semester = 'N/A'
+        student_class = 'N/A'
+
+    context = {
+        'is_admin_view': True,
+        'profile_obj': profile,
+        'target_user_id': profile.id,
+        'profile_user': {
+            'id': profile.id,
+            'user_id': target_user.id,
+            'name': target_user.get_full_name() or target_user.username,
+            'first_name': target_user.first_name,
+            'last_name': target_user.last_name,
+            'email': target_user.email,
+            'role': profile.display_role,
+            'raw_role': profile.role,
+            'department': str(profile.department) if profile.department else 'N/A',
+            'semester': semester,
+            'student_class': student_class,
+            'phone': profile.phone if (profile.phone and profile.phone.strip()) else 'Not provided',
+            'phone_verified': bool(profile.phone and profile.phone.strip()),
+            'total_hours': total_hours,
+            'events_participated': events_participated,
+            'profile_pic': profile.profile_pic.url if profile.profile_pic else None,
+            'is_hod': profile.is_hod,
+            'is_admin': target_user.is_staff or target_user.is_superuser,
+            'status': 'Active' if target_user.is_active else 'Inactive',
+            'last_login': _format_date_short(target_user.last_login) if target_user.last_login else 'Never',
+            'date_joined': _format_date_short(target_user.date_joined) if target_user.date_joined else 'N/A',
+        }
+    }
+    return render(request, 'accounts/profile.html', context)
+
+
+@dean_required
+def user_edit_view(request, user_id):
+    """Edit profile details of any selected user (Dean/Admin view)."""
+    profile = UserProfile.objects.filter(id=user_id).select_related('user').first()
+    if not profile:
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+        
+    target_user = profile.user
+
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        role = request.POST.get('role', profile.role)
+        department = request.POST.get('department', '').strip()
+        designation = request.POST.get('designation', '').strip()
+        semester_val = request.POST.get('semester', '').strip()
+        class_batch = request.POST.get('class_batch', '').strip()
+        is_hod = request.POST.get('is_hod') == 'on'
+
+        if first_name:
+            target_user.first_name = first_name
+        if last_name:
+            target_user.last_name = last_name
+        if email:
+            target_user.email = email
+            
+        target_user.is_staff = (role == 'dean')
+        target_user.is_superuser = (role == 'dean')
+        target_user.save()
+
+        profile.role = role
+        profile.department = department
+        profile.designation = designation
+        profile.is_hod = is_hod
+        if phone:
+            digits = re.sub(r'\D', '', phone)
+            if digits.startswith('91') and len(digits) > 10:
+                digits = digits[2:]
+            elif len(digits) > 10:
+                digits = digits[-10:]
+            profile.phone = f"+91 {digits}" if len(digits) == 10 else phone
+            profile.phone_verified = True
+
+        if class_batch:
+            profile.class_batch = class_batch
+
+        if 'profile_picture' in request.FILES:
+            profile.profile_pic = request.FILES['profile_picture']
+
+        profile.save()
+        messages.success(request, f'Account profile for "{target_user.get_full_name() or target_user.username}" updated successfully!')
+        return redirect('events_dean:user_detail', user_id=profile.id)
+
+    raw_depts = set(CourseConfig.objects.values_list('department', flat=True))
+    raw_depts.update(UserProfile.objects.exclude(department='').values_list('department', flat=True))
+    raw_depts.update(['Computer Science', 'Business Administration', 'Commerce', 'Psychology', 'Social Work'])
+    departments = sorted(list({d.strip() for d in raw_depts if d and d.strip()}))
+
+    context = {
+        'is_admin_edit': True,
+        'profile_obj': profile,
+        'departments': departments,
+        'profile_user': {
+            'id': profile.id,
+            'user_id': target_user.id,
+            'name': target_user.get_full_name() or target_user.username,
+            'first_name': target_user.first_name,
+            'last_name': target_user.last_name,
+            'email': target_user.email,
+            'role': profile.display_role,
+            'raw_role': profile.role,
+            'department': profile.department or '',
+            'designation': profile.designation or '',
+            'semester': profile.semester or '',
+            'student_class': profile.class_batch or '',
+            'phone': profile.phone or '',
+            'is_hod': profile.is_hod,
+            'profile_pic': profile.profile_pic.url if profile.profile_pic else None,
+        }
+    }
+    return render(request, 'accounts/profile_edit.html', context)
 
 
 @dean_required

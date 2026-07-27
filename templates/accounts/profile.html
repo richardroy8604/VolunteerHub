@@ -1,13 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}My Profile — VolunteerHub{% endblock %}
+{% block title %}{% if is_admin_view %}User Profile — {{ profile_user.name }}{% else %}My Profile — VolunteerHub{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row align-items-center mb-4">
     <div class="col-12">
-        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">My Profile</h2>
-        <p class="text-muted" style="font-size: 0.9rem;">View and manage your campus profile information</p>
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">
+            {% if is_admin_view %}User Profile — {{ profile_user.name }}{% else %}My Profile{% endif %}
+        </h2>
+        <p class="text-muted" style="font-size: 0.9rem;">
+            {% if is_admin_view %}Detailed institutional profile and volunteer metrics{% else %}View and manage your campus profile information{% endif %}
+        </p>
     </div>
 </div>
 
@@ -51,9 +55,15 @@
                 </div>
             </div>
 
+            {% if is_admin_view %}
+            <a href="/dean/users/{{ profile_user.id }}/edit/" class="btn btn-secondary w-100 mt-4 py-2">
+                <i class="fa-solid fa-user-pen me-2"></i> Edit User Profile
+            </a>
+            {% else %}
             <a href="/accounts/profile/edit/{% if user_role %}?role={{ user_role }}{% endif %}" class="btn btn-secondary w-100 mt-4 py-2">
                 <i class="fa-solid fa-user-pen me-2"></i> Edit Profile
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -126,12 +136,21 @@
 
             <!-- Action Navigation Buttons -->
             <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
+                {% if is_admin_view %}
+                <a href="{% url 'events_dean:user_management' %}" class="btn btn-secondary py-2 px-3">
+                    <i class="fa-solid fa-users me-2"></i> Back to User Management
+                </a>
+                <a href="/dean/users/{{ profile_user.id }}/edit/" class="btn btn-primary py-2 px-3">
+                    <i class="fa-solid fa-user-pen me-2"></i> Edit Account
+                </a>
+                {% else %}
                 <a href="{% if user_role == 'dean' %}/dean/dashboard/{% elif user_role == 'committee_head' %}/committee/dashboard/{% else %}/student/dashboard/{% endif %}" class="btn btn-secondary py-2 px-3">
                     <i class="fa-solid fa-house me-2"></i> Back to Dashboard
                 </a>
                 <a href="/accounts/logout/" class="btn btn-danger py-2 px-3">
                     <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>

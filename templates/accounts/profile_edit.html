@@ -1,13 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Edit Profile — VolunteerHub{% endblock %}
+{% block title %}{% if is_admin_edit %}Edit User Account — {{ profile_user.name }}{% else %}Edit Profile — VolunteerHub{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row align-items-center mb-4">
     <div class="col-12">
-        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Edit Profile</h2>
-        <p class="text-muted" style="font-size: 0.9rem;">Modify your contact number and profile picture</p>
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">
+            {% if is_admin_edit %}Edit Account Profile — {{ profile_user.name }}{% else %}Edit Profile{% endif %}
+        </h2>
+        <p class="text-muted" style="font-size: 0.9rem;">
+            {% if is_admin_edit %}Administer user credentials, academic assignment, and roles{% else %}Modify your contact number and profile picture{% endif %}
+        </p>
     </div>
 </div>
 
@@ -15,7 +19,7 @@
     <div class="col-lg-8">
         <div class="content-card">
             <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
-                <span><i class="fa-solid fa-user-gear text-success me-2"></i> Update Settings</span>
+                <span><i class="fa-solid fa-user-gear text-success me-2"></i> {% if is_admin_edit %}Admin Account Editor{% else %}Update Settings{% endif %}</span>
             </h4>
 
             <form method="post" enctype="multipart/form-data" action="">
@@ -24,9 +28,13 @@
                 <!-- Profile Pic upload row -->
                 <div class="row align-items-center mb-4 pb-3 border-bottom" style="border-bottom-color: var(--clr-border);">
                     <div class="col-md-3 text-center mb-3 mb-md-0">
-                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center border border-3 border-white mx-auto shadow-sm" style="width: 100px; height: 100px; font-weight: 700; font-size: 3rem;">
-                            {{ profile_user.name|slice:":1"|upper }}
-                        </div>
+                        {% if profile_user.profile_pic %}
+                            <img src="{{ profile_user.profile_pic }}" alt="Avatar" class="rounded-circle border border-3 border-success" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center border border-3 border-white mx-auto shadow-sm" style="width: 100px; height: 100px; font-weight: 700; font-size: 3rem;">
+                                {{ profile_user.name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="col-md-9">
                         <label class="form-label" for="profile_picture">Profile Image</label>
@@ -34,6 +42,74 @@
                         <div class="form-text text-muted" style="font-size: 0.75rem;">Supported formats: JPG, PNG. Max size: 2MB.</div>
                     </div>
                 </div>
+
+                {% if is_admin_edit %}
+                <!-- Admin Name & Email Editing -->
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="first_name">First Name</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" value="{{ profile_user.first_name }}" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="last_name">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" value="{{ profile_user.last_name }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ profile_user.email }}" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" value="{{ profile_user.phone }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="role">User Role</label>
+                        <select id="role" name="role" class="form-select">
+                            <option value="student" {% if profile_user.raw_role == 'student' %}selected{% endif %}>Student</option>
+                            <option value="faculty" {% if profile_user.raw_role == 'faculty' %}selected{% endif %}>Faculty / Committee Head</option>
+                            <option value="dean" {% if profile_user.raw_role == 'dean' %}selected{% endif %}>Dean of Student Affairs</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="department">Department</label>
+                        <select id="department" name="department" class="form-select">
+                            <option value="">-- Select Department --</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept }}" {% if profile_user.department == dept %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="designation">Designation</label>
+                        <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g. Assistant Professor, Student" value="{{ profile_user.designation }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="semester">Semester (1–8)</label>
+                        <input type="number" id="semester" name="semester" class="form-control" min="1" max="10" value="{{ profile_user.semester }}">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="class_batch">Class / Batch</label>
+                        <input type="text" id="class_batch" name="class_batch" class="form-control" placeholder="e.g. MSc CS 2024-2026" value="{{ profile_user.student_class }}">
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="is_hod" name="is_hod" {% if profile_user.is_hod %}checked{% endif %}>
+                    <label class="form-check-label fw-semibold text-dark" for="is_hod">
+                        Department HOD Privileges (Heads Department Administration)
+                    </label>
+                </div>
+
+                {% else %}
 
                 <div class="row">
                     <!-- Phone number input with verification trigger -->
@@ -77,9 +153,15 @@
                     <span>Contact the admin office if your Department, Semester, or Class details need correction. Only phone numbers and profile pictures can be edited directly.</span>
                 </div>
 
+                {% endif %}
+
                 <!-- Form Controls -->
                 <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="border-top-color: var(--clr-border);">
+                    {% if is_admin_edit %}
+                    <a href="/dean/users/{{ profile_user.id }}/" class="btn btn-secondary">Cancel</a>
+                    {% else %}
                     <a href="/accounts/profile/{% if user_role %}?role={{ user_role }}{% endif %}" class="btn btn-secondary">Cancel</a>
+                    {% endif %}
                     <button type="submit" class="btn btn-primary">
                         <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
                     </button>
