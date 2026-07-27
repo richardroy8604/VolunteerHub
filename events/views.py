@@ -249,6 +249,8 @@ def event_create_view(request):
     """
     Dean view to create a new event along with its committees.
     """
+    errors = {}
+
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
@@ -259,14 +261,22 @@ def event_create_view(request):
 
             if not _validate_committee_assignments(request, committee_heads, committee_student_coords):
                 # Re-render form with error
-                faculties = UserProfile.objects.filter(role='faculty').select_related('user').order_by('user__first_name')
+                faculties = UserProfile.objects.filter(role__in=['faculty', 'dean']).select_related('user').order_by('user__first_name')
                 students = UserProfile.objects.filter(role='student').select_related('user').order_by('user__first_name')
-                venues = Venue.objects.all()
+                venues = Venue.objects.all().order_by('name')
                 return render(request, 'events/event_form.html', {
-                    'form': form, 'faculties': faculties, 'students': students, 'venues': venues, 'is_edit': False
+                    'form': form,
+                    'committee_heads': [{'id': p.id, 'name': p.user.get_full_name()} for p in faculties],
+                    'students_pool': [{'id': p.id, 'name': p.user.get_full_name()} for p in students],
+                    'saved_venues': venues,
+                    'is_edit': False,
+                    'errors': errors,
+                    'form_data': request.POST,
                 })
 
             event = form.save(commit=False)
+            if not event.max_volunteers:
+                event.max_volunteers = 100
             event.status = 'open'
             event.created_by = request.user
             event.save()
@@ -354,6 +364,8 @@ def event_edit_view(request, pk):
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
             event = form.save(commit=False)
+            if not event.max_volunteers:
+                event.max_volunteers = 100
 
             msc_id = request.POST.get('main_student_coordinator')
             if msc_id:

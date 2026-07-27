@@ -34,6 +34,12 @@ class EventForm(forms.ModelForm):
             'registration_deadline': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'required': True}),
         }
 
+    def clean_max_volunteers(self):
+        val = self.cleaned_data.get('max_volunteers')
+        if val is None or val <= 0:
+            return 100
+        return val
+
     def clean(self):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
