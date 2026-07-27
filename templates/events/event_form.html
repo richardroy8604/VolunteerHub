@@ -34,29 +34,22 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" for="id_venue">Venue / Location <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="text" id="id_venue" name="venue" class="form-control {% if errors.venue %}is-invalid{% endif %}" placeholder="Type or select a saved venue..." value="{% if form_data.venue %}{{ form_data.venue }}{% elif event.venue %}{{ event.venue }}{% endif %}" autocomplete="off" required>
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="venueDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-location-dot"></i>
+                    <div class="col-12 form-group">
+                        <label class="form-label" for="id_venue">Event Venue / Location <span class="text-danger">*</span></label>
+                        <div class="position-relative">
+                            <input type="text" id="id_venue" name="venue" class="form-control pe-5 {% if errors.venue %}is-invalid{% endif %}" placeholder="e.g. Carmel Hall, Main Auditorium, Campus Grounds" value="{% if form_data.venue %}{{ form_data.venue }}{% elif event.venue %}{{ event.venue }}{% endif %}" autocomplete="off" required>
+                            <button type="button" id="toggle-venue-dropdown" class="btn border-0 position-absolute end-0 top-50 translate-middle-y me-2 text-muted px-2 py-1" style="z-index: 5; font-size: 0.85rem;" title="View saved locations">
+                                <i class="fa-solid fa-chevron-down"></i>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 w-100 p-2" id="venueDropdownMenu" style="max-height: 220px; overflow-y: auto; border-radius: var(--radius-md); font-size: 0.88rem; border: 1px solid var(--clr-border) !important;">
-                                <li class="dropdown-header text-muted py-1 px-2 mb-1" style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase;">
-                                    Saved Campus Locations
-                                </li>
+                            <ul class="dropdown-menu w-100 shadow-sm mt-1 border-0 custom-venue-dropdown" id="venue-saved-list" style="display: none; max-height: 180px; overflow-y: auto;">
                                 {% for v in saved_venues %}
-                                <li class="venue-item d-flex justify-content-between align-items-center px-2 py-1.5 rounded mb-1 bg-light-hover" id="venue-row-{{ v.id }}" style="cursor: pointer;">
+                                <li class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 venue-item" style="cursor: pointer;">
                                     <span class="venue-select-text text-truncate flex-grow-1 me-2 fw-semibold" data-name="{{ v.name }}">
                                         <i class="fa-solid fa-building-user me-1.5 text-success opacity-75"></i> {{ v.name }}
                                     </span>
                                     <button type="button" class="btn btn-sm text-danger p-0 delete-venue-btn me-1" data-venue-id="{{ v.id }}" data-venue-name="{{ v.name }}" title="Remove from saved dropdown list" style="font-size: 0.9rem; line-height: 1;">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
-                                </li>
-                                {% empty %}
-                                <li class="text-muted p-2 text-center" id="empty-venue-msg" style="font-size: 0.8rem;">
-                                    No saved locations yet. Type one to auto-save!
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -66,10 +59,6 @@
                             <i class="fa-solid fa-circle-exclamation me-1"></i> {{ errors.venue }}
                         </div>
                         {% endif %}
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" for="id_max_volunteers">Max Volunteers Limit (Optional)</label>
-                        <input type="number" id="id_max_volunteers" name="max_volunteers" class="form-control" placeholder="Leave empty for default (100)" value="{% if form_data.max_volunteers %}{{ form_data.max_volunteers }}{% elif event.max_volunteers %}{{ event.max_volunteers }}{% endif %}">
                     </div>
                 </div>
 
