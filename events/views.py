@@ -244,6 +244,27 @@ def _validate_committee_assignments(request, committee_heads, committee_student_
     return True
 
 
+def _get_saved_venues():
+    """Retrieve all unique saved campus venues including all past event locations."""
+    past_venues = Event.objects.exclude(venue='').values_list('venue', flat=True).distinct()
+    for pv in past_venues:
+        if pv and pv.strip():
+            Venue.objects.get_or_create(name=pv.strip())
+            
+    defaults = [
+        'Carmel Hall, RCSS',
+        'Chavara Hall, RCSS',
+        'Main Auditorium, Hill Campus',
+        'Kalamassery Campus Grounds',
+        'Golden Jubilee Hall',
+        'RSET Auditorium, Kakkanad',
+    ]
+    for d in defaults:
+        Venue.objects.get_or_create(name=d)
+
+    return Venue.objects.all().order_by('name')
+
+
 @dean_required
 def event_create_view(request):
     """
@@ -278,6 +299,8 @@ def event_create_view(request):
             event.status = 'open'
             event.created_by = request.user
             event.max_volunteers = 100 # Initial fallback
+            if event.venue and event.venue.strip():
+                Venue.objects.get_or_create(name=event.venue.strip())
             event.save()
 
             msc_id = request.POST.get('main_student_coordinator')
@@ -336,7 +359,7 @@ def event_create_view(request):
         'is_edit': False,
         'committee_heads': committee_heads,
         'students_pool': students_pool,
-        'saved_venues': Venue.objects.all().order_by('name'),
+        'saved_venues': _get_saved_venues(),
         'errors': errors,
         'form_data': request.POST if request.method == 'POST' else {},
     }
@@ -371,6 +394,8 @@ def event_edit_view(request, pk):
             event = form.save(commit=False)
             if not event.max_volunteers:
                 event.max_volunteers = 100
+            if event.venue and event.venue.strip():
+                Venue.objects.get_or_create(name=event.venue.strip())
 
             msc_id = request.POST.get('main_student_coordinator')
             if msc_id:
@@ -403,7 +428,7 @@ def event_edit_view(request, pk):
                     'event': _event_to_dict(event_with_committees),
                     'committee_heads': committee_heads_list,
                     'students_pool': students_pool_list,
-                    'saved_venues': Venue.objects.all().order_by('name'),
+                    'saved_venues': _get_saved_venues(),
                     'form': form,
                 })
 
@@ -466,7 +491,7 @@ def event_edit_view(request, pk):
         'event': _event_to_dict(event_with_committees),
         'committee_heads': committee_heads,
         'students_pool': students_pool,
-        'saved_venues': Venue.objects.all().order_by('name'),
+        'saved_venues': _get_saved_venues(),
         'errors': errors,
         'form_data': request.POST if request.method == 'POST' else {},
     }

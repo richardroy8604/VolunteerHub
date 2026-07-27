@@ -43,7 +43,7 @@
                             </button>
                             <ul class="dropdown-menu w-100 shadow-sm mt-1 border-0 custom-venue-dropdown" id="venue-saved-list" style="display: none; max-height: 180px; overflow-y: auto;">
                                 {% for v in saved_venues %}
-                                <li class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 venue-item" style="cursor: pointer;">
+                                <li class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 venue-item" id="venue-row-{{ v.id }}" style="cursor: pointer;">
                                     <span class="venue-select-text text-truncate flex-grow-1 me-2 fw-semibold" data-name="{{ v.name }}">
                                         <i class="fa-solid fa-building-user me-1.5 text-success opacity-75"></i> {{ v.name }}
                                     </span>
@@ -491,14 +491,49 @@
             updateDateConstraints();
         }
 
-        // Venue Combo Dropdown Selection and Deletion Logic
+        // Venue Combo Dropdown Selection, Filtering, and Deletion Logic
         const venueInput = document.getElementById('id_venue');
-        const venueMenu = document.getElementById('venueDropdownMenu');
-        const venueBtn = document.getElementById('venueDropdownBtn');
+        const venueList = document.getElementById('venue-saved-list');
+        const toggleBtn = document.getElementById('toggle-venue-dropdown');
 
-        if (venueMenu && venueInput) {
-            venueMenu.addEventListener('click', function(e) {
-                // Delete button click (small cross sign x)
+        if (venueInput && venueList && toggleBtn) {
+            function showVenueList() {
+                venueList.style.display = 'block';
+                venueList.classList.add('show');
+            }
+            function hideVenueList() {
+                venueList.style.display = 'none';
+                venueList.classList.remove('show');
+            }
+
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (venueList.style.display === 'none' || !venueList.style.display) {
+                    showVenueList();
+                } else {
+                    hideVenueList();
+                }
+            });
+
+            venueInput.addEventListener('focus', function() {
+                showVenueList();
+            });
+
+            venueInput.addEventListener('input', function() {
+                showVenueList();
+                const filter = this.value.toLowerCase().trim();
+                const items = venueList.querySelectorAll('.venue-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(filter)) {
+                        item.style.setProperty('display', 'flex', 'important');
+                    } else {
+                        item.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            });
+
+            venueList.addEventListener('click', function(e) {
                 const deleteBtn = e.target.closest('.delete-venue-btn');
                 if (deleteBtn) {
                     e.stopPropagation();
@@ -519,10 +554,6 @@
                             if (data.success) {
                                 const row = document.getElementById(`venue-row-${venueId}`);
                                 if (row) row.remove();
-                                const items = venueMenu.querySelectorAll('.venue-item');
-                                if (items.length === 0) {
-                                    venueMenu.innerHTML = `<li class="text-muted p-2 text-center" style="font-size: 0.8rem;">No saved locations yet. Type one to auto-save!</li>`;
-                                }
                             }
                         })
                         .catch(err => console.error('Error deleting venue:', err));
@@ -530,16 +561,19 @@
                     return;
                 }
 
-                // Venue text item click
                 const selectText = e.target.closest('.venue-select-text') || e.target.closest('.venue-item');
                 if (selectText) {
-                    const textNode = selectText.dataset.name || selectText.querySelector('.venue-select-text')?.dataset.name;
+                    const textNode = selectText.querySelector('.venue-select-text')?.dataset.name || selectText.dataset.name;
                     if (textNode) {
                         venueInput.value = textNode;
-                        if (venueBtn && bootstrap.Dropdown.getInstance(venueBtn)) {
-                            bootstrap.Dropdown.getInstance(venueBtn).hide();
-                        }
+                        hideVenueList();
                     }
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!venueInput.contains(e.target) && !venueList.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    hideVenueList();
                 }
             });
         }
