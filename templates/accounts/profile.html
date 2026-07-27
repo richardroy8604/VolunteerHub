@@ -55,11 +55,7 @@
                 </div>
             </div>
 
-            {% if is_admin_view %}
-            <a href="/dean/users/{{ profile_user.id }}/edit/" class="btn btn-secondary w-100 mt-4 py-2">
-                <i class="fa-solid fa-user-pen me-2"></i> Edit User Profile
-            </a>
-            {% else %}
+            {% if not is_admin_view %}
             <a href="/accounts/profile/edit/{% if user_role %}?role={{ user_role }}{% endif %}" class="btn btn-secondary w-100 mt-4 py-2">
                 <i class="fa-solid fa-user-pen me-2"></i> Edit Profile
             </a>
