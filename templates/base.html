@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,13 +23,105 @@
     <!-- Font Awesome 6 Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
 
+    <style>
+        /* Global Page Loader Overlay Styling */
+        .global-loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease-in-out;
+        }
+
+        .global-loader-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .global-loader-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, #1b4d3e 0%, #28a745 50%, #ffc107 100%);
+            transition: width 0.4s ease;
+        }
+
+        .global-loader-overlay.active .global-loader-top-bar {
+            width: 100%;
+        }
+
+        .global-loader-spinner-wrapper {
+            position: relative;
+            width: 72px;
+            height: 72px;
+            margin: 0 auto;
+        }
+
+        .global-loader-spinner {
+            width: 72px;
+            height: 72px;
+            border: 4px solid rgba(27, 77, 62, 0.12);
+            border-top: 4px solid #1b4d3e;
+            border-right: 4px solid #28a745;
+            border-radius: 50%;
+            animation: spinLoader 0.8s linear infinite;
+        }
+
+        .global-loader-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        @keyframes spinLoader {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .global-loader-pulse {
+            animation: pulseText 1.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+    </style>
+
     <!-- Custom Forest Green Design CSS -->
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+
+    <!-- Global Page Loading Overlay & Progress Bar -->
+    <div id="globalPageLoader" class="global-loader-overlay">
+        <div class="global-loader-top-bar"></div>
+        <div class="global-loader-content text-center">
+            <div class="global-loader-spinner-wrapper mb-3">
+                <div class="global-loader-spinner"></div>
+                <img src="{% static 'images/rcsslogo.png' %}" alt="RCSS Logo" class="global-loader-logo">
+            </div>
+            <div class="fw-bold text-dark h6 mb-1" style="letter-spacing: -0.2px;">VolunteerHub</div>
+            <div class="text-muted small global-loader-pulse">Loading page, please wait...</div>
+        </div>
+    </div>
 
     <div class="app-container">
         <!-- Sidebar Navigation (Include dynamic sidebar based on role) -->
@@ -65,6 +158,60 @@
             if (event.persisted || (window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0] && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
                 window.location.reload();
             }
+        });
+
+        // Global Page Transition Loader Controller (250ms Production Threshold)
+        document.addEventListener('DOMContentLoaded', function() {
+            const loader = document.getElementById('globalPageLoader');
+            if (!loader) return;
+
+            let loaderTimeout = null;
+
+            function showLoader() {
+                if (loaderTimeout) clearTimeout(loaderTimeout);
+                // Only show loader if page load takes longer than 250ms (prevents flicker on fast pages)
+                loaderTimeout = setTimeout(function() {
+                    loader.classList.add('active');
+                }, 250);
+            }
+
+            function hideLoader() {
+                if (loaderTimeout) {
+                    clearTimeout(loaderTimeout);
+                    loaderTimeout = null;
+                }
+                loader.classList.remove('active');
+            }
+
+            // Hide loader when page finishes loading
+            window.addEventListener('load', hideLoader);
+            window.addEventListener('pageshow', hideLoader);
+            hideLoader(); // Initial hide on DOM ready
+
+            // Intercept internal link clicks
+            document.addEventListener('click', function(e) {
+                const anchor = e.target.closest('a');
+                if (!anchor) return;
+
+                const href = anchor.getAttribute('href');
+                const target = anchor.getAttribute('target');
+                const toggle = anchor.getAttribute('data-bs-toggle');
+                const dismiss = anchor.getAttribute('data-bs-dismiss');
+
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || target === '_blank' || toggle || dismiss) {
+                    return;
+                }
+
+                showLoader();
+            });
+
+            // Intercept form submissions
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (form && !form.getAttribute('data-no-loader')) {
+                    showLoader();
+                }
+            });
         });
     </script>
     
