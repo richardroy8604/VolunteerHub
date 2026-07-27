@@ -296,6 +296,12 @@
 
         <!-- RIGHT COLUMN: 3-Step Wizard Form Panel -->
         <div class="setup-form-panel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted small fw-semibold"><i class="fa-solid fa-shield-halved me-1 text-success"></i> First Login Setup</span>
+                <a href="{% url 'accounts:logout' %}" class="btn btn-sm btn-outline-danger px-2.5 py-1" style="font-size: 0.78rem; font-weight: 600; border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Log Out
+                </a>
+            </div>
             <div>
                 <!-- Top Step Indicator Bar -->
                 <div class="wizard-progress">
@@ -355,7 +361,7 @@
                                 <span class="input-group-text country-flag-pill px-3">
                                     🇮🇳 +91
                                 </span>
-                                <input type="tel" id="phone-input" name="phone" class="form-control" placeholder="9876543210" maxlength="10" value="{% if form_data.phone %}{{ form_data.phone }}{% else %}{{ clean_phone }}{% endif %}" style="font-size: 0.9rem;" required>
+                                <input type="tel" id="phone-input" name="phone" class="form-control" placeholder="9876543210" maxlength="14" value="{% if form_data.phone %}{{ form_data.phone }}{% else %}{{ clean_phone }}{% endif %}" style="font-size: 0.9rem;" required>
                                 <button type="button" id="verify-otp-btn" class="btn btn-outline-success px-3" style="font-size: 0.82rem; font-weight: 600;">
                                     Send OTP
                                 </button>

@@ -80,10 +80,14 @@ def first_login_view(request):
         new_password = request.POST.get('new_password', '').strip()
         confirm_password = request.POST.get('confirm_password', '').strip()
 
-        # Clean digits from phone
+        # Clean digits from phone (strips leading 91 or +91 if auto-filled)
         phone_digits = re.sub(r'\D', '', raw_phone)
         if phone_digits.startswith('91') and len(phone_digits) == 12:
             phone_digits = phone_digits[2:]
+        elif phone_digits.startswith('91') and len(phone_digits) > 10:
+            phone_digits = phone_digits[2:]
+        elif len(phone_digits) > 10:
+            phone_digits = phone_digits[-10:]
 
         # Validate mandatory phone number
         if not phone_digits or len(phone_digits) != 10 or not phone_digits[0] in '6789':
