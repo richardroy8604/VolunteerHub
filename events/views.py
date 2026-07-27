@@ -24,6 +24,7 @@ from django.core.paginator import Paginator
 
 from accounts.models import UserProfile, CourseConfig
 from accounts.decorators import dean_required, faculty_required, student_required
+from accounts.services import trigger_attendance_submitted, trigger_attendance_approved, trigger_attendance_returned
 from events.models import Event, Committee, Venue
 from volunteers.models import VolunteerApplication, AttendanceSheet, AttendanceRecord
 from .forms import EventForm
@@ -1312,6 +1313,7 @@ def committee_attendance_view(request, pk):
             sheet.submitted_by = request.user.profile
             sheet.submitted_at = timezone.now()
             sheet.save()
+            trigger_attendance_submitted(sheet)
             messages.success(request, f'Attendance sheet for {selected_date} submitted/updated for Dean approval.')
         else:
             if sheet.status != 'pending':
@@ -1539,6 +1541,7 @@ def dean_approvals_view(request):
                     sheet.reviewed_at = timezone.now()
                     sheet.feedback = ''
                     sheet.save()
+                    trigger_attendance_approved(sheet)
                     messages.success(request, f'Attendance sheet for {sheet.committee.name} ({_format_date(sheet.date)}) approved successfully. Hours credited!')
                 elif action == 'send_back':
                     sheet.status = 'sent_back'
@@ -1546,6 +1549,7 @@ def dean_approvals_view(request):
                     sheet.reviewed_at = timezone.now()
                     sheet.feedback = request.POST.get('feedback', '')
                     sheet.save()
+                    trigger_attendance_returned(sheet, sheet.feedback)
                     messages.warning(request, f'Attendance sheet for {sheet.committee.name} ({_format_date(sheet.date)}) sent back with feedback.')
             except AttendanceSheet.DoesNotExist:
                 messages.error(request, 'Sheet not found.')

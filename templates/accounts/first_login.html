@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setup Profile — VolunteerHub</title>
+    <title>Account Onboarding Setup — VolunteerHub</title>
 
     <!-- Google Fonts (Poppins) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,10 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Font Awesome 6 CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom stylesheet -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -28,25 +28,27 @@
             align-items: center;
             justify-content: center;
             padding: 30px 15px;
+            font-family: 'Poppins', sans-serif;
         }
 
         .setup-card-wrapper {
             width: 100%;
-            max-width: 980px;
+            max-width: 1020px;
             background: #ffffff;
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-lg, 16px);
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
             display: flex;
             flex-direction: row;
+            min-height: 600px;
         }
 
         /* Left Split Column - Personal Intro Panel */
         .setup-intro-panel {
-            background: linear-gradient(145deg, #1b4d3e 0%, #113328 100%);
+            background: linear-gradient(145deg, #1b4d3e 0%, #0e2d24 100%);
             color: #ffffff;
             padding: 45px 40px;
-            width: 42%;
+            width: 38%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -64,36 +66,134 @@
         /* Right Split Column - Form Container */
         .setup-form-panel {
             padding: 40px 45px;
-            width: 58%;
+            width: 62%;
             background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        .profile-upload-wrapper {
+        /* Step Progress Wizard Bar */
+        .wizard-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             position: relative;
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 16px;
+            margin-bottom: 30px;
         }
 
-        .profile-upload-preview {
-            width: 90px;
-            height: 90px;
+        .wizard-progress::before {
+            content: "";
+            position: absolute;
+            top: 18px;
+            left: 40px;
+            right: 40px;
+            height: 3px;
+            background: #e9ecef;
+            z-index: 1;
+        }
+
+        .wizard-progress-bar {
+            position: absolute;
+            top: 18px;
+            left: 40px;
+            height: 3px;
+            background: var(--clr-primary, #1b4d3e);
+            z-index: 2;
+            transition: width 0.4s ease-in-out;
+            width: 0%;
+        }
+
+        .step-node {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .step-circle {
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--clr-primary);
-            background-color: var(--clr-primary-light);
+            background: #ffffff;
+            border: 3px solid #dee2e6;
+            color: #6c757d;
+            font-weight: 700;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            color: var(--clr-primary);
+            transition: all 0.3s ease;
+        }
+
+        .step-node.active .step-circle {
+            border-color: var(--clr-primary, #1b4d3e);
+            background: var(--clr-primary, #1b4d3e);
+            color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(27, 77, 62, 0.15);
+        }
+
+        .step-node.completed .step-circle {
+            border-color: #198754;
+            background: #198754;
+            color: #ffffff;
+        }
+
+        .step-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #888;
+            margin-top: 6px;
+            transition: color 0.3s;
+        }
+
+        .step-node.active .step-label {
+            color: var(--clr-primary, #1b4d3e);
+        }
+
+        /* Animated Step Content Container */
+        .wizard-step-content {
+            display: none;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .wizard-step-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Profile Picture Upload */
+        .profile-upload-wrapper {
+            position: relative;
+            width: 95px;
+            height: 95px;
+            margin: 0 auto 20px;
+        }
+
+        .profile-upload-preview {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--clr-primary, #1b4d3e);
+            background-color: #f4f9f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: var(--clr-primary, #1b4d3e);
         }
 
         .profile-upload-btn {
             position: absolute;
-            bottom: -2px;
-            right: -2px;
-            background-color: var(--clr-primary);
+            bottom: 0;
+            right: 0;
+            background-color: var(--clr-primary, #1b4d3e);
             color: white;
             border: 2px solid white;
             width: 32px;
@@ -104,11 +204,20 @@
             justify-content: center;
             cursor: pointer;
             font-size: 0.75rem;
-            box-shadow: var(--shadow-sm);
-            transition: transform var(--transition-speed);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
         }
         .profile-upload-btn:hover {
             transform: scale(1.1);
+        }
+
+        .country-flag-pill {
+            background-color: #f8f9fa;
+            border-color: #ced4da;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: #333;
+            user-select: none;
         }
 
         @media (max-width: 860px) {
@@ -142,7 +251,7 @@
 
                 <h2 class="h3 font-weight-bold mb-2" style="color: #ffffff;">Welcome, {{ user_name }}!</h2>
                 <p class="text-white-50 mb-4" style="font-size: 0.88rem; line-height: 1.5;">
-                    Your personalized portal for campus event coordination and volunteering lifecycle management.
+                    Complete your 1-time onboarding setup to activate your campus volunteering profile.
                 </p>
 
                 <!-- Role-tailored feature intro list -->
@@ -166,51 +275,14 @@
                             <span class="text-white-50" style="font-size: 0.78rem;">Track your verified shift hours towards your 30-hour target.</span>
                         </div>
                     </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
-                            <i class="fa-solid fa-comments"></i>
-                        </div>
-                        <div>
-                            <strong class="d-block text-white" style="font-size: 0.78rem;">Team Coordination</strong>
-                            <span class="text-white-50" style="font-size: 0.78rem;">Access coordinator rosters and connect with committee leads.</span>
-                        </div>
-                    </div>
-                    {% elif profile.role == 'faculty' %}
+                    {% else %}
                     <div class="d-flex gap-3 align-items-start">
                         <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
                             <i class="fa-solid fa-users-gear"></i>
                         </div>
                         <div>
-                            <strong class="d-block text-white" style="font-size: 0.85rem;">Committee Management</strong>
-                            <span class="text-white-50" style="font-size: 0.78rem;">Oversee assigned volunteers and appoint student coordinators.</span>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
-                            <i class="fa-solid fa-clipboard-user"></i>
-                        </div>
-                        <div>
-                            <strong class="d-block text-white" style="font-size: 0.85rem;">Daily Attendance Sheets</strong>
-                            <span class="text-white-50" style="font-size: 0.78rem;">Log student shift hours per event day and submit locked sheets to Dean.</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        </div>
-                        <div>
-                            <strong class="d-block text-white" style="font-size: 0.85rem;">Auto-Allocation Engine</strong>
-                            <span class="text-white-50" style="font-size: 0.78rem;">Run greedy matching optimization for student volunteer pools.</span>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 28px; height: 28px; font-size: 0.8rem; color: #1b4d3e !important;">
-                            <i class="fa-solid fa-stamp"></i>
-                        </div>
-                        <div>
-                            <strong class="d-block text-white" style="font-size: 0.85rem;">Attendance Governance</strong>
-                            <span class="text-white-50" style="font-size: 0.78rem;">Audit, approve, or request revisions on faculty attendance sheets.</span>
+                            <strong class="d-block text-white" style="font-size: 0.85rem;">Event Administration</strong>
+                            <span class="text-white-50" style="font-size: 0.78rem;">Manage committee quotas, attendance, and student allocations.</span>
                         </div>
                     </div>
                     {% endif %}
@@ -222,87 +294,209 @@
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: Compact Profile Setup Form -->
+        <!-- RIGHT COLUMN: 3-Step Wizard Form Panel -->
         <div class="setup-form-panel">
-            <h3 class="h4 font-weight-bold text-dark mb-1">Complete Account Setup</h3>
-            <p class="text-muted mb-3" style="font-size: 0.82rem;">Set your contact info and security credentials to unlock access.</p>
-
-            <form method="post" action="" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <!-- Profile Photo Widget -->
-                <div class="profile-upload-wrapper">
-                    <div class="profile-upload-preview" id="pic-preview">
-                        <i class="fa-solid fa-user"></i>
+            <div>
+                <!-- Top Step Indicator Bar -->
+                <div class="wizard-progress">
+                    <div class="wizard-progress-bar" id="wizardProgressBar"></div>
+                    <div class="step-node active" id="node-step-1" onclick="jumpToStep(1)">
+                        <div class="step-circle" id="circle-step-1">1</div>
+                        <span class="step-label">Contact</span>
                     </div>
-                    <label for="id_profile_picture" class="profile-upload-btn" title="Upload Photo">
-                        <i class="fa-solid fa-camera"></i>
-                    </label>
-                    <input type="file" id="id_profile_picture" name="profile_picture" accept="image/*" class="d-none">
-                </div>
-
-                <!-- Mandatory Phone Input & Verification -->
-                <div class="form-group mb-3 text-start">
-                    <label class="form-label" for="phone-field" style="font-size: 0.82rem; font-weight: 600;">Mandatory Phone Number <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: var(--clr-border);">
-                            <i class="fa-solid fa-phone"></i>
-                        </span>
-                        <input type="tel" id="phone-field" name="phone" class="form-control border-start-0 border-end-0" placeholder="e.g. +91 9876543210" value="{{ profile.phone }}" style="border-color: var(--clr-border); font-size: 0.88rem;" required>
-                        <button type="button" id="verify-btn" class="btn btn-outline-success" style="margin: 0; padding: 0 14px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.82rem; border-color: var(--clr-border); border-left: none;">
-                            Verify
-                        </button>
+                    <div class="step-node" id="node-step-2" onclick="jumpToStep(2)">
+                        <div class="step-circle" id="circle-step-2">2</div>
+                        <span class="step-label">Security</span>
                     </div>
-                    <div class="form-text text-muted" id="verification-status" style="font-size: 0.72rem; margin-top: 4px;">
-                        <i class="fa-solid fa-circle-info text-warning me-1"></i> Phone verification is required to unlock your account.
+                    <div class="step-node" id="node-step-3" onclick="jumpToStep(3)">
+                        <div class="step-circle" id="circle-step-3">3</div>
+                        <span class="step-label">Review</span>
                     </div>
                 </div>
 
-                <!-- Password Setup Fields (2-column layout) -->
-                <div class="row text-start mb-3 g-2">
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" for="new_password" style="font-size: 0.82rem; font-weight: 600;">Set Password</label>
-                        <input type="password" id="new_password" name="new_password" class="form-control" placeholder="New Password" style="font-size: 0.85rem; border-color: var(--clr-border);">
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" for="confirm_password" style="font-size: 0.82rem; font-weight: 600;">Confirm Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm Password" style="font-size: 0.85rem; border-color: var(--clr-border);">
-                    </div>
-                </div>
+                <!-- Django Messages Alert Banner -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'danger' }} alert-dismissible fade show py-2 px-3 mb-3" style="font-size: 0.85rem;" role="alert">
+                            <i class="fa-solid fa-circle-exclamation me-1.5"></i> {{ message }}
+                            <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
-                <!-- Department and Class information (2-column layout) -->
-                <div class="row text-start mb-3 g-2">
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" style="font-size: 0.82rem; font-weight: 600;">Department</label>
-                        <input type="text" class="form-control" value="{{ profile.department|default:'N/A' }}" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem; border-color: var(--clr-border);">
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label class="form-label" style="font-size: 0.82rem; font-weight: 600;">Semester / Class</label>
-                        <input type="text" class="form-control" value="{% if profile.semester %}{{ profile.semester }}th Sem / {% endif %}{{ profile.class_batch|default:'N/A' }}" readonly style="background-color: var(--clr-bg-main); font-size: 0.85rem; border-color: var(--clr-border);">
-                    </div>
-                </div>
+                <!-- Main Multi-Step Form -->
+                <form method="post" action="" enctype="multipart/form-data" id="onboardingForm">
+                    {% csrf_token %}
 
-                <button type="submit" id="submit-btn" class="btn btn-primary w-100 py-2 mt-2 font-weight-bold" style="background-color: var(--clr-primary) !important; border-color: var(--clr-primary) !important; font-size: 0.9rem;" disabled>
-                    <i class="fa-solid fa-circle-check me-2"></i> Complete Profile Setup
+                    <!-- ========================================================================= -->
+                    <!-- STEP 1: CONTACT INFO & SMS VERIFICATION -->
+                    <!-- ========================================================================= -->
+                    <div class="wizard-step-content active" id="step-1-content">
+                        <div class="text-center mb-3">
+                            <!-- Profile Photo Widget -->
+                            <div class="profile-upload-wrapper">
+                                <div class="profile-upload-preview" id="pic-preview">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <label for="id_profile_picture" class="profile-upload-btn" title="Upload Profile Picture">
+                                    <i class="fa-solid fa-camera"></i>
+                                </label>
+                                <input type="file" id="id_profile_picture" name="profile_picture" accept="image/*" class="d-none">
+                            </div>
+                            <h4 class="h5 font-weight-bold text-dark mb-1">Contact Information</h4>
+                            <p class="text-muted" style="font-size: 0.8rem;">Enter your official Indian mobile number for SMS alerts.</p>
+                        </div>
+
+                        <div class="form-group mb-3 text-start">
+                            <label class="form-label fw-semibold" style="font-size: 0.83rem;">
+                                Indian Mobile Number <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text country-flag-pill px-3">
+                                    🇮🇳 +91
+                                </span>
+                                <input type="tel" id="phone-input" name="phone" class="form-control" placeholder="9876543210" maxlength="10" value="{{ form_data.phone|default:profile.phone|default:'' }}" style="font-size: 0.9rem;" required>
+                                <button type="button" id="verify-otp-btn" class="btn btn-outline-success px-3" style="font-size: 0.82rem; font-weight: 600;">
+                                    Send OTP
+                                </button>
+                            </div>
+                            <div class="form-text" id="phone-feedback" style="font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-solid fa-circle-info text-warning me-1"></i> Enter a 10-digit Indian mobile number (starts with 6, 7, 8, 9).
+                            </div>
+                        </div>
+
+                        <!-- OTP Verification Input Box (Hidden initially) -->
+                        <div class="p-3 border rounded bg-light mb-3 d-none" id="otpBoxSection">
+                            <label class="form-label fw-bold small mb-1" for="otpInputCode">Enter 4-Digit Verification Code</label>
+                            <div class="d-flex gap-2">
+                                <input type="text" id="otpInputCode" class="form-control text-center fw-bold fs-5" placeholder="1234" maxlength="4" style="letter-spacing: 6px;">
+                                <button type="button" id="confirm-otp-btn" class="btn btn-success fw-bold px-3" style="font-size: 0.85rem;">
+                                    Verify Code
+                                </button>
+                            </div>
+                            <div class="text-muted small mt-1" style="font-size: 0.72rem;">Demo code: Enter any 4-digit code (e.g. 1234).</div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================================= -->
+                    <!-- STEP 2: SECURITY & PASSWORD SETUP -->
+                    <!-- ========================================================================= -->
+                    <div class="wizard-step-content" id="step-2-content">
+                        <div class="text-start mb-3">
+                            <h4 class="h5 font-weight-bold text-dark mb-1">Set Password</h4>
+                            <p class="text-muted" style="font-size: 0.8rem;">Create a password for your direct login credentials.</p>
+                        </div>
+
+                        <div class="row text-start mb-3 g-3">
+                            <div class="col-md-6 form-group">
+                                <label class="form-label fw-semibold" for="new_password" style="font-size: 0.83rem;">New Password</label>
+                                <div class="input-group">
+                                    <input type="password" id="new_password" name="new_password" class="form-control border-end-0" placeholder="Min 6 characters" style="font-size: 0.85rem;" required>
+                                    <span class="input-group-text bg-white cursor-pointer" onclick="togglePassVisibility('new_password', this)">
+                                        <i class="fa-regular fa-eye text-muted"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="form-label fw-semibold" for="confirm_password" style="font-size: 0.83rem;">Confirm Password</label>
+                                <div class="input-group">
+                                    <input type="password" id="confirm_password" name="confirm_password" class="form-control border-end-0" placeholder="Re-enter password" style="font-size: 0.85rem;" required>
+                                    <span class="input-group-text bg-white cursor-pointer" onclick="togglePassVisibility('confirm_password', this)">
+                                        <i class="fa-regular fa-eye text-muted"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Realtime Password Match & Strength Feedback -->
+                        <div class="p-3 border rounded bg-light mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.8rem;">
+                                <span class="fw-semibold text-dark">Password Match Status:</span>
+                                <span id="pass-match-indicator" class="fw-bold text-muted">Awaiting input...</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 5px;">
+                                <div class="progress-bar bg-secondary" id="pass-strength-bar" style="width: 0%;"></div>
+                            </div>
+                            <div class="text-muted" id="pass-help-text" style="font-size: 0.72rem;">
+                                Minimum 6 characters required.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================================= -->
+                    <!-- STEP 3: ACADEMIC PROFILE & FINAL REVIEW -->
+                    <!-- ========================================================================= -->
+                    <div class="wizard-step-content" id="step-3-content">
+                        <div class="text-start mb-3">
+                            <h4 class="h5 font-weight-bold text-dark mb-1">Confirm Profile Summary</h4>
+                            <p class="text-muted" style="font-size: 0.8rem;">Review your institutional profile before completing setup.</p>
+                        </div>
+
+                        <div class="card border-0 bg-light p-3 mb-3" style="border-radius: var(--radius-md, 10px);">
+                            <div class="row g-2 text-start" style="font-size: 0.85rem;">
+                                <div class="col-6 text-muted">Full Name:</div>
+                                <div class="col-6 fw-bold text-dark" id="review-name">{{ user_name }}</div>
+
+                                <div class="col-6 text-muted">Email:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ user_obj.email }}</div>
+
+                                <div class="col-6 text-muted">Department:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ profile.department|default:"Computer Science" }}</div>
+
+                                <div class="col-6 text-muted">Class / Batch:</div>
+                                <div class="col-6 fw-semibold text-dark">{% if profile.semester %}{{ profile.semester }}th Sem / {% endif %}{{ profile.class_batch|default:"MSCCS (2025-27)" }}</div>
+
+                                <div class="col-6 text-muted">Verified Mobile:</div>
+                                <div class="col-6 fw-bold text-success" id="review-phone">🇮🇳 +91 9876543210</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success py-2 px-3 mb-0 text-start" style="font-size: 0.78rem;">
+                            <i class="fa-solid fa-circle-check me-1"></i> Everything looks great! Click complete below to unlock full access.
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-3">
+                <button type="button" id="prev-step-btn" class="btn btn-outline-secondary px-3 py-1.5 d-none" onclick="changeStep(-1)" style="font-size: 0.85rem; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back
                 </button>
-            </form>
+                <div class="ms-auto">
+                    <button type="button" id="next-step-btn" class="btn btn-primary px-4 py-1.5 font-weight-bold" onclick="changeStep(1)" style="font-size: 0.88rem; background-color: var(--clr-primary, #1b4d3e) !important; border-color: var(--clr-primary, #1b4d3e) !important;">
+                        Next: Security <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </button>
+                    <button type="button" id="submit-onboarding-btn" class="btn btn-success px-4 py-1.5 font-weight-bold d-none" onclick="submitOnboardingForm()" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-circle-check me-1.5"></i> Complete Setup
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- UI Interactivity Scripts -->
+    <!-- 3-Step Animated Wizard Logic -->
     <script>
+        let currentStep = 1;
+        let isPhoneVerified = false;
+
         document.addEventListener('DOMContentLoaded', function() {
-            const phoneField = document.getElementById('phone-field');
-            const verifyBtn = document.getElementById('verify-btn');
-            const statusDiv = document.getElementById('verification-status');
-            const submitBtn = document.getElementById('submit-btn');
             const picInput = document.getElementById('id_profile_picture');
             const picPreview = document.getElementById('pic-preview');
+            const phoneInput = document.getElementById('phone-input');
+            const verifyOtpBtn = document.getElementById('verify-otp-btn');
+            const otpBoxSection = document.getElementById('otpBoxSection');
+            const confirmOtpBtn = document.getElementById('confirm-otp-btn');
+            const otpInputCode = document.getElementById('otpInputCode');
+            const phoneFeedback = document.getElementById('phone-feedback');
 
-            // Handle photo upload preview
+            const passInput = document.getElementById('new_password');
+            const confirmInput = document.getElementById('confirm_password');
+
+            // 1. Photo Upload Preview
             if (picInput && picPreview) {
                 picInput.addEventListener('change', function() {
                     const file = this.files[0];
@@ -316,41 +510,216 @@
                 });
             }
 
-            // Verification & submit enablement
-            if (phoneField && submitBtn) {
-                if (phoneField.value.trim().length >= 10) {
-                    submitBtn.disabled = false;
+            // 2. Phone input digits validation & OTP Simulator
+            if (phoneInput && verifyOtpBtn) {
+                // If phone exists pre-filled
+                if (phoneInput.value.replace(/\D/g, '').length === 10) {
+                    isPhoneVerified = true;
+                    setPhoneVerifiedState();
                 }
-                phoneField.addEventListener('input', function() {
-                    if (this.value.trim().length >= 10) {
-                        submitBtn.disabled = false;
+
+                phoneInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, ''); // keep only numbers
+                    if (this.value.length === 10 && /^[6-9]/.test(this.value)) {
+                        phoneFeedback.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Valid Indian mobile number! Click 'Send OTP'.`;
+                    } else {
+                        isPhoneVerified = false;
+                        verifyOtpBtn.disabled = false;
+                        verifyOtpBtn.classList.remove('btn-success');
+                        verifyOtpBtn.classList.add('btn-outline-success');
+                        verifyOtpBtn.innerHTML = 'Send OTP';
+                        phoneFeedback.innerHTML = `<i class="fa-solid fa-circle-info text-warning me-1"></i> Enter a 10-digit Indian mobile number (starts with 6, 7, 8, 9).`;
                     }
                 });
 
-                if (verifyBtn && statusDiv) {
-                    verifyBtn.addEventListener('click', function() {
-                        const phoneVal = phoneField.value.trim();
-                        if (phoneVal.length < 10) {
-                            statusDiv.innerHTML = `<i class="fa-solid fa-circle-xmark text-danger me-1"></i> Enter a valid 10-digit phone number.`;
-                            return;
-                        }
+                verifyOtpBtn.addEventListener('click', function() {
+                    const val = phoneInput.value.trim();
+                    if (val.length !== 10 || !/^[6-9]/.test(val)) {
+                        phoneFeedback.innerHTML = `<i class="fa-solid fa-circle-xmark text-danger me-1"></i> Please enter a valid 10-digit number starting with 6-9.`;
+                        return;
+                    }
+                    verifyOtpBtn.disabled = true;
+                    verifyOtpBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending...`;
 
-                        verifyBtn.disabled = true;
-                        verifyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
-                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-info text-info me-1"></i> Sending verification code...`;
+                    setTimeout(() => {
+                        verifyOtpBtn.innerHTML = `OTP Sent!`;
+                        otpBoxSection.classList.remove('d-none');
+                        otpInputCode.focus();
+                    }, 800);
+                });
 
-                        setTimeout(function() {
-                            verifyBtn.innerHTML = `Verified ✓`;
-                            verifyBtn.classList.remove('btn-outline-success');
-                            verifyBtn.classList.add('btn-success');
-                            
-                            statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Phone number successfully verified!`;
-                            submitBtn.disabled = false;
-                        }, 1200);
-                    });
+                confirmOtpBtn.addEventListener('click', function() {
+                    const code = otpInputCode.value.trim();
+                    if (code.length < 4) {
+                        alert('Please enter a 4-digit code.');
+                        return;
+                    }
+                    isPhoneVerified = true;
+                    setPhoneVerifiedState();
+                    otpBoxSection.classList.add('d-none');
+                });
+            }
+
+            function setPhoneVerifiedState() {
+                verifyOtpBtn.innerHTML = `Verified ✓`;
+                verifyOtpBtn.disabled = true;
+                verifyOtpBtn.classList.remove('btn-outline-success');
+                verifyOtpBtn.classList.add('btn-success');
+                phoneFeedback.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Mobile number verified successfully!`;
+                document.getElementById('review-phone').textContent = `🇮🇳 +91 ${phoneInput.value}`;
+            }
+
+            // 3. Realtime Password Matching & Strength Feedback
+            function checkPasswordMatch() {
+                const p1 = passInput ? passInput.value : '';
+                const p2 = confirmInput ? confirmInput.value : '';
+                const matchInd = document.getElementById('pass-match-indicator');
+                const strengthBar = document.getElementById('pass-strength-bar');
+
+                if (!p1 && !p2) {
+                    if (matchInd) matchInd.innerHTML = `<span class="text-muted">Awaiting input...</span>`;
+                    if (strengthBar) strengthBar.style.width = '0%';
+                    return;
+                }
+
+                // Strength bar math
+                let strength = 0;
+                if (p1.length >= 6) strength += 40;
+                if (p1.length >= 8) strength += 30;
+                if (/[0-9]/.test(p1) && /[^A-Za-z0-9]/.test(p1)) strength += 30;
+                if (strengthBar) {
+                    strengthBar.style.width = strength + '%';
+                    if (strength < 40) strengthBar.className = 'progress-bar bg-danger';
+                    else if (strength < 70) strengthBar.className = 'progress-bar bg-warning';
+                    else strengthBar.className = 'progress-bar bg-success';
+                }
+
+                // Match indicator
+                if (p2.length > 0) {
+                    if (p1 === p2) {
+                        if (matchInd) matchInd.innerHTML = `<span class="text-success"><i class="fa-solid fa-check me-1"></i> Passwords match ✓</span>`;
+                    } else {
+                        if (matchInd) matchInd.innerHTML = `<span class="text-danger"><i class="fa-solid fa-xmark me-1"></i> Passwords do not match ✖</span>`;
+                    }
                 }
             }
+
+            if (passInput) passInput.addEventListener('input', checkPasswordMatch);
+            if (confirmInput) confirmInput.addEventListener('input', checkPasswordMatch);
         });
+
+        // 4. Wizard Step Navigation Logic
+        function updateWizardUI() {
+            // Content step visibility
+            for (let i = 1; i <= 3; i++) {
+                const content = document.getElementById(`step-${i}-content`);
+                const node = document.getElementById(`node-step-${i}`);
+                if (content && node) {
+                    if (i === currentStep) {
+                        content.classList.add('active');
+                        node.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                        node.classList.remove('active');
+                    }
+                    if (i < currentStep) {
+                        node.classList.add('completed');
+                    } else {
+                        node.classList.remove('completed');
+                    }
+                }
+            }
+
+            // Progress bar width
+            const progressBar = document.getElementById('wizardProgressBar');
+            if (progressBar) {
+                if (currentStep === 1) progressBar.style.width = '0%';
+                else if (currentStep === 2) progressBar.style.width = '50%';
+                else if (currentStep === 3) progressBar.style.width = '100%';
+            }
+
+            // Navigation Buttons
+            const prevBtn = document.getElementById('prev-step-btn');
+            const nextBtn = document.getElementById('next-step-btn');
+            const submitBtn = document.getElementById('submit-onboarding-btn');
+
+            if (prevBtn) prevBtn.classList.toggle('d-none', currentStep === 1);
+
+            if (currentStep === 3) {
+                if (nextBtn) nextBtn.classList.add('d-none');
+                if (submitBtn) submitBtn.classList.remove('d-none');
+            } else {
+                if (nextBtn) {
+                    nextBtn.classList.remove('d-none');
+                    nextBtn.innerHTML = (currentStep === 1) ? `Next: Security <i class="fa-solid fa-arrow-right ms-1"></i>` : `Next: Review <i class="fa-solid fa-arrow-right ms-1"></i>`;
+                }
+                if (submitBtn) submitBtn.classList.add('d-none');
+            }
+        }
+
+        function changeStep(delta) {
+            if (delta === 1) {
+                // Validation before advancing from Step 1
+                if (currentStep === 1) {
+                    const phoneVal = document.getElementById('phone-input')?.value.trim();
+                    if (!phoneVal || phoneVal.length !== 10 || !/^[6-9]/.test(phoneVal)) {
+                        alert('Please enter a valid 10-digit Indian mobile number.');
+                        return;
+                    }
+                    if (!isPhoneVerified) {
+                        alert('Please verify your mobile number with OTP before proceeding.');
+                        return;
+                    }
+                }
+                // Validation before advancing from Step 2
+                if (currentStep === 2) {
+                    const p1 = document.getElementById('new_password')?.value.trim();
+                    const p2 = document.getElementById('confirm_password')?.value.trim();
+                    if (p1 || p2) {
+                        if (p1.length < 6) {
+                            alert('Password must be at least 6 characters long.');
+                            return;
+                        }
+                        if (p1 !== p2) {
+                            alert('Passwords do not match. Please ensure both fields match.');
+                            return;
+                        }
+                    }
+                }
+            }
+
+            currentStep += delta;
+            if (currentStep < 1) currentStep = 1;
+            if (currentStep > 3) currentStep = 3;
+            updateWizardUI();
+        }
+
+        function jumpToStep(step) {
+            if (step > currentStep) {
+                // Check if step 1 is valid before jumping to 2 or 3
+                const phoneVal = document.getElementById('phone-input')?.value.trim();
+                if (!phoneVal || phoneVal.length !== 10) return;
+            }
+            currentStep = step;
+            updateWizardUI();
+        }
+
+        function togglePassVisibility(inputId, toggleIcon) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    toggleIcon.innerHTML = '<i class="fa-regular fa-eye-slash text-success"></i>';
+                } else {
+                    input.type = 'password';
+                    toggleIcon.innerHTML = '<i class="fa-regular fa-eye text-muted"></i>';
+                }
+            }
+        }
+
+        function submitOnboardingForm() {
+            document.getElementById('onboardingForm')?.submit();
+        }
     </script>
 </body>
 </html>

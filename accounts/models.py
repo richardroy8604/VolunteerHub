@@ -302,17 +302,33 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
 class Notification(models.Model):
     """
     In-system notification sent to users (Faculty/Deans/Students).
+    Supports smart anti-spam aggregation and Dean announcements.
     """
+    NOTIFICATION_TYPES = [
+        ('attendance', 'Attendance Sheet'),
+        ('approval', 'Dean Approval'),
+        ('allocation', 'Committee Allocation'),
+        ('overmanned', 'Overmanned Alert'),
+        ('broadcast', 'Dean Broadcast'),
+        ('system', 'System Notification'),
+    ]
+
     recipient = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, default='system')
     title = models.CharField(max_length=255)
     message = models.TextField()
+    link_url = models.CharField(max_length=500, blank=True, default='')
+    count = models.PositiveIntegerField(default=1, help_text="Aggregated count for repeated alerts")
+    event = models.ForeignKey('events.Event', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    committee = models.ForeignKey('events.Committee', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-updated_at', '-created_at']
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
 
     def __str__(self):
-        return f"To {self.recipient}: {self.title}"
+        return f"To {self.recipient}: {self.title} ({self.count}x)"

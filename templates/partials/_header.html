@@ -10,13 +10,107 @@
         </span>
     </div>
 
-    <div class="header-right">
-        <!-- Notification Icons -->
-        <div class="position-relative cursor-pointer text-muted px-2" style="font-size: 1.2rem;">
-            <i class="fa-regular fa-bell"></i>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem; padding: 3px 5px;">
-                3
-            </span>
+    <div class="header-right d-flex align-items-center gap-3">
+        {% if user_role == 'dean' or user.is_staff %}
+        <!-- Dean Announcement Broadcast Button -->
+        <button type="button" class="btn btn-sm btn-outline-success py-1 px-2.5 d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#deanBroadcastModal" style="font-size: 0.78rem; font-weight: 600; border-radius: 50px;">
+            <i class="fa-solid fa-bullhorn text-warning"></i> Broadcast Announcement
+        </button>
+        {% endif %}
+
+        <!-- Notification Bell Dropdown Drawer -->
+        <div class="dropdown">
+            <div class="position-relative cursor-pointer text-muted px-2 py-1" id="notificationBellDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.25rem;">
+                <i class="fa-regular fa-bell"></i>
+                {% if unread_notifications_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 3px 6px;">
+                        {{ unread_notifications_count }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0 mt-2" aria-labelledby="notificationBellDropdown" style="width: 460px; max-width: 95vw; border-radius: var(--radius-lg); overflow: hidden;">
+                <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                    <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                        <i class="fa-solid fa-bell text-success"></i> Notifications
+                        {% if unread_notifications_count > 0 %}
+                            <span class="badge bg-danger rounded-pill" id="headerUnreadBadge" style="font-size: 0.72rem;">{{ unread_notifications_count }} Unread</span>
+                        {% endif %}
+                    </div>
+                    {% if recent_notifications %}
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-link p-0 text-success text-decoration-none fw-semibold" onclick="markAllNotificationsRead()" style="font-size: 0.8rem;" title="Mark All Read">
+                            <i class="fa-solid fa-check-double me-1"></i> Read All
+                        </button>
+                        <span class="text-muted">|</span>
+                        <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-semibold" onclick="clearAllNotifications()" style="font-size: 0.8rem;" title="Clear All">
+                            <i class="fa-regular fa-trash-can me-1"></i> Clear
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="notification-list" style="max-height: 460px; overflow-y: auto;">
+                    {% for notif in recent_notifications %}
+                    <div class="p-3.5 border-bottom position-relative notif-item {% if not notif.is_read %}bg-light-subtle{% endif %}" id="notif-item-{{ notif.id }}" style="padding: 14px 16px; transition: background 0.2s;">
+                        <div class="d-flex align-items-start justify-content-between gap-3">
+                            {% if notif.link_url %}
+                            <a href="{{ notif.link_url }}" onclick="markNotificationRead({{ notif.id }})" class="text-decoration-none text-dark flex-grow-1">
+                            {% else %}
+                            <div onclick="markNotificationRead({{ notif.id }})" class="flex-grow-1" style="cursor: default;">
+                            {% endif %}
+                                <div class="fw-bold d-flex align-items-center gap-2 text-dark" style="font-size: 0.88rem;">
+                                    {% if notif.notification_type == 'attendance' %}
+                                        <i class="fa-solid fa-file-signature text-primary fs-6"></i>
+                                    {% elif notif.notification_type == 'approval' %}
+                                        <i class="fa-solid fa-circle-check text-success fs-6"></i>
+                                    {% elif notif.notification_type == 'allocation' %}
+                                        <i class="fa-solid fa-user-tag text-info fs-6"></i>
+                                    {% elif notif.notification_type == 'overmanned' %}
+                                        <i class="fa-solid fa-triangle-exclamation text-warning fs-6"></i>
+                                    {% elif notif.notification_type == 'broadcast' %}
+                                        <i class="fa-solid fa-bullhorn text-warning fs-6"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-info text-secondary fs-6"></i>
+                                    {% endif %}
+                                    {{ notif.title }}
+                                    {% if notif.count > 1 and notif.notification_type != 'broadcast' %}
+                                        <span class="badge bg-secondary rounded-pill ms-1" style="font-size: 0.65rem;">{{ notif.count }}x</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-muted mb-1 mt-1.5" style="font-size: 0.82rem; line-height: 1.45;">
+                                    {{ notif.message }}
+                                </p>
+                                <span class="text-muted d-block" style="font-size: 0.72rem; font-weight: 500;">
+                                    <i class="fa-regular fa-clock me-1"></i> {{ notif.created_at|timesince }} ago
+                                </span>
+                            {% if notif.link_url %}
+                            </a>
+                            {% else %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Individual Item Actions (Mark Read & Delete) -->
+                            <div class="d-flex align-items-center gap-2 ms-2">
+                                {% if not notif.is_read %}
+                                <button type="button" class="btn btn-sm text-success p-1 border-0" onclick="markNotificationRead({{ notif.id }})" title="Mark as Read" style="font-size: 0.9rem; cursor: pointer; background:none;">
+                                    <i class="fa-regular fa-circle-check"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm text-danger p-1 border-0 ms-1" onclick="deleteNotification({{ notif.id }})" title="Delete Notification" style="font-size: 0.9rem; cursor: pointer; background:none;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted" style="font-size: 0.9rem;">
+                        <i class="fa-regular fa-bell-slash text-muted d-block mb-2" style="font-size: 2rem;"></i>
+                        No notifications right now.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
         <!-- User Dropdown (Stubs for profile picture upload, user info) -->
@@ -63,3 +157,218 @@
         </div>
     </div>
 </header>
+
+{% if user_role == 'dean' or user.is_staff %}
+<!-- DEAN BROADCAST ANNOUNCEMENT MODAL (Multi-Committee Selection) -->
+<div class="modal fade" id="deanBroadcastModal" tabindex="-1" aria-labelledby="deanBroadcastModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="modal-title" id="deanBroadcastModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-bullhorn text-warning me-2"></i> Broadcast Official Announcement
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/accounts/notifications/broadcast/" method="post" id="deanBroadcastForm">
+                {% csrf_token %}
+                <div class="modal-body p-4 text-start">
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Broadcast Scope Target</label>
+                        <div class="d-flex gap-3 mt-1">
+                            <div class="form-check">
+                                <input class="form-check-input broadcast-scope-radio" type="radio" name="scope" id="scope_system" value="system" checked>
+                                <label class="form-check-label fw-semibold" for="scope_system">🌐 System-Wide (All Users)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input broadcast-scope-radio" type="radio" name="scope" id="scope_event" value="event">
+                                <label class="form-check-label fw-semibold" for="scope_event">📅 Specific Event</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input broadcast-scope-radio" type="radio" name="scope" id="scope_committee" value="committee">
+                                <label class="form-check-label fw-semibold" for="scope_committee">👥 Specific Committees</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event Select Dropdown -->
+                    <div class="form-group mb-3 d-none" id="broadcastEventSection">
+                        <label class="form-label fw-bold" for="broadcast_event_id">Select Target Event</label>
+                        <select name="event_id" id="broadcast_event_id" class="form-select" onchange="updateBroadcastCommittees()">
+                            <option value="">-- Choose Event --</option>
+                            {% for ev in active_events_for_broadcast %}
+                            <option value="{{ ev.id }}">{{ ev.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Multi-Committee Checkbox Selection Group -->
+                    <div class="form-group mb-3 d-none" id="broadcastCommitteeSection">
+                        <label class="form-label fw-bold">Select Target Committees (Check 1, 2, or more)</label>
+                        <div class="p-3 border rounded bg-light" id="broadcastCommitteesContainer">
+                            <div class="text-muted small">Please select an event first to see its committees.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold" for="broadcast_title">Announcement Title</label>
+                        <input type="text" name="title" id="broadcast_title" class="form-control" placeholder="e.g. Venue Change Briefing" required>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label fw-bold" for="broadcast_message">Announcement Message</label>
+                        <textarea name="message" id="broadcast_message" class="form-control" rows="3" placeholder="Enter detailed announcement instructions for students & faculty..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4">
+                        <i class="fa-solid fa-paper-plane me-1.5"></i> Send Announcement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dynamic Broadcast Scope UI Toggles
+document.addEventListener('DOMContentLoaded', function() {
+    const scopeRadios = document.querySelectorAll('.broadcast-scope-radio');
+    const eventSec = document.getElementById('broadcastEventSection');
+    const commSec = document.getElementById('broadcastCommitteeSection');
+
+    function toggleBroadcastScope() {
+        const sel = document.querySelector('.broadcast-scope-radio:checked')?.value;
+        if (sel === 'system') {
+            eventSec?.classList.add('d-none');
+            commSec?.classList.add('d-none');
+        } else if (sel === 'event') {
+            eventSec?.classList.remove('d-none');
+            commSec?.classList.add('d-none');
+        } else if (sel === 'committee') {
+            eventSec?.classList.remove('d-none');
+            commSec?.classList.remove('d-none');
+        }
+    }
+
+    scopeRadios.forEach(r => r.addEventListener('change', toggleBroadcastScope));
+});
+
+// JSON Map of Event Committees for Dean Multi-Committee Broadcast Checkboxes
+const broadcastEventCommitteesMap = {
+    {% for ev in active_events_for_broadcast %}
+        "{{ ev.id }}": [
+            {% for c in ev.committees.all %}
+                {"id": "{{ c.id }}", "name": "{{ c.name|escapejs }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+function updateBroadcastCommittees() {
+    const eventId = document.getElementById('broadcast_event_id')?.value;
+    const container = document.getElementById('broadcastCommitteesContainer');
+    if (!container) return;
+
+    const comms = broadcastEventCommitteesMap[eventId] || [];
+    if (comms.length === 0) {
+        container.innerHTML = '<div class="text-muted small">No committees found for this event.</div>';
+        return;
+    }
+
+    let html = '<div class="row g-2">';
+    comms.forEach(c => {
+        html += `
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="target_committee_ids[]" value="${c.id}" id="b_comm_${c.id}" checked>
+                    <label class="form-check-label fw-medium" for="b_comm_${c.id}">${c.name}</label>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+</script>
+{% endif %}
+
+<!-- UNIVERSAL NOTIFICATION AJAX ACTIONS (Available for ALL roles: Dean, Faculty & Students) -->
+<script>
+function markNotificationRead(id) {
+    fetch('/accounts/notifications/' + id + '/read/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'ok') {
+            const item = document.getElementById('notif-item-' + id);
+            if (item) item.classList.remove('bg-light-subtle');
+            decrementBadgeCount();
+        }
+    }).catch(err => console.error('Error marking notification read:', err));
+}
+
+function deleteNotification(id) {
+    fetch('/accounts/notifications/' + id + '/delete/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'ok') {
+            const item = document.getElementById('notif-item-' + id);
+            if (item) {
+                item.style.opacity = '0';
+                setTimeout(() => item.remove(), 200);
+            }
+            decrementBadgeCount();
+        }
+    }).catch(err => console.error('Error deleting notification:', err));
+}
+
+function markAllNotificationsRead() {
+    fetch('/accounts/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'ok') location.reload();
+    }).catch(err => console.error('Error marking all notifications read:', err));
+}
+
+function clearAllNotifications() {
+    fetch('/accounts/notifications/clear-all/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'ok') location.reload();
+    }).catch(err => console.error('Error clearing all notifications:', err));
+}
+
+function decrementBadgeCount() {
+    const badges = document.querySelectorAll('#notificationBellDropdown .badge, #headerUnreadBadge');
+    badges.forEach(badge => {
+        let val = parseInt(badge.textContent.trim(), 10);
+        if (!isNaN(val) && val > 0) {
+            val -= 1;
+            if (val <= 0) {
+                badge.style.display = 'none';
+            } else {
+                badge.textContent = val + (badge.id === 'headerUnreadBadge' ? ' Unread' : '');
+            }
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>

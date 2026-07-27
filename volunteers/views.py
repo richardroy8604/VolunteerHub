@@ -6,6 +6,7 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from accounts.models import UserProfile
 from accounts.decorators import dean_required, student_required
+from accounts.services import trigger_allocation_confirmed
 from events.models import Event, Committee
 from volunteers.models import VolunteerApplication, AttendanceSheet, AttendanceRecord
 
@@ -709,6 +710,7 @@ def volunteer_pool_view(request, event_id):
                                 app.assigned_committee = comm
                                 app.status = 'assigned'
                                 app.save()
+                                trigger_allocation_confirmed(app)
                                 updated_count += 1
                     except VolunteerApplication.DoesNotExist:
                         pass
@@ -736,6 +738,7 @@ def volunteer_pool_view(request, event_id):
                 app.assigned_committee = comm
                 app.status = 'assigned'
                 app.save()
+                trigger_allocation_confirmed(app)
                 messages.success(request, f"Assigned {app.student.user.get_full_name()} to {comm.name}.")
 
         elif action == 'bulk_assign':

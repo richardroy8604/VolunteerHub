@@ -51,6 +51,18 @@ def user_context(request):
                 if user_comm:
                     user_committee_id = user_comm.id
 
+            # Notifications
+            from accounts.models import Notification
+            from events.models import Event
+            
+            unread_notifications = profile.notifications.filter(is_read=False)
+            unread_notifications_count = unread_notifications.count()
+            recent_notifications = profile.notifications.all()[:8]
+
+            active_events_for_broadcast = []
+            if profile.role == 'dean' or request.user.is_staff:
+                active_events_for_broadcast = Event.objects.prefetch_related('committees').all().order_by('-created_at')
+
             context.update({
                 'user_role': profile.role,
                 'user_name': request.user.get_full_name() or request.user.username,
@@ -60,6 +72,9 @@ def user_context(request):
                 'is_student_coordinator': profile.is_student_coordinator,
                 'pending_approvals_count': pending_approvals,
                 'user_committee_id': user_committee_id,
+                'unread_notifications_count': unread_notifications_count,
+                'recent_notifications': recent_notifications,
+                'active_events_for_broadcast': active_events_for_broadcast,
             })
         except Exception:
             # Profile may not exist yet (e.g. during superuser creation)

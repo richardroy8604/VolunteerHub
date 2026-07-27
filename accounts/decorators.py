@@ -55,9 +55,9 @@ def login_required_with_role(*allowed_roles):
             # Redirect to the user's own dashboard with an error message
             messages.error(request, 'You do not have permission to access that page.')
             dashboard_map = {
-                'dean': 'events:dean_dashboard',
-                'faculty': 'events:faculty_dashboard',
-                'student': 'events:student_dashboard',
+                'dean': '/dean/dashboard/',
+                'faculty': '/committee/dashboard/',
+                'student': '/student/dashboard/',
             }
             redirect_url = dashboard_map.get(profile.role, 'accounts:login')
             return redirect(redirect_url)
