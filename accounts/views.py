@@ -132,8 +132,16 @@ def first_login_view(request):
         messages.success(request, f"Welcome to VolunteerHub, {user_name}! Your account setup is complete.")
         return redirect('dashboard')
         
+    raw_p = profile.phone or ''
+    clean_p = re.sub(r'\D', '', raw_p)
+    if clean_p.startswith('91') and len(clean_p) == 12:
+        clean_p = clean_p[2:]
+    elif len(clean_p) > 10:
+        clean_p = clean_p[-10:]
+
     context = {
         'profile': profile,
+        'clean_phone': clean_p,
         'user_name': user_name,
         'user_obj': request.user,
         'role_title': profile.display_role,

@@ -355,7 +355,7 @@
                                 <span class="input-group-text country-flag-pill px-3">
                                     🇮🇳 +91
                                 </span>
-                                <input type="tel" id="phone-input" name="phone" class="form-control" placeholder="9876543210" maxlength="10" value="{{ form_data.phone|default:profile.phone|default:'' }}" style="font-size: 0.9rem;" required>
+                                <input type="tel" id="phone-input" name="phone" class="form-control" placeholder="9876543210" maxlength="10" value="{% if form_data.phone %}{{ form_data.phone }}{% else %}{{ clean_phone }}{% endif %}" style="font-size: 0.9rem;" required>
                                 <button type="button" id="verify-otp-btn" class="btn btn-outline-success px-3" style="font-size: 0.82rem; font-weight: 600;">
                                     Send OTP
                                 </button>
@@ -512,14 +512,25 @@
 
             // 2. Phone input digits validation & OTP Simulator
             if (phoneInput && verifyOtpBtn) {
-                // If phone exists pre-filled
-                if (phoneInput.value.replace(/\D/g, '').length === 10) {
+                function cleanPhoneValue(raw) {
+                    let digits = (raw || '').replace(/\D/g, '');
+                    if (digits.length === 12 && digits.startsWith('91')) {
+                        digits = digits.substring(2);
+                    } else if (digits.length > 10 && digits.startsWith('91')) {
+                        digits = digits.substring(2);
+                    }
+                    return digits.substring(0, 10);
+                }
+
+                // Sanitize initial value on page load
+                phoneInput.value = cleanPhoneValue(phoneInput.value);
+                if (phoneInput.value.length === 10 && /^[6-9]/.test(phoneInput.value)) {
                     isPhoneVerified = true;
                     setPhoneVerifiedState();
                 }
 
                 phoneInput.addEventListener('input', function() {
-                    this.value = this.value.replace(/\D/g, ''); // keep only numbers
+                    this.value = cleanPhoneValue(this.value);
                     if (this.value.length === 10 && /^[6-9]/.test(this.value)) {
                         phoneFeedback.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> Valid Indian mobile number! Click 'Send OTP'.`;
                     } else {
