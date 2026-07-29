@@ -143,7 +143,7 @@
                 <a href="{% if user_role == 'dean' %}/dean/dashboard/{% elif user_role == 'committee_head' %}/committee/dashboard/{% else %}/student/dashboard/{% endif %}" class="btn btn-secondary py-2 px-3">
                     <i class="fa-solid fa-house me-2"></i> Back to Dashboard
                 </a>
-                <a href="/accounts/logout/" class="btn btn-danger py-2 px-3">
+                <a href="/accounts/logout/" class="btn btn-danger py-2 px-3" onclick="event.preventDefault(); window.location.replace('/accounts/logout/');">
                     <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out
                 </a>
                 {% endif %}

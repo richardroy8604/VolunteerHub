@@ -56,7 +56,7 @@
                     <span class="input-group-text bg-white border-end-0 text-muted">
                         <i class="fa-regular fa-envelope"></i>
                     </span>
-                    <input type="text" id="username-field" name="username" class="form-control border-start-0" placeholder="Enter your username or email" required>
+                    <input type="text" id="username-field" name="username" class="form-control border-start-0" placeholder="Enter your username or email" value="{{ typed_username|default:'' }}" autocomplete="off" required>
                 </div>
             </div>
 
@@ -66,7 +66,7 @@
                     <span class="input-group-text bg-white border-end-0 text-muted">
                         <i class="fa-solid fa-lock"></i>
                     </span>
-                    <input type="password" id="password-field" name="password" class="form-control border-start-0 border-end-0 password-input" placeholder="Enter your password" required>
+                    <input type="password" id="password-field" name="password" class="form-control border-start-0 border-end-0 password-input" placeholder="Enter your password" autocomplete="off" required>
                     <button type="button" class="btn btn-outline-secondary bg-white border-start-0 text-muted toggle-password-btn" style="border: 1px solid var(--clr-border); border-left: none; margin: 0; padding: 0 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;" aria-label="Toggle Password Visibility">
                         <i class="fa-regular fa-eye-slash"></i>
                     </button>
@@ -104,7 +104,27 @@
     <!-- Custom UI Interaction Scripts (includes password toggles) -->
     <script src="{% static 'js/app.js' %}"></script>
     <script>
+        // Clear POST history entry to prevent "Resubmit the form?" on Back navigation
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Force fresh GET on back/forward navigation (login.html is standalone, not in base.html)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.replace(window.location.href);
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
+            // Force-clear form fields on fresh load/logout to prevent browser autofill leaks
+            var usernameField = document.getElementById('username-field');
+            var passwordField = document.getElementById('password-field');
+            {% if not typed_username %}
+            if (usernameField) usernameField.value = '';
+            {% endif %}
+            if (passwordField) passwordField.value = '';
+
             var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
             var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                 return new bootstrap.Popover(popoverTriggerEl);

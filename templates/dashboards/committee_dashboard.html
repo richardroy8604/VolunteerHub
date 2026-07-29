@@ -111,15 +111,15 @@
                             <!-- Redirect Buttons -->
                             <td>
                                 {% if day.status == 'Approved' %}
-                                <a href="/committee/1/attendance/?date={{ day.date|urlencode }}" class="btn btn-secondary py-1 px-3" style="font-size: 0.78rem;">
+                                <a href="/committee/{{ committee.id }}/attendance/?date={{ day.date|urlencode }}" class="btn btn-secondary py-1 px-3" style="font-size: 0.78rem;">
                                     <i class="fa-regular fa-eye"></i> View Sheet
                                 </a>
                                 {% elif day.status == 'Sent Back' %}
-                                <a href="/committee/1/attendance/?date={{ day.date|urlencode }}" class="btn btn-primary py-1 px-3 btn-danger text-white border-0" style="font-size: 0.78rem;">
+                                <a href="/committee/{{ committee.id }}/attendance/?date={{ day.date|urlencode }}" class="btn btn-primary py-1 px-3 btn-danger text-white border-0" style="font-size: 0.78rem;">
                                     <i class="fa-solid fa-file-pen"></i> Edit & Resubmit
                                 </a>
                                 {% else %}
-                                <a href="/committee/1/attendance/?date={{ day.date|urlencode }}" class="btn btn-primary py-1 px-3" style="font-size: 0.78rem;">
+                                <a href="/committee/{{ committee.id }}/attendance/?date={{ day.date|urlencode }}" class="btn btn-primary py-1 px-3" style="font-size: 0.78rem;">
                                     <i class="fa-solid fa-clipboard-user"></i> Log Hours
                                 </a>
                                 {% endif %}

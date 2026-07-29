@@ -62,13 +62,17 @@
                     <th>Event Timeline</th>
                     <th style="text-align: center;">Attendance</th>
                     <th style="text-align: center;">Hours Earned</th>
-                    <th style="text-align: center;">Certificates</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for log in history %}
-                <tr>
-                    <td style="font-weight: 600;">{{ log.event }}</td>
+                <!-- Main Event Row -->
+                <tr class="event-history-row" data-target="details-{{ log.id }}" style="cursor: pointer; transition: background-color 0.15s ease;">
+                    <td style="font-weight: 600;">
+                        <i class="fa-solid fa-chevron-right me-2 text-muted chevron-icon" style="font-size: 0.8rem; transition: transform 0.2s ease;"></i>
+                        {{ log.event }}
+                    </td>
                     <td style="font-weight: 600;" class="text-success">{{ log.committee }}</td>
                     <td class="text-muted" style="font-size: 0.88rem;">{{ log.dates }}</td>
                     <td style="text-align: center;">
@@ -79,11 +83,130 @@
                         </div>
                     </td>
                     <td style="text-align: center; font-weight: 700; color: var(--clr-primary);">{{ log.hours }} hrs</td>
-                    <td style="text-align: center;">
-                        <!-- Certificate stub button -->
-                        <button type="button" class="btn btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; border-radius: var(--radius-sm);" onclick="alert('Certificates will be implemented in a future update!')">
-                            <i class="fa-solid fa-download"></i> Download
-                        </button>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <button type="button" class="btn btn-outline-secondary py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; border-radius: var(--radius-sm);" onclick="toggleDetailsRow('details-{{ log.id }}')">
+                                <i class="fa-solid fa-table-cells"></i> View Log
+                            </button>
+                            <button type="button" class="btn btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1" style="font-size: 0.78rem; border-radius: var(--radius-sm);" onclick="alert('Certificates will be implemented in a future update!')">
+                                <i class="fa-solid fa-download"></i> Download
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Collapsible Detailed Attendance Sub-Row -->
+                <tr id="details-{{ log.id }}" class="details-collapse-row" style="display: none; background-color: #f8fafc;">
+                    <td colspan="6" class="p-3">
+                        <div class="p-3 bg-white rounded shadow-sm border" style="border-radius: var(--radius-md) !important; border-left: 4px solid var(--clr-primary) !important;">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 border-bottom pb-2 gap-2">
+                                <div>
+                                    <h5 class="mb-0 text-primary" style="font-size: 0.95rem; font-weight: 700; color: var(--clr-primary);">
+                                        <i class="fa-solid fa-calendar-check me-2 text-success"></i>
+                                        Daily Attendance Grid — {{ log.event }} ({{ log.committee }})
+                                    </h5>
+                                    <span class="text-muted" style="font-size: 0.8rem;">Detailed hourly record logged by Faculty Head</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.75rem; font-weight: 500;">
+                                        <i class="fa-solid fa-circle-check text-success me-1"></i> Present
+                                    </span>
+                                    <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.75rem; font-weight: 500;">
+                                        <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Absent
+                                    </span>
+                                    <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.75rem; font-weight: 500;">
+                                        <i class="fa-regular fa-clock text-warning me-1"></i> Future Date
+                                    </span>
+                                    <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.75rem; font-weight: 500;">
+                                        <i class="fa-solid fa-minus text-muted me-1"></i> No Work (Outside Shift Hours)
+                                    </span>
+                                </div>
+                            </div>
+
+                            {% if log.max_hours > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle text-center mb-0" style="font-size: 0.84rem;">
+                                    <thead>
+                                        <tr style="background-color: #f1f5f9; color: var(--clr-text-main);">
+                                            <th style="text-align: left; width: 140px; background-color: #f1f5f9; font-weight: 700;">Shift Date</th>
+                                            {% for h in log.max_hours_range %}
+                                            <th style="width: 110px; background-color: #f1f5f9; font-weight: 700;">Hour {{ h }}</th>
+                                            {% endfor %}
+                                            <th style="width: 110px; background-color: #f1f5f9; font-weight: 700;">Day Total</th>
+                                            <th style="width: 140px; background-color: #f1f5f9; font-weight: 700;">Sheet Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for day in log.daily_details %}
+                                        <tr {% if day.is_future %}style="background-color: #fffdf5;"{% endif %}>
+                                            <td style="text-align: left; font-weight: 600; background-color: #fafafa; color: var(--clr-text-main);">
+                                                <i class="fa-regular fa-calendar me-1 text-muted"></i> {{ day.date_str }}
+                                                {% if day.is_future %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1" style="font-size: 0.7rem;">Future</span>
+                                                {% endif %}
+                                            </td>
+                                            {% for cell in day.hour_cells %}
+                                            <td>
+                                                {% if cell.type == 'present' %}
+                                                <span class="badge bg-success-light text-success px-2 py-1" style="font-size: 0.78rem; font-weight: 600; background-color: rgba(25, 135, 84, 0.12);">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Present
+                                                </span>
+                                                {% elif cell.type == 'absent' %}
+                                                <span class="badge bg-danger-light text-danger px-2 py-1" style="font-size: 0.78rem; font-weight: 600; background-color: rgba(220, 53, 69, 0.1);">
+                                                    <i class="fa-solid fa-circle-xmark me-1"></i> Absent
+                                                </span>
+                                                {% elif cell.type == 'future' %}
+                                                <span class="badge text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.75rem; background-color: #fffbeb; font-weight: 600; color: #b45309 !important;">
+                                                    <i class="fa-regular fa-clock me-1"></i> Upcoming
+                                                </span>
+                                                {% else %}
+                                                <span class="badge text-muted border px-2 py-1" style="font-size: 0.75rem; background-color: #f8fafc; font-weight: 500; color: #64748b !important;">
+                                                    <i class="fa-solid fa-minus me-1 text-muted"></i> No Work
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            {% endfor %}
+                                            <td class="fw-bold" style="color: var(--clr-primary);">
+                                                {% if day.is_future %}
+                                                <span class="text-muted" style="font-weight: 500; font-size: 0.8rem;">—</span>
+                                                {% else %}
+                                                {{ day.total_day_hours }} / {{ day.num_hours }} hrs
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if day.is_future %}
+                                                <span class="badge px-2 py-1" style="font-size: 0.75rem; background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">
+                                                    <i class="fa-solid fa-clock me-1"></i> Future Date
+                                                </span>
+                                                {% elif day.raw_status == 'approved' %}
+                                                <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-check-double me-1"></i> Approved
+                                                </span>
+                                                {% elif day.raw_status == 'pending' %}
+                                                <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-hourglass-half me-1"></i> Pending
+                                                </span>
+                                                {% elif day.raw_status == 'sent_back' %}
+                                                <span class="badge bg-danger text-white px-2 py-1" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-rotate-left me-1"></i> Sent Back
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-secondary text-white px-2 py-1" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-ban me-1"></i> No Shift
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="p-3 text-center text-muted" style="font-size: 0.85rem; background-color: #f8fafc; border-radius: var(--radius-sm);">
+                                <i class="fa-solid fa-info-circle me-1"></i> No shift attendance sheets have been recorded for this event committee yet.
+                            </div>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -98,4 +221,37 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleDetailsRow(targetId) {
+    const row = document.getElementById(targetId);
+    if (!row) return;
+    
+    const parentRow = row.previousElementSibling;
+    const chevron = parentRow ? parentRow.querySelector('.chevron-icon') : null;
+    
+    if (row.style.display === 'none' || row.style.display === '') {
+        row.style.display = 'table-row';
+        if (chevron) chevron.style.transform = 'rotate(90deg)';
+        if (parentRow) parentRow.style.backgroundColor = 'rgba(25, 135, 84, 0.04)';
+    } else {
+        row.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (parentRow) parentRow.style.backgroundColor = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const historyRows = document.querySelectorAll('.event-history-row');
+    historyRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('a')) return;
+            const targetId = this.getAttribute('data-target');
+            toggleDetailsRow(targetId);
+        });
+    });
+});
+</script>
 {% endblock %}

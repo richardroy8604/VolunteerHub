@@ -62,7 +62,8 @@ def login_view(request):
             else:
                 messages.error(request, "Invalid password. Please check your credentials and try again.")
 
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'typed_username': user_input if request.method == 'POST' else ''})
+
 
 def logout_view(request):
     """Log the user out and redirect to the login page."""

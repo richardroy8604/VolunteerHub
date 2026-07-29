@@ -1469,6 +1469,27 @@ def committee_attendance_view(request, pk):
             return redirect(f"{request.path}?date={selected_date}&mode=view")
 
         action = request.POST.get('action', 'save')
+
+        # Quick submit: just promote existing draft to pending without re-processing attendance data
+        if action == 'quick_submit':
+            try:
+                sheet = AttendanceSheet.objects.get(committee=committee, date=selected_date_obj)
+            except AttendanceSheet.DoesNotExist:
+                messages.error(request, 'No draft sheet found to submit.')
+                return redirect(f"{request.path}?date={selected_date}")
+
+            if sheet.status == 'approved':
+                messages.error(request, 'This sheet is already approved and locked.')
+                return redirect(f"{request.path}?date={selected_date}&mode=view")
+
+            sheet.status = 'pending'
+            sheet.submitted_by = request.user.profile
+            sheet.submitted_at = timezone.now()
+            sheet.save()
+            trigger_attendance_submitted(sheet)
+            messages.success(request, f'Attendance sheet for {selected_date} submitted for Dean approval.')
+            return redirect(f"{request.path}?date={selected_date}&mode=view")
+
         num_hours_post = int(request.POST.get('num_hours', 3))
 
         # Get or create the attendance sheet

@@ -247,37 +247,120 @@ def my_volunteering_view(request):
 
     history = []
     for app in history_qs:
+        committee = app.assigned_committee
+        event = app.event
+
         # Calculate approved hours for this specific committee
         app_hours_agg = AttendanceRecord.objects.filter(
             student=profile,
-            sheet__committee=app.assigned_committee,
+            sheet__committee=committee,
             sheet__status='approved'
         ).aggregate(total=Sum('total_hours'))
         app_hours = app_hours_agg['total'] or 0
         
         # Calculate attendance percentage based on approved shift sheets
         total_sheets = AttendanceSheet.objects.filter(
-            committee=app.assigned_committee,
+            committee=committee,
             status='approved'
         ).count()
         
         if total_sheets > 0 and app_hours > 0:
-            sheets_qs = AttendanceSheet.objects.filter(committee=app.assigned_committee, status='approved')
+            sheets_qs = AttendanceSheet.objects.filter(committee=committee, status='approved')
             max_possible = sum(s.num_hours for s in sheets_qs)
             attendance_percent = min(int((app_hours / max_possible) * 100), 100) if max_possible > 0 else 100
         elif app_hours > 0:
             attendance_percent = 100
         else:
             attendance_percent = 0
-            
+
+        # Build daily attendance breakdown
+        daily_details = []
+        max_hours = 0
+        today = timezone.now().date()
+
+        if committee:
+            sheets = AttendanceSheet.objects.filter(committee=committee)
+            sheets_by_date = {s.date: s for s in sheets}
+            records = AttendanceRecord.objects.filter(sheet__committee=committee, student=profile).select_related('sheet')
+            records_by_sheet_id = {r.sheet_id: r for r in records}
+
+            current_date = event.start_date
+            while current_date <= event.end_date:
+                sheet = sheets_by_date.get(current_date)
+                date_str = current_date.strftime('%b %d, %Y')
+                is_future = (current_date > today)
+
+                if is_future:
+                    num_hours = sheet.num_hours if sheet else 0
+                    if num_hours > max_hours:
+                        max_hours = num_hours
+                    hours_status = []
+                    total_day_hours = 0
+                    sheet_status = 'Future Shift'
+                    raw_status = 'future_date'
+                elif sheet:
+                    num_hours = sheet.num_hours
+                    if num_hours > max_hours:
+                        max_hours = num_hours
+                    
+                    rec = records_by_sheet_id.get(sheet.id)
+                    if rec:
+                        hours_status = rec.hours  # List of booleans
+                        total_day_hours = rec.total_hours
+                    else:
+                        hours_status = [False] * num_hours
+                        total_day_hours = 0
+                    
+                    sheet_status = sheet.get_status_display()
+                    raw_status = sheet.status
+                else:
+                    num_hours = 0
+                    hours_status = []
+                    total_day_hours = 0
+                    sheet_status = 'No Shift Logged'
+                    raw_status = 'no_sheet'
+
+                daily_details.append({
+                    'date_str': date_str,
+                    'is_future': is_future,
+                    'num_hours': num_hours,
+                    'hours_status': hours_status,
+                    'total_day_hours': total_day_hours,
+                    'sheet_status': sheet_status,
+                    'raw_status': raw_status,
+                })
+                current_date += timedelta(days=1)
+
+            # Build cell matrix up to max_hours across all days
+            for day in daily_details:
+                hour_cells = []
+                for h in range(1, max_hours + 1):
+                    if day['is_future']:
+                        if day['num_hours'] > 0 and h <= day['num_hours']:
+                            hour_cells.append({'hour_num': h, 'type': 'future'})
+                        elif day['num_hours'] == 0:
+                            hour_cells.append({'hour_num': h, 'type': 'future'})
+                        else:
+                            hour_cells.append({'hour_num': h, 'type': 'no_work'})
+                    elif h <= day['num_hours']:
+                        is_pres = day['hours_status'][h - 1] if (h - 1) < len(day['hours_status']) else False
+                        hour_cells.append({'hour_num': h, 'type': 'present' if is_pres else 'absent'})
+                    else:
+                        hour_cells.append({'hour_num': h, 'type': 'no_work'})
+                day['hour_cells'] = hour_cells
+
         history.append({
-            'event': app.event.name,
-            'committee': app.assigned_committee.name if app.assigned_committee else 'N/A',
-            'dates': app.event.event_dates,
+            'id': app.id,
+            'event': event.name,
+            'committee': committee.name if committee else 'N/A',
+            'dates': f"{event.start_date.strftime('%b %d, %Y')} – {event.end_date.strftime('%b %d, %Y')}",
             'hours': app_hours,
             'attendance': attendance_percent,
-            'status': app.event.dynamic_status_display,
-            'event_status': app.event.dynamic_status,
+            'status': event.dynamic_status_display,
+            'event_status': event.dynamic_status,
+            'daily_details': daily_details,
+            'max_hours': max_hours,
+            'max_hours_range': list(range(1, max_hours + 1)),
         })
         
     context = {

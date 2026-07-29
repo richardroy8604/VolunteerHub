@@ -46,6 +46,12 @@
         cursor: default;
         opacity: 0.8;
     }
+
+    /* Pulsing indicator for draft banner */
+    @keyframes draft-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.75); }
+    }
 </style>
 {% endblock %}
 
@@ -118,6 +124,32 @@
         </div>
     </div>
 </div>
+{% elif raw_status == 'not_submitted' and sheet_exists %}
+<div class="alert border-0 p-3 mb-4 d-flex align-items-center justify-content-between gap-3 shadow-sm" style="border-radius: var(--radius-md); font-size: 0.88rem; background-color: #fffbeb; border-left: 4px solid #f59e0b !important; color: #92400e;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="position-relative flex-shrink-0">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: #fef3c7; color: #d97706; font-size: 1.15rem;">
+                <i class="fa-solid fa-file-circle-exclamation"></i>
+            </div>
+            <span class="position-absolute" style="top: -2px; right: -2px; width: 10px; height: 10px; background-color: #f59e0b; border-radius: 50%; border: 2px solid #fffbeb; animation: draft-pulse 2s ease-in-out infinite;"></span>
+        </div>
+        <div>
+            <strong class="d-block text-dark" style="font-size: 0.92rem;">Unsaved Draft — Not Yet Submitted</strong>
+            <span>This attendance sheet has been saved as a draft but <strong>has not been submitted</strong> for Dean approval. Hours will not be credited until submitted.</span>
+        </div>
+    </div>
+    {% if not is_future_date and not is_out_of_bounds %}
+    <form action="." method="post" class="flex-shrink-0" id="quick-submit-form">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ selected_date }}">
+        <input type="hidden" name="action" value="quick_submit">
+        <input type="hidden" name="num_hours" value="{{ num_hours }}">
+        <button type="submit" class="btn btn-sm text-white py-2 px-3 fw-bold text-nowrap" style="background-color: #d97706; border: none; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25); transition: all 0.2s ease;">
+            <i class="fa-solid fa-paper-plane me-1"></i> Submit Now
+        </button>
+    </form>
+    {% endif %}
+</div>
 {% endif %}
 
 <!-- Attendance Form -->
@@ -155,9 +187,15 @@
     <div class="content-card">
         <h4 class="content-card-title mb-4" style="border-bottom: 2px solid var(--clr-primary-light); padding-bottom: 12px;">
             <span><i class="fa-solid fa-clipboard-user text-success me-2"></i> Attendance Grid ({{ selected_date }})</span>
+            {% if raw_status == 'not_submitted' and sheet_exists %}
+            <span class="badge float-end text-capitalize" style="font-size:0.75rem; color: #92400e !important; background-color: #fef3c7 !important; border: 1px solid #fcd34d;">
+                <i class="fa-solid fa-file-circle-exclamation me-1"></i> Draft (Not Submitted)
+            </span>
+            {% else %}
             <span class="badge float-end bg-secondary-light text-capitalize" style="font-size:0.75rem; color: var(--clr-text-muted) !important; background-color: var(--clr-primary-light) !important;">
                 Sheet Status: {{ sheet_status }}
             </span>
+            {% endif %}
         </h4>
 
         <div class="table-responsive">
