@@ -80,7 +80,7 @@
                     </thead>
                     <tbody>
                         {% for committee in event.committees %}
-                        <tr class="clickable-committee-row" style="cursor: pointer;" onclick="window.location.href='/dean/committees/{{ committee.id }}/';">
+                        <tr class="clickable-committee-row" style="cursor: pointer;" {% if user_role == 'dean' or user.profile.role == 'dean' %}onclick="window.location.href='/dean/committees/{{ committee.id }}/';"{% else %}data-bs-toggle="modal" data-bs-target="#committeeInfoModal_{{ committee.id }}"{% endif %}>
                             <td style="font-weight: 600;">{{ committee.name }}</td>
                             <td style="font-size: 0.85rem;">{{ committee.head }}</td>
                             <td style="font-size: 0.85rem; font-weight: 600;">
@@ -113,11 +113,82 @@
                                 </div>
                             </td>
                             <td>
+                                {% if user_role == 'dean' or user.profile.role == 'dean' %}
                                 <a href="/dean/committees/{{ committee.id }}/" class="btn btn-sm btn-outline-primary py-1 px-2.5" style="font-size: 0.78rem;" onclick="event.stopPropagation();">
-                                    View Committee <i class="fa-solid fa-arrow-right ms-1"></i>
+                                    Manage Committee <i class="fa-solid fa-arrow-right ms-1"></i>
                                 </a>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-success py-1 px-2.5" style="font-size: 0.78rem;" data-bs-toggle="modal" data-bs-target="#committeeInfoModal_{{ committee.id }}" onclick="event.stopPropagation();">
+                                    <i class="fa-solid fa-circle-info me-1"></i> Committee Info
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
+
+                        <!-- Student Committee Info Modal -->
+                        <div class="modal fade" id="committeeInfoModal_{{ committee.id }}" tabindex="-1" aria-labelledby="committeeInfoModalLabel_{{ committee.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+                                    <div class="modal-header text-white p-3 border-0" style="background-color: var(--clr-primary); border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+                                        <h5 class="modal-title h6 fw-bold mb-0" id="committeeInfoModalLabel_{{ committee.id }}">
+                                            <i class="fa-solid fa-users me-2"></i> {{ committee.name }}
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4 text-start">
+                                        <p class="text-muted small mb-3">Parent Event: <strong>{{ event.name }}</strong></p>
+                                        
+                                        <div class="p-3 bg-light rounded mb-3 border">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="rounded-circle bg-success-light text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.1rem; background-color: rgba(25, 135, 84, 0.1);">
+                                                    <i class="fa-solid fa-user-shield"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="text-muted d-block small" style="font-size: 0.75rem;">Faculty Coordinator</span>
+                                                    <strong class="d-block text-dark">{{ committee.head|default:'Unassigned' }}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-3 bg-light rounded mb-3 border">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="rounded-circle bg-warning-light text-warning d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.1rem; background-color: rgba(255, 193, 7, 0.15);">
+                                                    <i class="fa-solid fa-star"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="text-muted d-block small" style="font-size: 0.75rem;">Student Lead</span>
+                                                    <strong class="d-block text-dark">
+                                                        {% if committee.student_coordinator %}
+                                                            {{ committee.student_coordinator }}
+                                                        {% else %}
+                                                            <em class="text-muted fw-normal">Not yet appointed</em>
+                                                        {% endif %}
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-3 border rounded">
+                                            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.85rem;">
+                                                <span class="text-muted">Quota & Capacity</span>
+                                                <strong class="text-dark">{{ committee.assigned }} / {{ committee.required }} slots filled</strong>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 8px; border-radius: 4px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required|default:1 100 %}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer p-3 border-top-0 bg-light d-flex justify-content-between align-items-center" style="border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg);">
+                                        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
+                                        {% if not has_applied and event.raw_status == 'open' or not has_applied and event.dynamic_status == 'open' %}
+                                        <a href="{% url 'events:apply' event.id %}" class="btn btn-success btn-sm px-3 fw-bold">
+                                            <i class="fa-solid fa-paper-plane me-1"></i> Apply for Event
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         {% empty %}
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted">No committees configured for this event.</td>

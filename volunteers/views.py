@@ -97,9 +97,11 @@ def student_dashboard_view(request):
     recent_events = []
     for ev in recent_events_qs:
         recent_events.append({
+            'id': ev.id,
             'name': ev.name,
             'date': ev.start_date.strftime('%b %d, %Y') if ev.start_date else '',
-            'status': ev.get_status_display()
+            'status': ev.dynamic_status_display,
+            'raw_status': ev.dynamic_status,
         })
         
     context = {
@@ -485,7 +487,7 @@ def apply_view(request, event_id):
             request,
             f"Registration for '{event.name}' closed on {formatted_deadline}. Applications are no longer accepted."
         )
-        return redirect('volunteers_student:available_events')
+        return redirect('events:browse_events')
 
     # Check if already applied (excluding cancelled or rejected applications)
     existing_app = VolunteerApplication.objects.filter(student=profile, event=event).exclude(status__in=['cancelled', 'rejected']).first()

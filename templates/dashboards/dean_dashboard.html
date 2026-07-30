@@ -158,7 +158,7 @@
 
             {% if pending_apps %}
             <div class="text-center mt-3 pt-3 border-top" style="border-top-color: var(--clr-border);">
-                <a href="/dean/events/1/volunteer_pool/" class="text-success" style="font-size: 0.85rem; font-weight: 600;">
+                <a href="{% if recent_events %}/dean/events/{{ recent_events.0.id }}/volunteer_pool/{% else %}/dean/events/{% endif %}" class="text-success" style="font-size: 0.85rem; font-weight: 600;">
                     Go to Central Volunteer Pool <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>

@@ -186,7 +186,7 @@ def trigger_attendance_approved(sheet):
                 title=f"Hours Sheet Approved! ({sheet.committee.name})",
                 message=f"Dean approved hours sheet for {sheet.committee.name} on {date_str}. Volunteering hours credited to students!",
                 notification_type='approval',
-                link_url=f"/committee/attendance/?date={date_str}",
+                link_url=f"/committee/{sheet.committee.id}/attendance/?date={date_str}",
                 event=sheet.committee.event,
                 committee=sheet.committee
             )
@@ -220,7 +220,7 @@ def trigger_attendance_returned(sheet, feedback=""):
                 title=f"Hours Sheet Sent Back ({sheet.committee.name})",
                 message=f"Dean sent back attendance sheet for {sheet.committee.name} ({date_str}).{fb_text}",
                 notification_type='approval',
-                link_url=f"/committee/attendance/?date={date_str}",
+                link_url=f"/committee/{sheet.committee.id}/attendance/?date={date_str}",
                 event=sheet.committee.event,
                 committee=sheet.committee
             )

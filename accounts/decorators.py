@@ -104,9 +104,9 @@ def coordinator_or_dean_required(view_func):
 
         messages.error(request, 'You do not have permission to access that page.')
         dashboard_map = {
-            'dean': 'events:dean_dashboard',
-            'faculty': 'events:faculty_dashboard',
-            'student': 'events:student_dashboard',
+            'dean': 'events_dean:dean_dashboard',
+            'faculty': 'events_committee:committee_dashboard',
+            'student': 'volunteers_student:student_dashboard',
         }
         redirect_url = dashboard_map.get(profile.role, 'accounts:login')
         return redirect(redirect_url)
