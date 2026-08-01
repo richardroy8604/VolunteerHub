@@ -44,6 +44,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // === 1.1 MOBILE SIDEBAR CLOSE ON OUTSIDE CLICK ===
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('mobile-open')) {
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        }
+    });
+
     // === 2. PASSWORD VISIBILITY TOGGLE ===
     const togglePasswordBtn = document.querySelector('.toggle-password-btn');
     const passwordInput = document.querySelector('.password-input');
@@ -74,4 +83,55 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 150);
         }, 5000); // 5 seconds
     });
+
+    // === 4. UNIVERSAL PHONE NUMBER COPY TO CLIPBOARD HANDLER ===
+    document.addEventListener('click', function(e) {
+        const copyBtn = e.target.closest('.copy-phone-btn');
+        if (!copyBtn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const phone = copyBtn.getAttribute('data-phone');
+        if (!phone) return;
+
+        function showSuccessFeedback() {
+            const icon = copyBtn.querySelector('i');
+            if (icon) {
+                const originalClass = icon.className;
+                icon.className = 'fa-solid fa-check text-success';
+                setTimeout(function() {
+                    icon.className = originalClass;
+                }, 1500);
+            }
+        }
+
+        // 1. Try modern Async Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(phone).then(showSuccessFeedback).catch(function() {
+                fallbackCopyText(phone, showSuccessFeedback);
+            });
+        } else {
+            // 2. Fallback for HTTP / local network IP contexts
+            fallbackCopyText(phone, showSuccessFeedback);
+        }
+    });
+
+    function fallbackCopyText(text, callback) {
+        var textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '-9999px';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (callback) callback();
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
+    }
 });

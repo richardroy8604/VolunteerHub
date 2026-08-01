@@ -648,8 +648,13 @@ a:hover {
    ========================================================================== */
 @media (max-width: 768px) {
     .app-content {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    .main-content {
+        padding: 10px 10px !important;
     }
     
     .sidebar {
@@ -662,7 +667,97 @@ a:hover {
     }
     
     .app-content.sidebar-collapsed {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Mobile UI/UX Typography & Element Scaling */
+    h1, .h1 { font-size: 1.15rem !important; }
+    h2, .h2 { font-size: 1.05rem !important; }
+    h3, .h3 { font-size: 0.98rem !important; }
+    h4, .h4 { font-size: 0.92rem !important; }
+    h5, .h5 { font-size: 0.85rem !important; }
+    
+    /* 2-Column Mobile Metric Cards Grid Override */
+    div.grid-dashboard,
+    .grid-dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+    }
+
+    /* Content Cards & Metric Cards */
+    .content-card {
+        padding: 12px 10px !important;
+        margin-bottom: 12px !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    .content-card-title {
+        font-size: 0.95rem !important;
+        margin-bottom: 10px !important;
+    }
+
+    .metric-card {
+        padding: 10px 8px !important;
+        border-radius: var(--radius-sm) !important;
+        border-left-width: 4px !important;
+    }
+    
+    .metric-value {
+        font-size: 1.15rem !important;
+    }
+
+    .metric-label {
+        font-size: 0.62rem !important;
+        letter-spacing: 0px !important;
+        line-height: 1.15 !important;
+    }
+
+    .metric-icon {
+        font-size: 1.05rem !important;
+    }
+
+    /* Header Bar Adjustments */
+    .header {
+        padding: 0 12px !important;
+        height: 56px !important;
+    }
+
+    .header-title {
+        font-size: 0.88rem !important;
+    }
+
+    /* Form Inputs & Buttons on Mobile */
+    .form-control, .form-select {
+        font-size: 0.85rem !important;
+        padding: 8px 10px !important;
+    }
+
+    .btn {
+        font-size: 0.82rem !important;
+        padding: 7px 12px !important;
+    }
+
+    /* Mobile Table Clean Horizontal Scroll & Text Formatting */
+    .table-responsive {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .table-custom {
+        min-width: 480px !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    .table-custom th,
+    .table-custom td {
+        padding: 10px 10px !important;
+        font-size: 0.82rem !important;
+        white-space: nowrap !important;
+        word-break: normal !important;
     }
 }

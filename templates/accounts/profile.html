@@ -102,6 +102,11 @@
                         <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Contact Number</span>
                         <span class="d-block d-flex align-items-center gap-2 mt-1" style="font-size: 1rem; font-weight: 500; color: var(--clr-text-main);">
                             <span>{{ profile_user.phone }}</span>
+                            {% if profile_user.phone %}
+                            <button type="button" class="btn btn-link text-success p-0 ms-1 copy-phone-btn" data-phone="{{ profile_user.phone }}" title="Copy Phone Number" style="border:0; background:none; vertical-align: baseline; font-size: 0.85rem;">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            {% endif %}
                             {% if profile_user.phone_verified %}
                                 <span class="badge bg-success" style="font-size: 0.65rem; border-radius: 50px; padding: 3px 8px;">
                                     <i class="fa-solid fa-circle-check me-1"></i> Verified
