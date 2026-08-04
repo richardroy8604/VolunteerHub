@@ -134,4 +134,142 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         document.body.removeChild(textArea);
     }
+
+    // === 5. DYNAMIC SEARCH DROPDOWN ENGINE ===
+    function initDynamicSearchDropdowns() {
+        const searchableSelects = document.querySelectorAll('select[data-dynamic-search="true"], .dynamic-search-select');
+        searchableSelects.forEach(function(select) {
+            if (select.dataset.searchInitialized === 'true') return;
+            select.dataset.searchInitialized = 'true';
+
+            // Hide native select
+            select.style.display = 'none';
+
+            const parent = select.parentElement;
+            if (parent) parent.style.position = 'relative';
+
+            const container = document.createElement('div');
+            container.className = 'dynamic-search-wrapper position-relative mb-2';
+
+            function getSelectedText() {
+                const selectedOpt = select.options[select.selectedIndex];
+                return (selectedOpt && selectedOpt.value) ? selectedOpt.text.trim() : '';
+            }
+
+            let lastSavedText = getSelectedText();
+
+            container.innerHTML = `
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0" style="border-color: var(--clr-border);">
+                        <i class="fa-solid fa-magnifying-glass text-muted" style="font-size: 0.8rem;"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 dynamic-search-input" placeholder="Type to search..." value="${lastSavedText}" style="border-color: var(--clr-border); font-size: 0.88rem; background-color: #fff; cursor: pointer;">
+                </div>
+                <div class="dynamic-search-results shadow border bg-white rounded-bottom d-none" style="position: absolute; top: 100%; left: 0; right: 0; max-height: 155px; overflow-y: auto; z-index: 1080; border-color: var(--clr-border) !important;">
+                </div>
+            `;
+
+            parent.insertBefore(container, select);
+
+            const input = container.querySelector('.dynamic-search-input');
+            const resultsBox = container.querySelector('.dynamic-search-results');
+
+            function renderOptions(query) {
+                query = (query || '').toLowerCase().trim();
+                resultsBox.innerHTML = '';
+                let matchCount = 0;
+
+                Array.from(select.options).forEach(function(option) {
+                    const text = option.text.trim();
+                    const val = option.value;
+
+                    if (!query || text.toLowerCase().includes(query) || !val) {
+                        matchCount++;
+                        const item = document.createElement('div');
+                        item.className = 'dynamic-search-item px-3 py-2 border-bottom text-dark';
+                        item.style.cssText = 'cursor: pointer; font-size: 0.84rem; line-height: 1.35; transition: background-color 0.12s;';
+                        
+                        if (option.selected) {
+                            item.style.backgroundColor = '#e6f4ea';
+                            item.style.fontWeight = '700';
+                            item.style.color = '#1b4d3e';
+                        }
+
+                        item.innerText = text;
+
+                        item.addEventListener('mouseenter', function() {
+                            if (select.value !== val) this.style.backgroundColor = '#f1f5f9';
+                        });
+                        item.addEventListener('mouseleave', function() {
+                            if (select.value !== val) this.style.backgroundColor = '#fff';
+                        });
+
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            select.value = val;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            lastSavedText = val ? text : '';
+                            input.value = lastSavedText;
+                            resultsBox.classList.add('d-none');
+                        });
+
+                        resultsBox.appendChild(item);
+                    }
+                });
+
+                if (matchCount === 0) {
+                    const noMatch = document.createElement('div');
+                    noMatch.className = 'px-3 py-2 text-muted fst-italic';
+                    noMatch.style.fontSize = '0.82rem';
+                    noMatch.innerText = 'No matching options found';
+                    resultsBox.appendChild(noMatch);
+                }
+            }
+
+            // On focus/tap: clear text so user can immediately type to filter
+            input.addEventListener('focus', function() {
+                this.value = '';
+                renderOptions('');
+                resultsBox.classList.remove('d-none');
+            });
+
+            input.addEventListener('input', function() {
+                renderOptions(this.value);
+                resultsBox.classList.remove('d-none');
+            });
+
+            // Reset logic
+            function resetToLastSaved() {
+                lastSavedText = getSelectedText();
+                input.value = lastSavedText;
+                resultsBox.classList.add('d-none');
+            }
+
+            // If inside a modal, handle reset on modal show & hide (Cancel / X / Backdrop click)
+            const parentModal = select.closest('.modal');
+            if (parentModal) {
+                parentModal.addEventListener('hidden.bs.modal', function() {
+                    resetToLastSaved();
+                });
+                parentModal.addEventListener('show.bs.modal', function() {
+                    resetToLastSaved();
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target)) {
+                    if (resultsBox.classList.contains('d-none') === false) {
+                        resultsBox.classList.add('d-none');
+                        // Restore saved text if user clicks outside without choosing
+                        input.value = getSelectedText();
+                    }
+                }
+            });
+        });
+    }
+
+    // Run on DOM load
+    initDynamicSearchDropdowns();
+    // Expose globally for dynamically opened modals
+    window.initDynamicSearchDropdowns = initDynamicSearchDropdowns;
 });

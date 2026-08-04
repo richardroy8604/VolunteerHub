@@ -20,6 +20,21 @@
     .applicant-row {
         transition: background-color var(--transition-speed) var(--transition-smooth),
                     outline var(--transition-speed) var(--transition-smooth);
+        cursor: pointer;
+    }
+    .applicant-row:hover {
+        background-color: #f8fafc;
+    }
+    .applicant-row.row-selected {
+        background-color: #f0fdf4 !important; /* Soft green selected highlight */
+        outline: 1px solid #86efac;
+    }
+    .select-applicant-checkbox,
+    #select-all-checkbox {
+        width: 19px;
+        height: 19px;
+        cursor: pointer;
+        accent-color: var(--clr-primary);
     }
     .applicant-row.row-modified {
         background-color: #fff9c4 !important; /* Soft yellow highlight for unsaved changes */
@@ -299,18 +314,24 @@
     </div>
 </div>
 
-<!-- Bulk Actions Action Bar (Shown when items are selected) -->
 <div class="content-card mb-3 p-3 bg-light border-success d-none" id="bulk-action-bar" style="border-left: 4px solid var(--clr-primary);">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div class="d-flex align-items-center gap-2">
-            <i class="fa-solid fa-circle-info text-success"></i>
-            <span style="font-size: 0.9rem; font-weight: 600;" id="selected-count-label">0 applicants selected</span>
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-info text-success"></i>
+                <span style="font-size: 0.9rem; font-weight: 600;" id="selected-count-label">0 applicants selected</span>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2.5" id="clear-selection-btn" style="font-size: 0.78rem; font-weight: 600; border-radius: 50px;" title="Clear selected checkboxes">
+                <i class="fa-solid fa-xmark me-1 text-danger"></i> Clear Selection
+            </button>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <select class="form-control py-1 px-3" id="bulk-assign-select" style="font-size: 0.85rem; width: 220px; border-color: var(--clr-border);">
+            <select class="form-control py-1 px-3" id="bulk-assign-select" style="font-size: 0.85rem; width: 250px; border-color: var(--clr-border);">
                 <option value="">-- Assign to Committee --</option>
                 {% for committee in event.committees %}
-                <option value="{{ committee.id }}">{{ committee.name }}</option>
+                <option value="{{ committee.id }}" data-assigned="{{ committee.assigned }}" data-required="{{ committee.required }}" {% if committee.assigned >= committee.required %}class="text-danger"{% endif %}>
+                    {{ committee.name }} ({{ committee.assigned }}/{{ committee.required }}) {% if committee.assigned >= committee.required %}[FULL]{% endif %}
+                </option>
                 {% endfor %}
             </select>
             <button type="button" class="btn btn-primary py-1 px-3" style="font-size: 0.85rem;" id="bulk-assign-btn">Apply Assign</button>
@@ -435,11 +456,11 @@
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <select name="assign_{{ app.id }}" class="form-select form-select-sm row-assign-select {% if is_auto_draft and app.draft_assigned_id %}is-changed{% endif %}" data-original="{% if app.raw_status == 'rejected' %}rejected{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}{% endif %}" style="font-size: 0.82rem; border-color: var(--clr-border); cursor: pointer; width: 175px;">
+                                <select name="assign_{{ app.id }}" class="form-select form-select-sm row-assign-select {% if is_auto_draft and app.draft_assigned_id %}is-changed{% endif %}" data-original="{% if app.raw_status == 'rejected' %}rejected{% elif app.assigned_id %}{{ app.assigned_id }}{% else %}{% endif %}" style="font-size: 0.82rem; border-color: var(--clr-border); cursor: pointer; width: 195px;">
                                     <option value="" {% if not app.assigned_id and not app.draft_assigned_id and app.raw_status != 'rejected' %}selected{% endif %}>-- Unassigned --</option>
                                     {% for committee in event.committees %}
-                                    <option value="{{ committee.id }}" {% if is_auto_draft and app.draft_assigned_id == committee.id %}selected{% elif not is_auto_draft and app.assigned_id == committee.id %}selected{% endif %}>
-                                        {{ committee.name }}
+                                    <option value="{{ committee.id }}" data-assigned="{{ committee.assigned }}" data-required="{{ committee.required }}" {% if is_auto_draft and app.draft_assigned_id == committee.id %}selected{% elif not is_auto_draft and app.assigned_id == committee.id %}selected{% endif %} {% if committee.assigned >= committee.required and app.assigned_id != committee.id %}class="text-danger"{% endif %}>
+                                        {{ committee.name }} ({{ committee.assigned }}/{{ committee.required }}) {% if committee.assigned >= committee.required and app.assigned_id != committee.id %}[FULL]{% endif %}
                                     </option>
                                     {% endfor %}
                                     <option value="rejected" {% if app.raw_status == 'rejected' %}selected{% endif %} class="text-danger">
@@ -489,7 +510,7 @@
                     </p>
 
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="reallocate_all" name="reallocate_all" value="1" checked>
+                        <input class="form-check-input" type="checkbox" id="reallocate_all" name="reallocate_all" value="1">
                         <label class="form-check-label" for="reallocate_all" style="font-size: 0.9rem; font-weight: 600; cursor:pointer;">
                             Full Pool Re-Allocation (Include already assigned volunteers)
                             <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: normal;">When checked, re-allocates all active students. Uncheck to only allocate newly registered / pending students.</span>
@@ -566,6 +587,23 @@
         const limitsRow = document.getElementById('class-balance-limits');
         const unsavedBadge = document.getElementById('unsaved-badge');
 
+        // Full Re-allocation warning confirmation listener
+        const reallocateAllCheck = document.getElementById('reallocate_all');
+        if (reallocateAllCheck) {
+            reallocateAllCheck.addEventListener('change', function(e) {
+                if (this.checked) {
+                    const confirmed = confirm(
+                        "⚠️ CAUTION: Full Re-Allocation Warning!\n\n" +
+                        "Checking this option will RESET and RE-ALLOCATE ALL volunteers across all committees, overwriting current assignments.\n\n" +
+                        "Are you sure you want to enable full pool re-allocation?"
+                    );
+                    if (!confirmed) {
+                        this.checked = false;
+                    }
+                }
+            });
+        }
+
         // Toggle balance options inside modal
         if (balanceCheck && limitsRow) {
             balanceCheck.addEventListener('change', function() {
@@ -591,6 +629,16 @@
             });
         }
 
+        // Clear selection button
+        const clearSelectionBtn = document.getElementById('clear-selection-btn');
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function() {
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                checkboxes.forEach(cb => cb.checked = false);
+                updateBulkBar();
+            });
+        }
+
         // Toggle select all checkboxes
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
@@ -606,30 +654,68 @@
         });
 
         function updateBulkBar() {
-            const checkedCount = document.querySelectorAll('.select-applicant-checkbox:checked').length;
+            const allCbs = document.querySelectorAll('.select-applicant-checkbox');
+            let checkedCount = 0;
+            allCbs.forEach(cb => {
+                const row = cb.closest('tr');
+                if (cb.checked) {
+                    checkedCount++;
+                    if (row) row.classList.add('row-selected');
+                } else {
+                    if (row) row.classList.remove('row-selected');
+                }
+            });
+
             if (checkedCount > 0) {
                 bulkActionBar.classList.remove('d-none');
                 countLabel.innerText = `${checkedCount} applicant${checkedCount > 1 ? 's' : ''} selected`;
             } else {
                 bulkActionBar.classList.add('d-none');
-                selectAllCheckbox.checked = false;
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
             }
         }
 
-        // Detect Unsaved Dropdown Changes
+        // Tap/click anywhere on student row to toggle selection
+        document.querySelectorAll('.applicant-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Ignore click if user clicked on dropdown, button, link, or input element
+                if (e.target.closest('select, button, a, input')) return;
+
+                const cb = this.querySelector('.select-applicant-checkbox');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    updateBulkBar();
+                }
+            });
+        });
+
+        // Detect Unsaved Dropdown Changes with Strict Capacity Checks
         const rowSelects = document.querySelectorAll('.row-assign-select');
         rowSelects.forEach(select => {
             select.addEventListener('change', function() {
                 const orig = this.getAttribute('data-original');
                 const current = this.value;
                 const row = this.closest('tr');
+                const selectedOpt = this.options[this.selectedIndex];
+
+                if (current && current !== 'rejected') {
+                    const assigned = parseInt(selectedOpt.getAttribute('data-assigned') || '0');
+                    const required = parseInt(selectedOpt.getAttribute('data-required') || '0');
+                    if (current !== orig && assigned >= required) {
+                        alert(`⛔ ALLOCATION BLOCKED!\n\n"${selectedOpt.text.replace(/\[FULL\]/, '').trim()}" is FULL (${assigned}/${required} slots filled).\n\nYou cannot assign volunteers to a full committee.`);
+                        this.value = orig;
+                        this.classList.remove('is-changed');
+                        if (row) row.classList.remove('row-modified');
+                        return;
+                    }
+                }
 
                 if (current !== orig) {
                     this.classList.add('is-changed');
-                    row.classList.add('row-modified');
+                    if (row) row.classList.add('row-modified');
                 } else {
                     this.classList.remove('is-changed');
-                    row.classList.remove('row-modified');
+                    if (row) row.classList.remove('row-modified');
                 }
 
                 // Check if any row has changed
@@ -642,7 +728,7 @@
             });
         });
 
-        // Real Bulk Assignment Form Submit
+        // Real Bulk Assignment Form Submit with Capacity Hard Block
         const bulkAssignBtn = document.getElementById('bulk-assign-btn');
         const bulkAssignSelect = document.getElementById('bulk-assign-select');
         const bulkRejectBtn = document.getElementById('bulk-reject-btn');
@@ -657,19 +743,34 @@
                 const checkedCbs = document.querySelectorAll('.select-applicant-checkbox:checked');
                 if (checkedCbs.length === 0) return;
 
-                const container = document.getElementById('bulk_application_ids_container');
-                container.innerHTML = '';
-                checkedCbs.forEach(cb => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'application_ids[]';
-                    input.value = cb.getAttribute('data-id');
-                    container.appendChild(input);
-                });
+                const selectedOpt = bulkAssignSelect.options[bulkAssignSelect.selectedIndex];
+                const commName = selectedOpt.text.replace(/\[FULL\]/, '').trim();
+                const assigned = parseInt(selectedOpt.getAttribute('data-assigned') || '0');
+                const required = parseInt(selectedOpt.getAttribute('data-required') || '0');
+                const available = Math.max(0, required - assigned);
 
-                document.getElementById('post_action').value = 'bulk_assign';
-                document.getElementById('post_committee_id').value = commId;
-                document.getElementById('actionForm').submit();
+                if (checkedCbs.length > available) {
+                    alert(`⛔ BULK ALLOCATION BLOCKED!\n\n"${commName}" has only ${available} slot(s) remaining (${assigned}/${required} filled), but you selected ${checkedCbs.length} volunteer(s).\n\nOver-allocation is strictly blocked.`);
+                    return;
+                }
+
+                const confirmMsg = `Are you sure you want to assign ${checkedCbs.length} selected volunteer(s) to "${commName}"?`;
+                
+                if (confirm(confirmMsg)) {
+                    const container = document.getElementById('bulk_application_ids_container');
+                    container.innerHTML = '';
+                    checkedCbs.forEach(cb => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'application_ids[]';
+                        input.value = cb.getAttribute('data-id');
+                        container.appendChild(input);
+                    });
+
+                    document.getElementById('post_action').value = 'bulk_assign';
+                    document.getElementById('post_committee_id').value = commId;
+                    document.getElementById('actionForm').submit();
+                }
             });
         }
 
@@ -678,7 +779,22 @@
                 const checkedCbs = document.querySelectorAll('.select-applicant-checkbox:checked');
                 if (checkedCbs.length === 0) return;
 
-                if (confirm(`Are you sure you want to reject/waitlist the ${checkedCbs.length} selected volunteer(s)?`)) {
+                let assignedCount = 0;
+                checkedCbs.forEach(cb => {
+                    const row = cb.closest('tr');
+                    if (row && row.getAttribute('data-status') === 'assigned') {
+                        assignedCount++;
+                    }
+                });
+
+                let confirmMsg = `Are you sure you want to reject/waitlist the ${checkedCbs.length} selected volunteer(s)?`;
+                if (assignedCount > 0) {
+                    confirmMsg = `⚠️ WARNING: Active Assignment Override!\n\n` +
+                                 `${assignedCount} of your ${checkedCbs.length} selected volunteer(s) are currently assigned to active committees.\n\n` +
+                                 `Rejecting them will REMOVE them from their active committee slots. Are you sure you want to proceed?`;
+                }
+
+                if (confirm(confirmMsg)) {
                     const container = document.getElementById('bulk_application_ids_container');
                     container.innerHTML = '';
                     checkedCbs.forEach(cb => {

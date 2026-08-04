@@ -563,7 +563,7 @@ def apply_view(request, event_id):
 # Dean views — /dean/events/ prefix (volunteer pool management)
 # =============================================================================
 
-def _generate_auto_allocation_draft(event_obj, reallocate_all=True, target_committee_ids=None):
+def _generate_auto_allocation_draft(event_obj, reallocate_all=False, target_committee_ids=None):
     """
     Greedy Balanced Auto-Allocation Draft Generator.
     
@@ -770,28 +770,23 @@ def volunteer_pool_view(request, event_id):
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        if action == 'save_auto_allocation_draft' or action == 'save_allocations':
+        if action == 'save_auto_allocation_draft':
+            # Auto-allocation draft plan resolves over-manning. Apply draft plan directly.
             updated_count = 0
+            reallocated_app_ids = [k.replace('assign_', '') for k in request.POST.keys() if k.startswith('assign_')]
+            if reallocated_app_ids:
+                VolunteerApplication.objects.filter(event=event_obj, id__in=reallocated_app_ids).update(
+                    assigned_committee=None,
+                    status='pending'
+                )
             for key, val in request.POST.items():
                 if key.startswith('assign_'):
                     app_id = key.replace('assign_', '')
                     try:
                         app = VolunteerApplication.objects.get(id=app_id, event=event_obj)
-                        if val == 'rejected':
-                            if app.status != 'rejected' or app.assigned_committee is not None:
-                                app.assigned_committee = None
-                                app.status = 'rejected'
-                                app.save()
-                                updated_count += 1
-                        elif not val:  # unassigned
-                            if app.status != 'pending' or app.assigned_committee is not None:
-                                app.assigned_committee = None
-                                app.status = 'pending'
-                                app.save()
-                                updated_count += 1
-                        else:  # specific committee id
+                        if val and val not in ['rejected', '']:
                             comm = Committee.objects.filter(id=val, event=event_obj).first()
-                            if comm and (app.assigned_committee != comm or app.status != 'assigned'):
+                            if comm:
                                 app.assigned_committee = comm
                                 app.status = 'assigned'
                                 app.save()
@@ -799,6 +794,76 @@ def volunteer_pool_view(request, event_id):
                                 updated_count += 1
                     except VolunteerApplication.DoesNotExist:
                         pass
+
+            messages.success(request, f"Successfully saved and finalized Auto-Allocation Plan ({updated_count} assignments updated, over-manning resolved!).")
+            return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
+
+        elif action == 'save_allocations':
+            updated_count = 0
+            
+            # Build proposed assignments map from POST parameters
+            proposed_changes = {}
+            for key, val in request.POST.items():
+                if key.startswith('assign_'):
+                    app_id = key.replace('assign_', '')
+                    proposed_changes[app_id] = val
+
+            # Calculate proposed resulting counts from zero to avoid double-counting unchanged assignments
+            committee_counts = {c.id: 0 for c in event_obj.committees.all()}
+            committee_objs = {c.id: c for c in event_obj.committees.all()}
+            all_event_apps = VolunteerApplication.objects.filter(event=event_obj)
+
+            for app in all_event_apps:
+                str_id = str(app.id)
+                target_val = proposed_changes.get(str_id, str(app.assigned_committee_id) if app.assigned_committee_id else '')
+                if target_val and target_val not in ['rejected', '']:
+                    try:
+                        cid = int(target_val)
+                        if cid in committee_counts:
+                            committee_counts[cid] += 1
+                    except (ValueError, KeyError):
+                        pass
+
+            full_violations = set()
+            for cid, count in committee_counts.items():
+                comm_obj = committee_objs[cid]
+                if count > comm_obj.required_volunteers:
+                    full_violations.add(f"{comm_obj.name} ({count}/{comm_obj.required_volunteers})")
+
+            if full_violations:
+                messages.error(
+                    request, 
+                    f"⛔ Save Blocked: The following committee(s) would exceed their volunteer capacity: {', '.join(full_violations)}. "
+                    f"Please unassign some students or adjust committee capacity before saving."
+                )
+                return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
+
+            # Proceed to save valid manual assignments
+            for app_id, val in proposed_changes.items():
+                try:
+                    app = VolunteerApplication.objects.get(id=app_id, event=event_obj)
+                    if val == 'rejected':
+                        if app.status != 'rejected' or app.assigned_committee is not None:
+                            app.assigned_committee = None
+                            app.status = 'rejected'
+                            app.save()
+                            updated_count += 1
+                    elif not val:  # unassigned
+                        if app.status != 'pending' or app.assigned_committee is not None:
+                            app.assigned_committee = None
+                            app.status = 'pending'
+                            app.save()
+                            updated_count += 1
+                    else:  # specific committee id
+                        comm = Committee.objects.filter(id=val, event=event_obj).first()
+                        if comm and (app.assigned_committee != comm or app.status != 'assigned'):
+                            app.assigned_committee = comm
+                            app.status = 'assigned'
+                            app.save()
+                            trigger_allocation_confirmed(app)
+                            updated_count += 1
+                except VolunteerApplication.DoesNotExist:
+                    pass
             
             messages.success(request, f"Successfully finalized and saved volunteer allocations ({updated_count} assignments updated).")
             return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
@@ -807,19 +872,35 @@ def volunteer_pool_view(request, event_id):
             app_id = request.POST.get('application_id')
             comm_id = request.POST.get('committee_id')
             app = get_object_or_404(VolunteerApplication, id=app_id, event=event_obj)
+            was_assigned = (app.status == 'assigned')
+            prev_comm_name = app.assigned_committee.name if app.assigned_committee else ''
             
             if comm_id == 'rejected':
                 app.assigned_committee = None
                 app.status = 'rejected'
                 app.save()
-                messages.success(request, f"Marked {app.student.user.get_full_name()} as Rejected / Waitlisted.")
+                msg = f"Marked {app.student.user.get_full_name()} as Rejected / Waitlisted."
+                if was_assigned:
+                    msg += f" (Removed from active committee '{prev_comm_name}')."
+                messages.warning(request, msg) if was_assigned else messages.success(request, msg)
             elif not comm_id:
                 app.assigned_committee = None
                 app.status = 'pending'
                 app.save()
-                messages.success(request, f"Unassigned {app.student.user.get_full_name()}.")
+                msg = f"Unassigned {app.student.user.get_full_name()}."
+                if was_assigned:
+                    msg += f" (Removed from active committee '{prev_comm_name}')."
+                messages.warning(request, msg) if was_assigned else messages.success(request, msg)
             else:
                 comm = get_object_or_404(Committee, id=comm_id, event=event_obj)
+                if app.assigned_committee != comm:
+                    if comm.assigned_count >= comm.required_volunteers:
+                        messages.error(
+                            request, 
+                            f"⛔ Assignment Failed: '{comm.name}' is FULL ({comm.assigned_count}/{comm.required_volunteers} slots filled). Over-allocation is blocked."
+                        )
+                        return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
+
                 app.assigned_committee = comm
                 app.status = 'assigned'
                 app.save()
@@ -831,6 +912,18 @@ def volunteer_pool_view(request, event_id):
             comm_id = request.POST.get('committee_id')
             if app_ids and comm_id:
                 comm = get_object_or_404(Committee, id=comm_id, event=event_obj)
+                apps_to_assign = VolunteerApplication.objects.filter(id__in=app_ids, event=event_obj).exclude(assigned_committee=comm)
+                new_add_count = apps_to_assign.count()
+                available_slots = max(0, comm.required_volunteers - comm.assigned_count)
+                
+                if new_add_count > available_slots:
+                    messages.error(
+                        request, 
+                        f"⛔ Bulk Assignment Blocked: '{comm.name}' has only {available_slots} slot(s) available "
+                        f"({comm.assigned_count}/{comm.required_volunteers} filled), but you selected {new_add_count} volunteer(s)."
+                    )
+                    return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
+
                 updated = VolunteerApplication.objects.filter(id__in=app_ids, event=event_obj).update(
                     assigned_committee=comm,
                     status='assigned'
@@ -842,11 +935,15 @@ def volunteer_pool_view(request, event_id):
         elif action == 'bulk_reject':
             app_ids = request.POST.getlist('application_ids[]') or request.POST.getlist('application_ids')
             if app_ids:
+                assigned_count = VolunteerApplication.objects.filter(id__in=app_ids, event=event_obj, status='assigned').count()
                 updated = VolunteerApplication.objects.filter(id__in=app_ids, event=event_obj).update(
                     assigned_committee=None,
                     status='rejected'
                 )
-                messages.success(request, f"Marked {updated} volunteers as Rejected / Waitlisted.")
+                if assigned_count > 0:
+                    messages.warning(request, f"Marked {updated} volunteers as Rejected / Waitlisted. (⚠️ {assigned_count} volunteer(s) were removed from active committees).")
+                else:
+                    messages.success(request, f"Marked {updated} volunteers as Rejected / Waitlisted.")
 
         return redirect('volunteers_dean:volunteer_pool', event_id=event_id)
         

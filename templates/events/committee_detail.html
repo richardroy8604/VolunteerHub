@@ -21,21 +21,28 @@
     <!-- Faculty & Student Coordinators Card -->
     <div class="col-lg-7 mb-4 mb-lg-0">
         <div class="content-card h-100">
-            <h4 class="content-card-title border-bottom pb-2 mb-4">
-                <span><i class="fa-solid fa-user-gear text-success me-2"></i> Committee Leadership</span>
-            </h4>
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-4">
+                <h4 class="content-card-title mb-0 border-0 pb-0">
+                    <span><i class="fa-solid fa-user-gear text-success me-2"></i> Committee Leadership</span>
+                </h4>
+                {% if user_role == 'dean' or user.profile.role == 'dean' %}
+                <button type="button" class="btn btn-sm btn-light text-success fw-bold border py-1 px-3" style="font-size: 0.78rem; border-radius: 6px; background-color: #f0fdf4; border-color: #bbf7d0 !important;" data-bs-toggle="modal" data-bs-target="#changeFacultyModal">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Change Faculty Head
+                </button>
+                {% endif %}
+            </div>
             
             <div class="row g-4">
                 <!-- Faculty in Charge -->
                 <div class="col-md-6 border-end" style="border-color: var(--clr-border) !important;">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; flex-shrink: 0; background-color: var(--clr-primary-light) !important; color: var(--clr-primary) !important;">
                             <i class="fa-solid fa-user-tie"></i>
                         </div>
                         <div>
                             <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">Faculty in Charge</span>
-                            <strong style="font-size: 0.95rem; color: var(--clr-text-main);">{{ committee.faculty_head }}</strong>
-                            <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 500;">Committee Coordinator</span>
+                            <strong class="d-block text-dark" style="font-size: 0.98rem; font-weight: 700;">{{ committee.faculty_head }}</strong>
+                            <span class="d-block text-muted" style="font-size: 0.75rem;">Committee Coordinator</span>
                         </div>
                     </div>
                 </div>
@@ -164,4 +171,60 @@
         </table>
     </div>
 </div>
+
+<!-- Change Faculty Head Modal -->
+<div class="modal fade" id="changeFacultyModal" tabindex="-1" aria-labelledby="changeFacultyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header bg-success text-white p-3 border-0" style="border-radius: var(--radius-lg) var(--radius-lg) 0 0; background-color: var(--clr-primary) !important;">
+                <h5 class="modal-title" id="changeFacultyModalLabel" style="font-weight: 600;">
+                    <i class="fa-solid fa-user-tie me-2"></i> Reassign Faculty In-Charge
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="" method="post" id="changeFacultyForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="change_faculty_head">
+                <div class="modal-body p-4 text-start">
+                    <p class="mb-3 text-muted" style="font-size: 0.88rem;">
+                        Select the new Faculty Coordinator for <strong>{{ committee.name }}</strong> ({{ committee.event }}).
+                    </p>
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold" for="faculty_head_select" style="font-size: 0.85rem; font-weight: 600;">
+                            Select Faculty Head
+                        </label>
+                        <select id="faculty_head_select" name="faculty_head" class="form-select" data-dynamic-search="true" style="border-color: var(--clr-border); cursor: pointer; font-size: 0.9rem;">
+                            <option value="">-- Leave Unassigned / Remove --</option>
+                            {% for fac in all_faculty %}
+                            <option value="{{ fac.id }}" {% if committee.faculty_head_id == fac.id %}selected{% endif %}>
+                                {{ fac.name }} {% if fac.dept %}({{ fac.dept }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer p-3 border-top-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirm-faculty-btn">Reassign Faculty Head</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('changeFacultyForm');
+    const select = document.getElementById('faculty_head_select');
+    if (form && select) {
+        form.addEventListener('submit', function(e) {
+            const selectedText = select.options[select.selectedIndex].text.trim();
+            const confirmed = confirm(`Are you sure you want to reassign Faculty Head for {{ committee.name }} to:\n\n"${selectedText}"?`);
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

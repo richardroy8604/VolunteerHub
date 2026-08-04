@@ -1685,6 +1685,21 @@ def dean_committee_detail_view(request, pk):
     )
 
     if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'change_faculty_head':
+            faculty_id = request.POST.get('faculty_head')
+            if faculty_id:
+                fac_profile = UserProfile.objects.filter(id=faculty_id, role__in=['faculty', 'dean']).first()
+                if fac_profile:
+                    committee.faculty_head = fac_profile
+                    committee.save()
+                    messages.success(request, f"Reassigned {fac_profile.user.get_full_name()} as Faculty Head for {committee.name}.")
+            else:
+                committee.faculty_head = None
+                committee.save()
+                messages.info(request, f"Cleared Faculty Head for {committee.name}.")
+            return redirect('events_dean:committee_detail', pk=pk)
+
         student_coord_id = request.POST.get('student_coordinator')
         if student_coord_id:
             student_profile = UserProfile.objects.filter(id=student_coord_id, role='student').first()
@@ -1716,11 +1731,17 @@ def dean_committee_detail_view(request, pk):
             'status': 'Active',
         })
 
+    faculty_profiles = UserProfile.objects.filter(
+        role__in=['faculty', 'dean']
+    ).select_related('user').order_by('user__first_name')
+    all_faculty = [{'id': f.id, 'name': f.user.get_full_name(), 'dept': f.department} for f in faculty_profiles]
+
     context = {
         'committee': {
             'id': committee.id,
             'name': committee.name,
             'event': committee.event.name,
+            'faculty_head_id': committee.faculty_head.id if committee.faculty_head else None,
             'faculty_head': (
                 committee.faculty_head.user.get_full_name()
                 if committee.faculty_head else 'Unassigned'
@@ -1733,6 +1754,7 @@ def dean_committee_detail_view(request, pk):
             'assigned': committee.assigned_count,
         },
         'volunteers': volunteers,
+        'all_faculty': all_faculty,
     }
     return render(request, 'events/committee_detail.html', context)
 
