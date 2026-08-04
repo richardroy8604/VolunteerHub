@@ -72,20 +72,25 @@ def student_dashboard_view(request):
     active_assignments = []
     for app in active_assignments_qs:
         comm = app.assigned_committee
-        coordinator_name = ''
+        coordinator_name = 'Unassigned'
         coordinator_phone = ''
         if comm and comm.faculty_head:
             coordinator_name = comm.faculty_head.user.get_full_name()
-            coordinator_phone = comm.faculty_head.phone
+            coordinator_phone = getattr(comm.faculty_head, 'phone', '') or ''
             
+        start_str = app.event.start_date.strftime('%b %d, %Y') if app.event.start_date else ''
+        end_str = app.event.end_date.strftime('%b %d, %Y') if app.event.end_date else ''
+        date_display = f"{start_str} - {end_str}" if (start_str and end_str and start_str != end_str) else start_str
+
         active_assignments.append({
-            'event': app.event.name,
-            'committee': comm.name if comm else 'Pending Assignment',
-            'date': app.event.event_dates,
-            'status': app.get_status_display(),
+            'event_name': app.event.name,
+            'committee_name': comm.name if comm else 'Unassigned',
+            'event_date': date_display,
+            'event_time': 'Full Day' if app.event.venue else 'Campus Event',
+            'status': 'Assigned',
             'event_id': app.event.id,
             'committee_id': comm.id if comm else None,
-            'coordinator': coordinator_name,
+            'coordinator_name': coordinator_name,
             'coordinator_phone': coordinator_phone
         })
         
@@ -377,13 +382,23 @@ def my_volunteering_view(request):
 def student_committee_detail_view(request, pk):
     """Student's view of their assigned committee details, coordinator, and fellow committee mates."""
     committee = get_object_or_404(Committee.objects.select_related('event', 'faculty_head__user', 'student_coordinator__user'), pk=pk)
+    profile = request.user.profile
     
+    # Check if logged in user is in a leadership role for this committee or event
+    is_lead = (
+        (committee.student_coordinator == profile) or
+        (committee.event.main_student_coordinator == profile) or
+        profile.role in ['dean', 'faculty']
+    )
+
     faculty_head_name = committee.faculty_head.user.get_full_name() if committee.faculty_head else ''
-    faculty_phone = committee.faculty_head.phone if committee.faculty_head else ''
+    faculty_phone = getattr(committee.faculty_head, 'phone', '') if committee.faculty_head else ''
     faculty_email = committee.faculty_head.user.email if committee.faculty_head else ''
     
     student_head_name = committee.student_coordinator.user.get_full_name() if committee.student_coordinator else ''
-    
+    student_head_phone = getattr(committee.student_coordinator, 'phone', '') if committee.student_coordinator else ''
+    student_head_email = committee.student_coordinator.user.email if committee.student_coordinator else ''
+
     committee_dict = {
         'id': committee.id,
         'name': committee.name,
@@ -391,7 +406,9 @@ def student_committee_detail_view(request, pk):
         'faculty_head': faculty_head_name,
         'faculty_phone': faculty_phone,
         'faculty_email': faculty_email,
-        'student_head': student_head_name
+        'student_head': student_head_name,
+        'student_head_phone': student_head_phone,
+        'student_head_email': student_head_email,
     }
     
     volunteers_qs = VolunteerApplication.objects.filter(
@@ -402,17 +419,20 @@ def student_committee_detail_view(request, pk):
     volunteers = []
     for app in volunteers_qs:
         student = app.student
+        phone_num = getattr(student, 'phone', '') or ''
         volunteers.append({
             'name': student.user.get_full_name(),
             'class': student.class_batch,
             'dept': student.department,
             'email': student.user.email,
-            'is_me': (student == request.user.profile)
+            'phone': phone_num if (is_lead or student == profile) else '',
+            'is_me': (student == profile)
         })
         
     context = {
         'committee': committee_dict,
         'volunteers': volunteers,
+        'is_lead': is_lead,
     }
     return render(request, 'volunteers/student_committee_detail.html', context)
 

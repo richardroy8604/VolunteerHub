@@ -63,6 +63,19 @@ def user_context(request):
             if profile.role == 'dean' or request.user.is_staff:
                 active_events_for_broadcast = Event.objects.prefetch_related('committees').all().order_by('-created_at')
 
+            student_assigned_committee_id = None
+            student_assigned_committee_name = ''
+            if profile.role == 'student':
+                from volunteers.models import VolunteerApplication
+                active_app = VolunteerApplication.objects.filter(
+                    student=profile,
+                    status='assigned',
+                    event__status__in=['open', 'upcoming', 'ongoing']
+                ).select_related('assigned_committee').first()
+                if active_app and active_app.assigned_committee:
+                    student_assigned_committee_id = active_app.assigned_committee.id
+                    student_assigned_committee_name = active_app.assigned_committee.name
+
             context.update({
                 'user_role': profile.role,
                 'user_name': request.user.get_full_name() or request.user.username,
@@ -72,6 +85,8 @@ def user_context(request):
                 'is_student_coordinator': profile.is_student_coordinator,
                 'pending_approvals_count': pending_approvals,
                 'user_committee_id': user_committee_id,
+                'student_assigned_committee_id': student_assigned_committee_id,
+                'student_assigned_committee_name': student_assigned_committee_name,
                 'unread_notifications_count': unread_notifications_count,
                 'recent_notifications': recent_notifications,
                 'active_events_for_broadcast': active_events_for_broadcast,

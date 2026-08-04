@@ -109,7 +109,7 @@
 
                 <div class="form-group mb-3">
                     <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Main Student Coordinator (Optional)</label>
-                    <input type="hidden" id="id_main_student_coordinator" name="main_student_coordinator" value="{{ event.main_student_coordinator|default:"" }}">
+                    <input type="hidden" id="id_main_student_coordinator" name="main_student_coordinator" value="{% if event.main_student_coordinator %}{{ event.main_student_coordinator.id }}{% endif %}">
                     
                     <!-- Selected display card -->
                     <div id="main-coordinator-display" class="border rounded p-3 mb-2 bg-light {% if not event.main_student_coordinator %}d-none{% endif %}" style="border-radius: var(--radius-md) !important; border-color: var(--clr-border) !important;">
@@ -329,8 +329,9 @@
             searchResults.querySelectorAll('.student-select-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
+                    const selectedId = this.getAttribute('data-id');
                     const selectedName = this.getAttribute('data-name');
-                    hiddenInput.value = selectedName;
+                    hiddenInput.value = selectedId;
                     coordinatorNameText.textContent = selectedName;
                     coordinatorDisplay.classList.remove('d-none');
                     triggerText.textContent = "Change Coordinator";

@@ -307,9 +307,16 @@ def event_create_view(request):
             msc_id = request.POST.get('main_student_coordinator')
             if msc_id:
                 try:
-                    event.main_student_coordinator = UserProfile.objects.get(id=msc_id, role='student')
+                    if str(msc_id).isdigit():
+                        event.main_student_coordinator = UserProfile.objects.get(id=int(msc_id), role='student')
+                    else:
+                        event.main_student_coordinator = UserProfile.objects.filter(
+                            role='student'
+                        ).filter(
+                            models.Q(user__first_name__icontains=msc_id) | models.Q(user__last_name__icontains=msc_id)
+                        ).first()
                     event.save()
-                except UserProfile.DoesNotExist:
+                except (UserProfile.DoesNotExist, ValueError):
                     pass
 
             for i, name in enumerate(committee_names):
@@ -401,8 +408,15 @@ def event_edit_view(request, pk):
             msc_id = request.POST.get('main_student_coordinator')
             if msc_id:
                 try:
-                    event.main_student_coordinator = UserProfile.objects.get(id=msc_id, role='student')
-                except UserProfile.DoesNotExist:
+                    if str(msc_id).isdigit():
+                        event.main_student_coordinator = UserProfile.objects.get(id=int(msc_id), role='student')
+                    else:
+                        event.main_student_coordinator = UserProfile.objects.filter(
+                            role='student'
+                        ).filter(
+                            models.Q(user__first_name__icontains=msc_id) | models.Q(user__last_name__icontains=msc_id)
+                        ).first()
+                except (UserProfile.DoesNotExist, ValueError):
                     pass
             else:
                 event.main_student_coordinator = None

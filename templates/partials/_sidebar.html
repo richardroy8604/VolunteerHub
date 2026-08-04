@@ -132,6 +132,14 @@
                         <span>My Volunteering</span>
                     </a>
                 </li>
+                {% if student_assigned_committee_id %}
+                <li class="nav-item">
+                    <a href="/student/committees/{{ student_assigned_committee_id }}/" class="sidebar-link {% if '/student/committees/' in request.path %}active{% endif %}" data-title="My Committee">
+                        <i class="fa-solid fa-users-gear text-success"></i>
+                        <span>My Committee</span>
+                    </a>
+                </li>
+                {% endif %}
                 {% if is_student_coordinator %}
                 <li class="nav-item">
                     <a href="/student/coordinators/" class="sidebar-link {% if '/student/coordinators/' in request.path %}active{% endif %}" data-title="Coordinators Board">
