@@ -527,36 +527,59 @@ def venue_delete_view(request, pk):
 
 @dean_required
 def committee_list_view(request):
-    """List all committees across all events, with optional event filtering."""
-    selected_event_id = request.GET.get('event_id', '')
+    """List all committees with event filter selector and searchable overview."""
+    events_qs = Event.objects.order_by('-start_date', '-created_at')
+    events = [{'id': e.id, 'name': e.name} for e in events_qs]
+
+    selected_event_id = request.GET.get('event_id')
+    # Default to the most recent active event if no event_id param is provided
+    if selected_event_id is None:
+        selected_event_id = str(events[0]['id']) if events else ''
 
     committees_qs = Committee.objects.select_related(
         'event', 'faculty_head__user', 'student_coordinator__user'
-    )
-    if selected_event_id:
+    ).order_by('name')
+
+    if selected_event_id and selected_event_id != 'all':
         committees_qs = committees_qs.filter(event_id=selected_event_id)
 
     committees = []
+    total_required = 0
+    total_assigned = 0
+
     for c in committees_qs:
+        req = c.required_volunteers
+        ass = c.assigned_count
+        total_required += req
+        total_assigned += ass
+
         committees.append({
             'id': c.id,
             'name': c.name,
-            'required': c.required_volunteers,
-            'assigned': c.assigned_count,
+            'required': req,
+            'assigned': ass,
             'head': c.faculty_head.user.get_full_name() if c.faculty_head else 'Unassigned',
             'student_coordinator': (
                 c.student_coordinator.user.get_full_name()
-                if c.student_coordinator else None
+                if c.student_coordinator else 'Unassigned'
             ),
+            'event_id': c.event.id,
             'event_name': c.event.name,
+            'pct': int((ass / req * 100)) if req > 0 else 0,
         })
 
-    events = [{'id': e.id, 'name': e.name} for e in Event.objects.all()]
+    metrics = {
+        'total_committees': len(committees),
+        'total_required': total_required,
+        'total_assigned': total_assigned,
+        'fill_pct': int((total_assigned / total_required * 100)) if total_required > 0 else 0,
+    }
 
     context = {
         'committees': committees,
         'events': events,
         'selected_event_id': selected_event_id,
+        'metrics': metrics,
     }
     return render(request, 'events/committee_list.html', context)
 

@@ -5,16 +5,23 @@
 {% block extra_css %}
 <style>
     /* Premium Clickable Row Float & Glow Animation */
-    .table-custom tbody tr.clickable-row {
+    .table-custom tbody tr.committee-table-row {
         cursor: pointer;
         transition: background-color var(--transition-speed) var(--transition-smooth),
                     transform var(--transition-speed) var(--transition-smooth),
                     box-shadow var(--transition-speed) var(--transition-smooth);
     }
-    .table-custom tbody tr.clickable-row:hover {
-        background-color: rgba(27, 77, 62, 0.05) !important;
-        transform: translateY(-2px);
+    .table-custom tbody tr.committee-table-row:hover {
+        background-color: rgba(27, 77, 62, 0.04) !important;
+        transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(27, 77, 62, 0.05);
+    }
+    
+    .event-selector-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid var(--clr-border);
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
     }
 </style>
 {% endblock %}
@@ -22,80 +29,128 @@
 {% block content %}
 <!-- Page Header -->
 <div class="row align-items-center mb-4">
-    <div class="col-12">
-        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Event Committees</h2>
-        <p class="text-muted" style="font-size: 0.9rem;">Master view of all coordinating committees across campus events</p>
+    <div class="col-12 col-md-8 mb-3 mb-md-0">
+        <h2 class="h3 font-weight-bold" style="color: var(--clr-primary); font-weight: 700;">Event Committees Overview</h2>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Select an event below to manage committee leadership, student coordinators, and volunteer capacity.</p>
     </div>
 </div>
 
-<!-- Filter Selector Card -->
-<div class="content-card mb-4" style="padding: 16px 24px;">
-    <form method="get" class="row g-3 align-items-center">
-        <div class="col-md-6 col-lg-4 mb-0">
-            <label class="form-label" for="event-filter" style="font-size: 0.85rem; font-weight: 600;">Filter Committees by Event</label>
-            <select name="event_id" id="event-filter" class="form-control" onchange="this.form.submit();" style="border-color: var(--clr-border); cursor: pointer;">
-                <option value="">-- All Events --</option>
-                {% for event in events %}
-                <option value="{{ event.id }}" {% if selected_event_id == event.id|slugify %}selected{% endif %}>{{ event.name }}</option>
-                {% endfor %}
-            </select>
+<!-- STEP 1: Event Filter Selector First (Clean & Spacious Card) -->
+<div class="content-card event-selector-card mb-4 p-3.5">
+    <form method="get" id="eventFilterForm">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-md-7 col-lg-6">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label font-weight-bold text-dark mb-0 text-nowrap" for="event-filter-select" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-calendar-check text-success me-1"></i> Select Event:
+                    </label>
+                    <select name="event_id" id="event-filter-select" class="form-select font-weight-semibold" onchange="this.form.submit();" style="border-color: var(--clr-primary); font-size: 0.92rem; height: 42px; cursor: pointer; border-width: 2px;">
+                        <option value="all" {% if selected_event_id == 'all' %}selected{% endif %}>-- All Events Overview --</option>
+                        {% for event in events %}
+                        <option value="{{ event.id }}" {% if selected_event_id == event.id|slugify %}selected{% endif %}>{{ event.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-12 col-md-5 col-lg-6 text-md-end">
+                <span class="badge bg-light text-dark border px-3 py-2" style="font-size: 0.85rem; font-weight: 600;">
+                    <i class="fa-solid fa-cubes text-success me-1"></i> {{ committees|length }} Committee(s) Configured
+                </span>
+            </div>
         </div>
-        {% if selected_event_id %}
-        <div class="col-md-3 col-lg-2 align-self-end mt-md-0 mt-3" style="margin-bottom: 2px;">
-            <a href="." class="btn btn-secondary w-100 py-1" style="font-size: 0.85rem; border-color: var(--clr-border); height: 38px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-filter-circle-xmark me-2"></i> Clear Filter
-            </a>
-        </div>
-        {% endif %}
     </form>
 </div>
 
+<!-- Committee Search & List Header -->
+<div class="content-card mb-4 p-3 bg-light">
+    <div class="row align-items-center g-3">
+        <!-- Real-time Instant Committee Table Search Bar -->
+        <div class="col-12 col-md-6">
+            <div class="position-relative">
+                <i class="fa-solid fa-magnifying-glass position-absolute text-muted" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.88rem;"></i>
+                <input type="text" id="committee-search-input" class="form-control ps-5" placeholder="Search committee name, faculty head, student lead..." style="border-color: var(--clr-border); font-size: 0.88rem; height: 42px;">
+            </div>
+        </div>
+        <div class="col-12 col-md-6 text-md-end">
+            <span class="text-muted" style="font-size: 0.85rem;" id="visible-committees-count">Showing {{ committees|length }} committee(s)</span>
+        </div>
+    </div>
+</div>
+
 <!-- Committee Table List -->
-<div class="content-card">
-    <div class="table-responsive">
-        <table class="table-custom">
+<div class="content-card table-container-card">
+    <div class="table-custom-responsive">
+        <table class="table-custom" id="committee-table">
             <thead>
                 <tr>
                     <th style="width: 25%;">Committee Name</th>
-                    <th style="width: 25%;">Event Name</th>
-                    <th>assigned Coordinator</th>
-                    <th>Required Count</th>
-                    <th>Filled Slots</th>
-                    <th>Allocation Bar</th>
+                    {% if selected_event_id == 'all' %}<th style="width: 20%;">Event Name</th>{% endif %}
+                    <th>Faculty Head</th>
+                    <th>Student Lead Coordinator</th>
+                    <th style="text-align: center;">Required</th>
+                    <th style="text-align: center;">Filled</th>
+                    <th style="min-width: 140px;">Progress</th>
+                    <th style="text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>
+                <tr id="no-search-results-row" style="display: none;">
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-magnifying-glass text-muted mb-2 d-block" style="font-size: 2rem;"></i>
+                        <span class="d-block font-weight-bold" style="font-size: 0.95rem;">No matching committees found.</span>
+                    </td>
+                </tr>
                 {% for committee in committees %}
-                <tr class="clickable-row" onclick="window.location.href='/dean/committees/{{ committee.id }}/';">
-                    <td>
-                        <a href="/dean/committees/{{ committee.id }}/" class="text-success" style="font-weight: 600;" onclick="event.stopPropagation();">
-                            {{ committee.name }}
+                <tr class="committee-table-row" data-name="{{ committee.name|lower }}" data-head="{{ committee.head|lower }}" data-lead="{{ committee.student_coordinator|lower }}" onclick="window.location.href='/dean/committees/{{ committee.id }}/';">
+                    <td style="font-weight: 700;">
+                        <a href="/dean/committees/{{ committee.id }}/" class="text-success text-decoration-none" onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-cubes me-1.5 text-success opacity-75"></i> {{ committee.name }}
                         </a>
                     </td>
-                    <td style="font-size: 0.9rem; font-weight: 500;">
+                    {% if selected_event_id == 'all' %}
+                    <td style="font-size: 0.88rem; font-weight: 500;">
                         <i class="fa-solid fa-calendar-week text-muted me-1"></i> {{ committee.event_name }}
                     </td>
-                    <td style="font-size: 0.85rem; font-weight: 500;">
-                        <i class="fa-solid fa-user-tie text-muted me-1"></i> {{ committee.head }}
+                    {% endif %}
+                    <td style="font-size: 0.88rem; font-weight: 600; color: #334155;">
+                        {% if committee.head != 'Unassigned' %}
+                            <i class="fa-solid fa-user-tie text-primary me-1"></i> {{ committee.head }}
+                        {% else %}
+                            <span class="text-muted font-italic"><i class="fa-solid fa-user-xmark me-1"></i> Unassigned</span>
+                        {% endif %}
                     </td>
-                    <td style="font-weight: 600;">{{ committee.required }}</td>
-                    <td>
-                        <span class="badge bg-success" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">{{ committee.assigned }}</span>
+                    <td style="font-size: 0.88rem; font-weight: 500;">
+                        {% if committee.student_coordinator != 'Unassigned' %}
+                            <i class="fa-solid fa-user-graduate text-success me-1"></i> {{ committee.student_coordinator }}
+                        {% else %}
+                            <span class="text-muted font-italic">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 700; text-align: center;">{{ committee.required }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge {% if committee.assigned >= committee.required %}bg-success{% else %}bg-secondary{% endif %}" style="font-size: 0.8rem; border-radius: 50px; padding: 4px 10px;">
+                            {{ committee.assigned }} / {{ committee.required }}
+                        </span>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <div class="progress" style="width: 80px; height: 8px; border-radius: 5px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio committee.assigned committee.required 100 %}%"></div>
+                            <div class="progress flex-grow-1" style="height: 7px; border-radius: 5px; background-color: #e2e8f0;">
+                                <div class="progress-bar {% if committee.pct >= 100 %}bg-success{% elif committee.pct > 50 %}bg-primary{% else %}bg-warning{% endif %}" role="progressbar" style="width: {{ committee.pct }}%"></div>
                             </div>
-                            <span style="font-size: 0.75rem; font-weight: 500;" class="text-muted">{% widthratio committee.assigned committee.required 100 %}%</span>
+                            <span style="font-size: 0.78rem; font-weight: 700;" class="{% if committee.pct >= 100 %}text-success{% else %}text-muted{% endif %}">{{ committee.pct }}%</span>
                         </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="/dean/committees/{{ committee.id }}/" class="btn btn-sm btn-outline-success font-weight-semibold py-1 px-2.5" style="font-size: 0.8rem;" onclick="event.stopPropagation();">
+                            View ➔
+                        </a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-cubes mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
-                        No committees have been configured.
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-folder-open mb-2" style="font-size: 3rem; display: block; opacity: 0.5;"></i>
+                        No committees found for the selected event.
                     </td>
                 </tr>
                 {% endfor %}
@@ -103,4 +158,44 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time Instant Search for Committee Table
+    const searchInput = document.getElementById('committee-search-input');
+    const tableRows = document.querySelectorAll('.committee-table-row');
+    const noResultsRow = document.getElementById('no-search-results-row');
+    const countLabel = document.getElementById('visible-committees-count');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            tableRows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const head = row.getAttribute('data-head') || '';
+                const lead = row.getAttribute('data-lead') || '';
+
+                if (!query || name.includes(query) || head.includes(query) || lead.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (noResultsRow) {
+                noResultsRow.style.display = (visibleCount === 0 && tableRows.length > 0) ? '' : 'none';
+            }
+
+            if (countLabel) {
+                countLabel.innerText = `Showing ${visibleCount} of ${tableRows.length} committee(s)`;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
